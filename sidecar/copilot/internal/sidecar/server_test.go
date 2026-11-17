@@ -2,6 +2,7 @@ package sidecar
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -460,6 +461,14 @@ func TestDeviceFlowSignIn(t *testing.T) {
 	h.ok("signIn", map[string]any{}, &si)
 	now = now.Add(time.Hour)
 	h.fails("signInPoll", nil, CodeSignInExpired)
+}
+
+func TestMockStopsAtMaxTokens(t *testing.T) {
+	m := NewMockBackend(nil)
+	c, err := m.Complete(context.Background(), "", CompletionRequest{Prompt: leafPrompt(), MaxTokens: 5})
+	if err != nil || c.TokensOut != 5 || len([]rune(c.Text)) != 20 {
+		t.Fatalf("completion %+v (%v)", c, err)
+	}
 }
 
 func TestTokens(t *testing.T) {

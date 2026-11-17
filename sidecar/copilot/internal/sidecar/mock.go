@@ -59,6 +59,11 @@ func (m *MockBackend) Complete(_ context.Context, _ string, req CompletionReques
 		model = MockModels[0].ID
 	}
 	text := MockAnswer(req.System, req.Prompt)
+	// Like a real model, stop at maxTokens.
+	if req.MaxTokens > 0 && Tokens(text) > uint64(req.MaxTokens) {
+		r := []rune(text)
+		text = string(r[:int(req.MaxTokens)*4])
+	}
 	sysTokens := Tokens(req.System)
 	m.mu.Lock()
 	h := sha256.Sum256([]byte(model + "\x00" + req.System))

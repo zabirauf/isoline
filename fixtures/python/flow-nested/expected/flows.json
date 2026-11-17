@@ -1,0 +1,263 @@
+{
+ "outer": {
+  "id": "outer",
+  "owner": "outer",
+  "method": null,
+  "start": 4,
+  "end": 18,
+  "async": false,
+  "params": [
+   "data",
+   "*args",
+   "**kw"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "for p in pairs",
+    "line": 13,
+    "children": [
+     {
+      "t": "block",
+      "kind": "deferred",
+      "kw": "later",
+      "label": "inline function, runs when invoked",
+      "line": 13,
+      "children": [
+       {
+        "t": "call",
+        "label": "helper",
+        "target": {
+         "kind": "local",
+         "id": "helper"
+        },
+        "line": 13,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": [
+         {
+          "t": "block",
+          "kind": "inline",
+          "kw": "body",
+          "label": "helper()",
+          "line": 5,
+          "children": [
+           {
+            "t": "call",
+            "label": "json.dumps",
+            "target": {
+             "kind": "ext",
+             "id": "json.dumps",
+             "module": "json"
+            },
+            "line": 6,
+            "await": false,
+            "optional": false,
+            "argOf": null,
+            "inner": []
+           },
+           {
+            "t": "exit",
+            "kind": "return",
+            "label": "json.dumps(x)",
+            "line": 6,
+            "early": true
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "try",
+    "kw": "try",
+    "label": "",
+    "line": 14,
+    "children": [
+     {
+      "t": "call",
+      "label": "helper",
+      "target": {
+       "kind": "local",
+       "id": "helper"
+      },
+      "line": 15,
+      "await": false,
+      "optional": false,
+      "argOf": "emit",
+      "inner": [
+       {
+        "t": "block",
+        "kind": "inline",
+        "kw": "body",
+        "label": "helper()",
+        "line": 5,
+        "children": [
+         {
+          "t": "call",
+          "label": "json.dumps",
+          "target": {
+           "kind": "ext",
+           "id": "json.dumps",
+           "module": "json"
+          },
+          "line": 6,
+          "await": false,
+          "optional": false,
+          "argOf": null,
+          "inner": []
+         },
+         {
+          "t": "exit",
+          "kind": "return",
+          "label": "json.dumps(x)",
+          "line": 6,
+          "early": false
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "call",
+      "label": "emit",
+      "target": {
+       "kind": "other"
+      },
+      "line": 15,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "finally",
+    "kw": "finally",
+    "label": "always runs",
+    "line": 16,
+    "children": [
+     {
+      "t": "call",
+      "label": "close",
+      "target": {
+       "kind": "other"
+      },
+      "line": 17,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "callbacks",
+    "line": 18,
+    "early": false
+   }
+  ]
+ },
+ "stream": {
+  "id": "stream",
+  "owner": "stream",
+  "method": null,
+  "start": 21,
+  "end": 27,
+  "async": true,
+  "params": [
+   "source"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "source.lock",
+    "target": {
+     "kind": "method",
+     "id": "lock"
+    },
+    "line": 22,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "block",
+    "kind": "try",
+    "kw": "with",
+    "label": "source.lock() as guard",
+    "line": 22,
+    "children": [
+     {
+      "t": "call",
+      "label": "source.read",
+      "target": {
+       "kind": "method",
+       "id": "read"
+      },
+      "line": 23,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "block",
+      "kind": "loop",
+      "kw": "loop",
+      "label": "for chunk in source.read()",
+      "line": 23,
+      "children": [
+       {
+        "t": "call",
+        "label": "transform",
+        "target": {
+         "kind": "other"
+        },
+        "line": 24,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "while True",
+    "line": 25,
+    "children": [
+     {
+      "t": "call",
+      "label": "source.done",
+      "target": {
+       "kind": "method",
+       "id": "done"
+      },
+      "line": 26,
+      "await": false,
+      "optional": false,
+      "argOf": "(condition)",
+      "inner": []
+     }
+    ]
+   }
+  ]
+ }
+}

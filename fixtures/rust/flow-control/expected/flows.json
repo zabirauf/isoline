@@ -1,0 +1,403 @@
+{
+ "classify": {
+  "id": "classify",
+  "owner": "classify",
+  "method": null,
+  "start": 4,
+  "end": 14,
+  "async": false,
+  "params": [
+   "n"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "if",
+    "label": "n < 0",
+    "line": 5,
+    "children": [
+     {
+      "t": "call",
+      "label": "log",
+      "target": {
+       "kind": "fn",
+       "id": "log"
+      },
+      "line": 6,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "exit",
+      "kind": "return",
+      "label": "\"neg\"",
+      "line": 7,
+      "early": true
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "else",
+    "label": "",
+    "line": 8,
+    "children": [
+     {
+      "t": "block",
+      "kind": "cond",
+      "kw": "if",
+      "label": "n == 0",
+      "line": 8,
+      "children": []
+     },
+     {
+      "t": "block",
+      "kind": "cond",
+      "kw": "else",
+      "label": "",
+      "line": 10,
+      "children": [
+       {
+        "t": "call",
+        "label": "log",
+        "target": {
+         "kind": "fn",
+         "id": "log"
+        },
+        "line": 11,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "find": {
+  "id": "find",
+  "owner": "find",
+  "method": null,
+  "start": 16,
+  "end": 29,
+  "async": false,
+  "params": [
+   "map",
+   "key"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "map.get",
+    "target": {
+     "kind": "method",
+     "id": "get"
+    },
+    "line": 17,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "throw",
+    "label": "map.get(key)?",
+    "line": 17
+   },
+   {
+    "t": "call",
+    "label": "load",
+    "target": {
+     "kind": "ext",
+     "id": "load",
+     "module": "crate::store"
+    },
+    "line": 18,
+    "await": false,
+    "optional": false,
+    "argOf": "(condition)",
+    "inner": []
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "if",
+    "label": "let Some(limit) = load(key)",
+    "line": 18,
+    "children": [
+     {
+      "t": "call",
+      "label": "check",
+      "target": {
+       "kind": "other"
+      },
+      "line": 19,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "exit",
+      "kind": "throw",
+      "label": "check(limit)?",
+      "line": 19
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "match",
+    "label": "v if v > 10",
+    "line": 23,
+    "children": [
+     {
+      "t": "call",
+      "label": "scale",
+      "target": {
+       "kind": "other"
+      },
+      "line": 23,
+      "await": false,
+      "optional": false,
+      "argOf": "Some",
+      "inner": []
+     },
+     {
+      "t": "call",
+      "label": "Some",
+      "target": {
+       "kind": "builtin",
+       "id": "Some"
+      },
+      "line": 23,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "match",
+    "label": "v",
+    "line": 24,
+    "children": [
+     {
+      "t": "call",
+      "label": "log",
+      "target": {
+       "kind": "fn",
+       "id": "log"
+      },
+      "line": 25,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "call",
+      "label": "Some",
+      "target": {
+       "kind": "builtin",
+       "id": "Some"
+      },
+      "line": 26,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   }
+  ]
+ },
+ "drain": {
+  "id": "drain",
+  "owner": "drain",
+  "method": null,
+  "start": 31,
+  "end": 49,
+  "async": false,
+  "params": [
+   "store"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "loop",
+    "line": 33,
+    "children": [
+     {
+      "t": "call",
+      "label": "store.is_empty",
+      "target": {
+       "kind": "method",
+       "id": "is_empty"
+      },
+      "line": 34,
+      "await": false,
+      "optional": false,
+      "argOf": "(condition)",
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "while let Some(item) = store.pop()",
+    "line": 39,
+    "children": [
+     {
+      "t": "call",
+      "label": "store.pop",
+      "target": {
+       "kind": "method",
+       "id": "pop"
+      },
+      "line": 39,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "call",
+      "label": "handle",
+      "target": {
+       "kind": "other"
+      },
+      "line": 40,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "store.iter",
+    "target": {
+     "kind": "method",
+     "id": "iter"
+    },
+    "line": 42,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "store.iter().enumerate",
+    "target": {
+     "kind": "method",
+     "id": "enumerate"
+    },
+    "line": 42,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "for (i, x) in store.iter().enumerate()",
+    "line": 42,
+    "children": [
+     {
+      "t": "call",
+      "label": "render",
+      "target": {
+       "kind": "other"
+      },
+      "line": 43,
+      "await": false,
+      "optional": false,
+      "argOf": "println!",
+      "inner": []
+     },
+     {
+      "t": "call",
+      "label": "println!",
+      "target": {
+       "kind": "builtin",
+       "id": "println!"
+      },
+      "line": 43,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "if",
+    "label": "count == 0",
+    "line": 45,
+    "children": [
+     {
+      "t": "exit",
+      "kind": "throw",
+      "label": "panic!(\"nothing drained\")",
+      "line": 46
+     }
+    ]
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "count",
+    "line": 48,
+    "early": false
+   }
+  ]
+ },
+ "log": {
+  "id": "log",
+  "owner": "log",
+  "method": null,
+  "start": 51,
+  "end": 53,
+  "async": false,
+  "params": [
+   "msg"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "eprintln!",
+    "target": {
+     "kind": "builtin",
+     "id": "eprintln!"
+    },
+    "line": 52,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   }
+  ]
+ }
+}

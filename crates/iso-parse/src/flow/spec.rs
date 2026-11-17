@@ -42,6 +42,21 @@ pub enum Cat {
     Lambda,
     /// Object literal.
     Object,
+    /// A nested named function statement (`def f():` in Python, `fn f()` in Rust): a local.
+    FnDecl,
+    /// One binding statement (`x = …` in Python, `let x = …` in Rust): a lambda value makes
+    /// a local, anything else is walked (value first, then a non-identifier target).
+    Assign,
+    /// `match` (Rust) / `match`-`case` (Python): arms come from [`super::FlowLang::match_arms`].
+    Match,
+    /// Python `with`: the context expressions run first, the body is a block.
+    With,
+    /// Python list/set/dict comprehensions and generator expressions: a loop.
+    Comprehension,
+    /// Rust `expr?`: an exit that propagates the error (or `None`) to the caller.
+    TryOp,
+    /// Rust macro invocation: token trees, scanned by [`super::FlowLang::token_calls`].
+    Macro,
 }
 
 /// Kind names per category and field names, as written in one grammar.
@@ -66,6 +81,13 @@ pub struct SpecDef {
     pub new: &'static [&'static str],
     pub lambda: &'static [&'static str],
     pub object: &'static [&'static str],
+    pub fn_decl: &'static [&'static str],
+    pub assign: &'static [&'static str],
+    pub match_: &'static [&'static str],
+    pub with: &'static [&'static str],
+    pub comprehension: &'static [&'static str],
+    pub try_op: &'static [&'static str],
+    pub macro_: &'static [&'static str],
     /// Short-circuit operators (operator token kind) and the keyword shown for them.
     pub logical_ops: &'static [(&'static str, &'static str)],
     /// Methods whose callback argument runs once per item (`map`, `forEach`, …).
@@ -73,6 +95,74 @@ pub struct SpecDef {
     /// Receivers whose methods are built-ins (`Object`, `JSON`, …).
     pub builtins: &'static [&'static str],
     pub kinds: KindNames,
+    pub style: Style,
+}
+
+/// Language conventions beyond node kinds. [`Style::JS`] is analyze.js's behavior.
+pub struct Style {
+    /// Functions called by bare name that are built-ins (`print`, `len`, `Some`).
+    pub builtin_fns: &'static [&'static str],
+    /// Functions called by bare name whose callback argument runs once per item (`map`).
+    pub iter_fns: &'static [&'static str],
+    /// Receiver names that mean the unit's own type (`self`, `cls`).
+    pub self_names: &'static [&'static str],
+    /// A member call whose receiver chain starts at an imported module is `ext`
+    /// (`os.path.join`, `np.mean`). analyze.js treats every member call as a method.
+    pub member_roots_ext: bool,
+    /// Wrap conditions in parentheses in labels (`if (x)`, `while (x)`), as analyze.js does.
+    pub parens: bool,
+    /// Keyword shown for a `for … of`/`for … in` loop's operator when the grammar has none.
+    pub for_op: &'static str,
+    /// An `else` block's line is the `else` keyword's line, not its first statement's.
+    pub else_line_from_clause: bool,
+    /// Keyword for `match` arms.
+    pub match_kw: &'static str,
+    /// Keyword for exception handlers (`catch`, `except`).
+    pub catch_kw: &'static str,
+    /// Clause kinds of a try statement without `handler`/`finalizer` fields (Python).
+    pub catch_clauses: &'static [&'static str],
+    pub try_else_clauses: &'static [&'static str],
+    pub finally_clauses: &'static [&'static str],
+    /// `elif` clause kinds (siblings under an if statement's `alternative` field).
+    pub elif_clauses: &'static [&'static str],
+    /// Comprehension `for` clause kind.
+    pub for_in_clause: &'static str,
+    /// Call-like nodes whose callee is a path (`Type::f`), classified by
+    /// [`super::FlowLang::path_target`].
+    pub path_kinds: &'static [&'static str],
+    /// Macros that never return (`panic!`): an exit instead of a call.
+    pub exit_macros: &'static [&'static str],
+    /// Macros shown as built-in calls (`println!`, `vec!`).
+    pub builtin_macros: &'static [&'static str],
+    /// Field names of a member access (`a.b`) and of a subscript's object.
+    pub member_object: &'static str,
+    pub member_property: &'static str,
+    pub subscript_object: &'static str,
+}
+
+impl Style {
+    pub const JS: Style = Style {
+        builtin_fns: &[],
+        iter_fns: &[],
+        self_names: &[],
+        member_roots_ext: false,
+        parens: true,
+        for_op: "of",
+        else_line_from_clause: false,
+        match_kw: "case",
+        catch_kw: "catch",
+        catch_clauses: &[],
+        try_else_clauses: &[],
+        finally_clauses: &[],
+        elif_clauses: &[],
+        for_in_clause: "",
+        path_kinds: &[],
+        exit_macros: &[],
+        builtin_macros: &[],
+        member_object: "object",
+        member_property: "property",
+        subscript_object: "object",
+    };
 }
 
 /// Individual kind names the walker matches directly.
@@ -107,6 +197,7 @@ pub struct FlowSpec {
     pub k: KindIds,
     pub f: Fields,
     pub names: &'static KindNames,
+    pub style: &'static Style,
 }
 
 /// Kind ids (every grammar may alias one name to several ids, so these are lists).
@@ -161,6 +252,10 @@ pub struct Fields {
     pub source: Option<FieldId>,
     pub alias: Option<FieldId>,
     pub declaration: Option<FieldId>,
+    pub definition: Option<FieldId>,
+    pub member_object: Option<FieldId>,
+    pub member_property: Option<FieldId>,
+    pub subscript_object: Option<FieldId>,
 }
 
 fn ids(lang: &Language, name: &str) -> Vec<u16> {
@@ -173,7 +268,7 @@ impl FlowSpec {
     pub fn build(lang: &Language, def: &'static SpecDef) -> FlowSpec {
         let n = lang.node_kind_count();
         let mut cats = vec![Cat::Other; n];
-        let groups: [(&[&str], Cat); 20] = [
+        let groups: [(&[&str], Cat); 27] = [
             (def.skip, Cat::Skip),
             (def.block, Cat::Block),
             (def.var_decl, Cat::VarDecl),
@@ -194,6 +289,13 @@ impl FlowSpec {
             (def.new, Cat::New),
             (def.lambda, Cat::Lambda),
             (def.object, Cat::Object),
+            (def.fn_decl, Cat::FnDecl),
+            (def.assign, Cat::Assign),
+            (def.match_, Cat::Match),
+            (def.with, Cat::With),
+            (def.comprehension, Cat::Comprehension),
+            (def.try_op, Cat::TryOp),
+            (def.macro_, Cat::Macro),
         ];
         for (names, cat) in groups {
             for name in names {
@@ -249,6 +351,10 @@ impl FlowSpec {
             source: fid("source"),
             alias: fid("alias"),
             declaration: fid("declaration"),
+            definition: fid("definition"),
+            member_object: fid(def.style.member_object),
+            member_property: fid(def.style.member_property),
+            subscript_object: fid(def.style.subscript_object),
         };
         FlowSpec {
             cats,
@@ -258,6 +364,7 @@ impl FlowSpec {
             k,
             f,
             names: &def.kinds,
+            style: &def.style,
         }
     }
 

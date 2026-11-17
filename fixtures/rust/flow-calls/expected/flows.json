@@ -1,0 +1,556 @@
+{
+ "Repo.new": {
+  "id": "Repo.new",
+  "owner": "Repo",
+  "method": "new",
+  "start": 9,
+  "end": 11,
+  "async": false,
+  "params": [],
+  "tree": [
+   {
+    "t": "call",
+    "label": "Vec::new",
+    "target": {
+     "kind": "builtin",
+     "id": "Vec::new"
+    },
+    "line": 10,
+    "await": false,
+    "optional": false,
+    "argOf": "Self::with_items",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "Self::with_items",
+    "target": {
+     "kind": "method",
+     "id": "with_items",
+     "unit": "Repo.with_items"
+    },
+    "line": 10,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "Self::with_items(Vec::new())",
+    "line": 10,
+    "early": false
+   }
+  ]
+ },
+ "Repo.with_items": {
+  "id": "Repo.with_items",
+  "owner": "Repo",
+  "method": "with_items",
+  "start": 13,
+  "end": 15,
+  "async": false,
+  "params": [
+   "items"
+  ],
+  "tree": [
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "Repo { items }",
+    "line": 14,
+    "early": false
+   }
+  ]
+ },
+ "Repo.sync": {
+  "id": "Repo.sync",
+  "owner": "Repo",
+  "method": "sync",
+  "start": 17,
+  "end": 27,
+  "async": true,
+  "params": [
+   "&self",
+   "client"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "self.url",
+    "target": {
+     "kind": "method",
+     "id": "url",
+     "unit": "Repo.url"
+    },
+    "line": 18,
+    "await": false,
+    "optional": false,
+    "argOf": "client.fetch",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "client.fetch",
+    "target": {
+     "kind": "method",
+     "id": "fetch"
+    },
+    "line": 18,
+    "await": true,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "throw",
+    "label": "client.fetch(&self.url()).await?",
+    "line": 18
+   },
+   {
+    "t": "call",
+    "label": "serde_json::from_str",
+    "target": {
+     "kind": "ext",
+     "id": "serde_json::from_str",
+     "module": "serde_json"
+    },
+    "line": 19,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "throw",
+    "label": "serde_json::from_str(&body)?",
+    "line": 19
+   },
+   {
+    "t": "call",
+    "label": "self.items.iter",
+    "target": {
+     "kind": "method",
+     "id": "iter"
+    },
+    "line": 20,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "self.items.iter().map",
+    "target": {
+     "kind": "method",
+     "id": "map"
+    },
+    "line": 20,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": [
+     {
+      "t": "block",
+      "kind": "loop",
+      "kw": "loop",
+      "label": "each item of .map()",
+      "line": 20,
+      "children": [
+       {
+        "t": "call",
+        "label": "weigh",
+        "target": {
+         "kind": "fn",
+         "id": "weigh"
+        },
+        "line": 20,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "self.items.iter().map(|x| weigh(*x)).sum",
+    "target": {
+     "kind": "method",
+     "id": "sum"
+    },
+    "line": 20,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "self.items.iter",
+    "target": {
+     "kind": "method",
+     "id": "iter"
+    },
+    "line": 21,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "self.items.iter().for_each",
+    "target": {
+     "kind": "method",
+     "id": "for_each"
+    },
+    "line": 21,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": [
+     {
+      "t": "block",
+      "kind": "loop",
+      "kw": "loop",
+      "label": "each item of .for_each()",
+      "line": 21,
+      "children": [
+       {
+        "t": "block",
+        "kind": "cond",
+        "kw": "if",
+        "label": "*x > 9",
+        "line": 22,
+        "children": [
+         {
+          "t": "call",
+          "label": "warn",
+          "target": {
+           "kind": "other"
+          },
+          "line": 23,
+          "await": false,
+          "optional": false,
+          "argOf": null,
+          "inner": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "parsed.as_u64",
+    "target": {
+     "kind": "method",
+     "id": "as_u64"
+    },
+    "line": 26,
+    "await": false,
+    "optional": false,
+    "argOf": "Ok",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "parsed.as_u64().unwrap_or",
+    "target": {
+     "kind": "method",
+     "id": "unwrap_or"
+    },
+    "line": 26,
+    "await": false,
+    "optional": false,
+    "argOf": "Ok",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "Ok",
+    "target": {
+     "kind": "builtin",
+     "id": "Ok"
+    },
+    "line": 26,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "Ok(total as usize + parsed.as_u64().unwrap_or…",
+    "line": 26,
+    "early": false
+   }
+  ]
+ },
+ "Repo.url": {
+  "id": "Repo.url",
+  "owner": "Repo",
+  "method": "url",
+  "start": 29,
+  "end": 31,
+  "async": false,
+  "params": [
+   "&self"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "self.items.len",
+    "target": {
+     "kind": "method",
+     "id": "len"
+    },
+    "line": 30,
+    "await": false,
+    "optional": false,
+    "argOf": "format!",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "format!",
+    "target": {
+     "kind": "builtin",
+     "id": "format!"
+    },
+    "line": 30,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "format!(\"/repo/{}\", self.items.len())",
+    "line": 30,
+    "early": false
+   }
+  ]
+ },
+ "Named.greet": {
+  "id": "Named.greet",
+  "owner": "Named",
+  "method": "greet",
+  "start": 37,
+  "end": 40,
+  "async": false,
+  "params": [
+   "&self"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "self.name",
+    "target": {
+     "kind": "method",
+     "id": "name"
+    },
+    "line": 39,
+    "await": false,
+    "optional": false,
+    "argOf": "shout",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "shout",
+    "target": {
+     "kind": "local",
+     "id": "shout"
+    },
+    "line": 39,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": [
+     {
+      "t": "block",
+      "kind": "inline",
+      "kw": "body",
+      "label": "shout()",
+      "line": 38,
+      "children": [
+       {
+        "t": "call",
+        "label": "s.to_uppercase",
+        "target": {
+         "kind": "method",
+         "id": "to_uppercase"
+        },
+        "line": 38,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "shout(self.name())",
+    "line": 39,
+    "early": false
+   }
+  ]
+ },
+ "weigh": {
+  "id": "weigh",
+  "owner": "weigh",
+  "method": null,
+  "start": 43,
+  "end": 50,
+  "async": false,
+  "params": [
+   "x"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "Arc::new",
+    "target": {
+     "kind": "ext",
+     "id": "Arc::new",
+     "module": "std::sync::Arc"
+    },
+    "line": 47,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "crate::metrics::record",
+    "target": {
+     "kind": "ext",
+     "id": "crate::metrics::record",
+     "module": "crate::metrics"
+    },
+    "line": 48,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "square",
+    "target": {
+     "kind": "local",
+     "id": "square"
+    },
+    "line": 49,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": [
+     {
+      "t": "block",
+      "kind": "inline",
+      "kw": "body",
+      "label": "square()",
+      "line": 44,
+      "children": [
+       {
+        "t": "exit",
+        "kind": "return",
+        "label": "v * v",
+        "line": 45,
+        "early": false
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "Repo::new",
+    "target": {
+     "kind": "method",
+     "id": "new",
+     "unit": "Repo.new"
+    },
+    "line": 49,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "Repo::new().items.len",
+    "target": {
+     "kind": "method",
+     "id": "len"
+    },
+    "line": 49,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "square(x) + Repo::new().items.len() as u32",
+    "line": 49,
+    "early": false
+   }
+  ]
+ },
+ "tests.weighs": {
+  "id": "tests.weighs",
+  "owner": "tests.weighs",
+  "method": null,
+  "start": 57,
+  "end": 59,
+  "async": false,
+  "params": [],
+  "tree": [
+   {
+    "t": "call",
+    "label": "weigh",
+    "target": {
+     "kind": "fn",
+     "id": "weigh"
+    },
+    "line": 58,
+    "await": false,
+    "optional": false,
+    "argOf": "assert_eq!",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "assert_eq!",
+    "target": {
+     "kind": "builtin",
+     "id": "assert_eq!"
+    },
+    "line": 58,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   }
+  ]
+ }
+}

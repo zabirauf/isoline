@@ -1,0 +1,521 @@
+{
+ "classify": {
+  "id": "classify",
+  "owner": "classify",
+  "method": null,
+  "start": 6,
+  "end": 14,
+  "async": false,
+  "params": [
+   "n"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "if",
+    "label": "n < 0",
+    "line": 7,
+    "children": [
+     {
+      "t": "call",
+      "label": "log",
+      "target": {
+       "kind": "fn",
+       "id": "log"
+      },
+      "line": 8,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "exit",
+      "kind": "return",
+      "label": "\"neg\"",
+      "line": 9,
+      "early": true
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "elif",
+    "label": "n == 0",
+    "line": 10,
+    "children": [
+     {
+      "t": "exit",
+      "kind": "return",
+      "label": "\"zero\"",
+      "line": 11,
+      "early": true
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "else",
+    "label": "",
+    "line": 12,
+    "children": [
+     {
+      "t": "call",
+      "label": "log",
+      "target": {
+       "kind": "fn",
+       "id": "log"
+      },
+      "line": 13,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "check",
+    "target": {
+     "kind": "fn",
+     "id": "check"
+    },
+    "line": 14,
+    "await": false,
+    "optional": false,
+    "argOf": "(condition)",
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "\"pos\" if check(n) else \"big\"",
+    "line": 14,
+    "early": false
+   }
+  ]
+ },
+ "scan": {
+  "id": "scan",
+  "owner": "scan",
+  "method": null,
+  "start": 17,
+  "end": 26,
+  "async": false,
+  "params": [
+   "items",
+   "limit = …"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "for item in items",
+    "line": 18,
+    "children": [
+     {
+      "t": "call",
+      "label": "handle",
+      "target": {
+       "kind": "ext",
+       "id": "handle",
+       "module": ".util"
+      },
+      "line": 21,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "else",
+    "label": "if the loop ends without break",
+    "line": 22,
+    "children": [
+     {
+      "t": "call",
+      "label": "log",
+      "target": {
+       "kind": "fn",
+       "id": "log"
+      },
+      "line": 23,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "while limit > 0 and ready()",
+    "line": 24,
+    "children": [
+     {
+      "t": "block",
+      "kind": "cond",
+      "kw": "only if",
+      "label": "limit > 0",
+      "line": 24,
+      "children": [
+       {
+        "t": "call",
+        "label": "ready",
+        "target": {
+         "kind": "ext",
+         "id": "ready",
+         "module": ".util"
+        },
+        "line": 24,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     },
+     {
+      "t": "call",
+      "label": "step",
+      "target": {
+       "kind": "ext",
+       "id": "step",
+       "module": ".util"
+      },
+      "line": 25,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "limit",
+    "line": 26,
+    "early": false
+   }
+  ]
+ },
+ "load": {
+  "id": "load",
+  "owner": "load",
+  "method": null,
+  "start": 29,
+  "end": 40,
+  "async": false,
+  "params": [
+   "path"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "try",
+    "kw": "try",
+    "label": "",
+    "line": 30,
+    "children": [
+     {
+      "t": "call",
+      "label": "open",
+      "target": {
+       "kind": "builtin",
+       "id": "open"
+      },
+      "line": 31,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "block",
+      "kind": "try",
+      "kw": "with",
+      "label": "open(path) as fh",
+      "line": 31,
+      "children": [
+       {
+        "t": "call",
+        "label": "fh.read",
+        "target": {
+         "kind": "method",
+         "id": "read"
+        },
+        "line": 32,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "catch",
+    "kw": "except",
+    "label": "(OSError, ValueError) as err",
+    "line": 33,
+    "children": [
+     {
+      "t": "call",
+      "label": "log",
+      "target": {
+       "kind": "fn",
+       "id": "log"
+      },
+      "line": 34,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "call",
+      "label": "RuntimeError",
+      "target": {
+       "kind": "builtin",
+       "id": "RuntimeError"
+      },
+      "line": 35,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     },
+     {
+      "t": "exit",
+      "kind": "throw",
+      "label": "RuntimeError(\"cannot load\")",
+      "line": 35
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "else",
+    "label": "if no exception",
+    "line": 36,
+    "children": [
+     {
+      "t": "call",
+      "label": "log",
+      "target": {
+       "kind": "fn",
+       "id": "log"
+      },
+      "line": 37,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "finally",
+    "kw": "finally",
+    "label": "always runs",
+    "line": 38,
+    "children": [
+     {
+      "t": "call",
+      "label": "cleanup",
+      "target": {
+       "kind": "ext",
+       "id": "cleanup",
+       "module": ".util"
+      },
+      "line": 39,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "unless",
+    "label": "data",
+    "line": 40,
+    "children": [
+     {
+      "t": "call",
+      "label": "default",
+      "target": {
+       "kind": "ext",
+       "id": "default",
+       "module": ".util"
+      },
+      "line": 40,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "data or default()",
+    "line": 40,
+    "early": false
+   }
+  ]
+ },
+ "route": {
+  "id": "route",
+  "owner": "route",
+  "method": null,
+  "start": 43,
+  "end": 50,
+  "async": false,
+  "params": [
+   "cmd"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "case",
+    "label": "\"start\"",
+    "line": 45,
+    "children": [
+     {
+      "t": "call",
+      "label": "start",
+      "target": {
+       "kind": "ext",
+       "id": "start",
+       "module": ".util"
+      },
+      "line": 46,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "case",
+    "label": "\"stop\" | \"halt\"",
+    "line": 47,
+    "children": [
+     {
+      "t": "exit",
+      "kind": "return",
+      "label": "None",
+      "line": 48,
+      "early": true
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "case",
+    "label": "_ if cmd.startswith(\"x\")",
+    "line": 49,
+    "children": [
+     {
+      "t": "call",
+      "label": "cmd.startswith",
+      "target": {
+       "kind": "method",
+       "id": "startswith"
+      },
+      "line": 49,
+      "await": false,
+      "optional": false,
+      "argOf": "(condition)",
+      "inner": []
+     },
+     {
+      "t": "call",
+      "label": "os.remove",
+      "target": {
+       "kind": "ext",
+       "id": "os.remove",
+       "module": "os"
+      },
+      "line": 50,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   }
+  ]
+ },
+ "log": {
+  "id": "log",
+  "owner": "log",
+  "method": null,
+  "start": 53,
+  "end": 54,
+  "async": false,
+  "params": [
+   "msg"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "print",
+    "target": {
+     "kind": "builtin",
+     "id": "print"
+    },
+    "line": 54,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   }
+  ]
+ },
+ "check": {
+  "id": "check",
+  "owner": "check",
+  "method": null,
+  "start": 57,
+  "end": 58,
+  "async": false,
+  "params": [
+   "n"
+  ],
+  "tree": [
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "n > 100",
+    "line": 58,
+    "early": false
+   }
+  ]
+ }
+}

@@ -4,13 +4,18 @@
 //! The walker ([`walk`]) only knows categories of nodes ([`spec::Cat`]) and field ids; every
 //! grammar-specific name lives in a [`spec::SpecDef`]. Unit discovery (which functions are
 //! units, what a file imports, which factories return controller objects) is per language
-//! and produces a [`Prepared`] file for the walker. `js.rs` holds the TS/JS table and
-//! discovery; Python and Rust add their own module next to it.
+//! and produces a [`Prepared`] file for the walker. `js.rs`, `python.rs` and `rust.rs` hold
+//! the tables, hooks ([`FlowLang`]) and discovery of each language.
 //!
-//! Semantics follow analyze.js exactly, including its quirks (see `fixtures/ts/DEVIATIONS.md`
-//! for the few places where Isoline does more).
+//! For TS/JS, semantics follow analyze.js exactly, including its quirks (see
+//! `fixtures/ts/DEVIATIONS.md` for the few places where Isoline does more). Behavior that
+//! only Python and Rust need is switched on by their [`spec::Style`]; [`spec::Style::JS`]
+//! keeps analyze.js's. The Python and Rust mappings are in `fixtures/python/FLOW.md` and
+//! `fixtures/rust/FLOW.md`.
 
 pub mod js;
+pub mod python;
+pub mod rust;
 pub mod spec;
 
 use std::cell::{Cell, RefCell};
@@ -52,6 +57,130 @@ pub trait FlowLang: Sync {
     fn is_chain_top(&self, _n: Node) -> bool {
         true
     }
+    /// The callee to label and classify (Rust `f::<T>` is `f`).
+    fn unwrap_callee<'t>(&self, callee: Node<'t>) -> Node<'t> {
+        callee
+    }
+    /// An argument's value (Python `key=value` is `value`).
+    fn unwrap_arg<'t>(&self, arg: Node<'t>) -> Node<'t> {
+        arg
+    }
+    /// Subject and arms of a [`Cat::Match`] node.
+    fn match_arms<'t>(&self, _node: Node<'t>, _src: &str) -> (Option<Node<'t>>, Vec<Arm<'t>>) {
+        (None, Vec::new())
+    }
+    /// The expression a function's body ends with when it is the return value (a Rust tail
+    /// expression in a function that declares a return type).
+    fn tail_value<'t>(&self, _f: Node<'t>, _src: &str) -> Option<Node<'t>> {
+        None
+    }
+    /// Target of a path callee (`Type::f`, `module::f`), split at `::`.
+    fn path_target(&self, _segs: &[&str], _cx: &PathCx) -> FlowTarget {
+        other_target()
+    }
+    /// Name node and token tree of a [`Cat::Macro`] node.
+    fn macro_parts<'t>(&self, _m: Node<'t>) -> Option<(Node<'t>, Option<Node<'t>>)> {
+        None
+    }
+    /// Call shapes (`f(…)`, `a::b(…)`, `x.m(…)`) in a macro's token tree, in source order.
+    fn token_calls<'t>(&self, _tree: Node<'t>, _src: &str) -> Vec<TokenCall<'t>> {
+        Vec::new()
+    }
+}
+
+/// One arm of a `match`.
+pub struct Arm<'t> {
+    pub label: String,
+    /// `if` guard, walked as a condition.
+    pub guard: Option<Node<'t>>,
+    pub body: Option<Node<'t>>,
+    pub line: u32,
+}
+
+/// What [`FlowLang::path_target`] can see.
+pub struct PathCx<'a, 't, 's> {
+    pub file: &'a Prepared<'t, 's>,
+    pub unit_ids: &'a HashSet<&'a str>,
+    /// The unit's own type (`Self`), qualified as unit ids are.
+    pub owner: Option<&'a str>,
+    /// Inline-module prefix of the unit (`tests.`).
+    pub prefix: &'a str,
+}
+
+/// A call found in a macro's token tree.
+pub struct TokenCall<'t> {
+    pub label: String,
+    pub callee: TokenCallee,
+    pub line: u32,
+    /// The parenthesized arguments, scanned for nested calls.
+    pub args: Option<Node<'t>>,
+}
+
+pub enum TokenCallee {
+    Ident(String),
+    Path(Vec<String>),
+    Method { name: String, on_self: bool },
+}
+
+/// Callable symbols by (name, end line) → qualified name, so a language's units carry the
+/// extractor's names exactly (`Type.method`, `sync#2.wake`) and cards link to them.
+pub struct SymbolNames<'f>(HashMap<(&'f str, u32), &'f str>);
+
+impl<'f> SymbolNames<'f> {
+    pub fn new(facts: &'f iso_core::FileFacts) -> Self {
+        SymbolNames(
+            facts
+                .symbols
+                .iter()
+                .filter(|s| s.kind.is_callable())
+                .map(|s| ((s.name.as_str(), s.end_line), s.qualified_name.as_str()))
+                .collect(),
+        )
+    }
+    /// Unit id, owner and method for a function named `name` ending on `end`, falling back
+    /// to the computed `(id, owner)` when the extractor has no such symbol.
+    pub fn unit(
+        &self,
+        name: &str,
+        end: u32,
+        method: bool,
+        fallback: (String, String),
+    ) -> (String, String, Option<String>) {
+        let Some(qn) = self.0.get(&(name, end)) else {
+            let m = method.then(|| name.to_string());
+            return (fallback.0, fallback.1, m);
+        };
+        if !method {
+            return (qn.to_string(), qn.to_string(), None);
+        }
+        let owner = qn
+            .strip_suffix(name)
+            .and_then(|o| o.strip_suffix('.'))
+            .unwrap_or(&fallback.1);
+        (qn.to_string(), owner.to_string(), Some(name.to_string()))
+    }
+}
+
+/// An `other` target (no id).
+pub fn other_target() -> FlowTarget {
+    FlowTarget {
+        kind: FlowTargetKind::Other,
+        id: None,
+        module: None,
+        unit: None,
+        of: None,
+        note: None,
+        ext: None,
+    }
+}
+
+/// `FlowTarget` constructors for language modules.
+pub fn target(kind: FlowTargetKind, id: impl Into<String>) -> FlowTarget {
+    FlowTarget {
+        kind,
+        id: Some(id.into()),
+        ..other_target()
+    }
 }
 
 /// One factory's returned controller object: property name and what it is.
@@ -90,12 +219,19 @@ pub struct UnitSeed<'t, 's> {
     pub param_labels: Vec<String>,
     /// Set when the unit is a factory whose controller object is listed on return.
     pub factory: Option<String>,
+    /// The type a method belongs to (qualified like unit ids), for `self.m()` / `Self::f()`.
+    pub self_type: Option<String>,
+    /// Inline-module prefix (`tests.`) for calls to functions of the same module.
+    pub prefix: String,
 }
 
 /// One file, prepared by a language's discovery pass.
 pub struct Prepared<'t, 's> {
-    /// Local name of a named import → module specifier.
-    pub imports: HashMap<&'s str, &'s str>,
+    /// Local name of an imported function or value → module it comes from.
+    pub imports: HashMap<String, String>,
+    /// Local name of an imported module or type → its full path, for member and path
+    /// callees rooted at it (`np.mean`, `HashMap::new`). Empty for TS/JS.
+    pub import_paths: HashMap<String, String>,
     /// Functions declared at the top of the file.
     pub top_fns: HashSet<&'s str>,
     /// Factory name → its controller object's properties in source order.
@@ -105,6 +241,7 @@ pub struct Prepared<'t, 's> {
 
 /// Walk every unit of a prepared file.
 pub fn walk_units(lang: &dyn FlowLang, src: &str, file: &Prepared) -> Vec<FlowUnit> {
+    let unit_ids: HashSet<&str> = file.units.iter().map(|u| u.id.as_str()).collect();
     file.units
         .iter()
         .map(|u| {
@@ -117,6 +254,9 @@ pub fn walk_units(lang: &dyn FlowLang, src: &str, file: &Prepared) -> Vec<FlowUn
                 used: RefCell::new(HashSet::new()),
                 depth: Cell::new(0),
                 budget: Cell::new(MAX_WALKED),
+                unit_ids: &unit_ids,
+                owner: u.self_type.as_deref(),
+                prefix: &u.prefix,
             };
             let inline: Vec<&str> = u.method.iter().map(|m| m.as_str()).collect();
             let ctx = Ctx {
@@ -179,6 +319,32 @@ pub fn label(s: &str, max: usize) -> String {
     }
     cut.push('…');
     cut
+}
+
+/// Whitespace runs collapsed to one space, no length limit.
+pub fn collapse(s: &str) -> String {
+    s.split(is_js_space)
+        .filter(|w| !w.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Generic arguments removed from a path: `Vec::<u8>::new` → `Vec::new`.
+pub fn strip_generics(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut depth = 0usize;
+    for c in s.chars() {
+        match c {
+            '<' => depth += 1,
+            '>' if depth > 0 => depth -= 1,
+            _ if depth == 0 => out.push(c),
+            _ => {}
+        }
+    }
+    while out.contains("::::") {
+        out = out.replace("::::", "::");
+    }
+    out.trim_end_matches("::").to_string()
 }
 
 fn is_js_space(c: char) -> bool {
@@ -355,6 +521,10 @@ struct Walker<'w, 't, 's> {
     depth: Cell<u32>,
     /// Nodes left to walk (see [`MAX_WALKED`]).
     budget: Cell<u32>,
+    unit_ids: &'w HashSet<&'w str>,
+    /// The unit's own type, for `self.m()`.
+    owner: Option<&'w str>,
+    prefix: &'w str,
 }
 
 impl<'w, 't, 's> Walker<'w, 't, 's> {
@@ -388,9 +558,36 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
             arg_of: None,
             ..ctx.clone()
         };
-        match self.lang.body(f) {
+        let mut out = match self.lang.body(f) {
             Some(b) => self.walk(Some(b), &c),
             None => Vec::new(),
+        };
+        if let Some(t) = self.lang.tail_value(f, self.src) {
+            out.push(Item::Exit {
+                kind: ExitKind::Return,
+                label: self.t(t, 46),
+                line: line(t),
+                early: Some(ctx.cond > 0),
+                methods: None,
+            });
+        }
+        out
+    }
+
+    /// `(x)` for analyze.js, `x` for languages whose conditions have no parentheses.
+    fn cond_label(&self, s: String) -> String {
+        if self.spec.style.parens {
+            format!("({s})")
+        } else {
+            s
+        }
+    }
+
+    fn for_head(&self, left: String, op: &str, right: String) -> String {
+        if self.spec.style.parens {
+            format!("for ({left} {op} {right})")
+        } else {
+            format!("for {left} {op} {right}")
         }
     }
 
@@ -457,14 +654,24 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
             }
             Cat::If => self.walk_if(node, ctx),
             Cat::Ternary => {
-                let cond_n = field(node, f.condition);
-                let when_t = field(node, f.consequence);
-                let when_f = field(node, f.alternative);
+                let (cond_n, when_t, when_f) = match field(node, f.condition) {
+                    Some(c) => (
+                        Some(c),
+                        field(node, f.consequence),
+                        field(node, f.alternative),
+                    ),
+                    None => {
+                        // Python: `consequence if condition else alternative`, no fields.
+                        let mut kids = named(node).filter(|c| sp.cat(*c) != Cat::Skip);
+                        let a = kids.next();
+                        (kids.next(), a, kids.next())
+                    }
+                };
                 let mut out = self.walk(cond_n, &ctx.with_arg_of(Rc::from("(condition)")));
                 let inner = ctx.with_cond();
                 let a = self.walk(when_t, &inner);
                 let b = self.walk(when_f, &inner);
-                let lbl = format!("({})", cond_n.map(|c| self.t(c, 72)).unwrap_or_default());
+                let lbl = self.cond_label(cond_n.map(|c| self.t(c, 72)).unwrap_or_default());
                 let (ma, mb) = (meaningful(&a), meaningful(&b));
                 let lf = when_f.map(line).unwrap_or(line(node));
                 if !ma && !mb {
@@ -540,21 +747,25 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
             Cat::While | Cat::Do => {
                 let cond_n = field(node, f.condition);
                 let inner = cond_n.map(|c| self.unparen(c));
-                let head = format!(
-                    "while ({})",
-                    inner.map(|c| self.t(c, 50)).unwrap_or_default()
-                );
+                let head = match inner {
+                    Some(c) if sp.style.parens => format!("while ({})", self.t(c, 50)),
+                    Some(c) => format!("while {}", self.t(c, 50)),
+                    // Rust `loop { … }`.
+                    None if !sp.style.parens => "loop".to_string(),
+                    None => "while ()".to_string(),
+                };
                 let mut b = self.walk(cond_n, ctx);
                 b.extend(self.walk(field(node, f.body), &ctx.with_cond()));
+                let mut out = Vec::new();
                 if meaningful(&b) {
-                    vec![block(BlockKind::Loop, "loop", head, b, line(node))]
-                } else {
-                    Vec::new()
+                    out.push(block(BlockKind::Loop, "loop", head, b, line(node)));
                 }
+                out.extend(self.loop_else(node, ctx));
+                out
             }
             Cat::ForEach => {
-                let left = field(node, f.left);
-                let right = field(node, f.right);
+                let left = field(node, f.left).or_else(|| field(node, f.pattern));
+                let right = field(node, f.right).or_else(|| field(node, f.value));
                 let mut out = self.walk(right, ctx);
                 let b = self.walk(field(node, f.body), &ctx.with_cond());
                 if meaningful(&b) {
@@ -565,15 +776,12 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
                     };
                     let op = field(node, f.operator)
                         .map(|o| self.text(o))
-                        .unwrap_or("of");
-                    let head = format!(
-                        "for ({} {} {})",
-                        init,
-                        op,
-                        right.map(|r| self.t(r, 30)).unwrap_or_default()
-                    );
+                        .unwrap_or(sp.style.for_op);
+                    let head =
+                        self.for_head(init, op, right.map(|r| self.t(r, 30)).unwrap_or_default());
                     out.push(block(BlockKind::Loop, "loop", head, b, line(node)));
                 }
+                out.extend(self.loop_else(node, ctx));
                 out
             }
             Cat::Switch => {
@@ -646,29 +854,358 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
                 }
                 out
             }
+            Cat::FnDecl => {
+                let def = field(node, f.definition).unwrap_or(node);
+                match (sp.cat(def), field(def, f.name)) {
+                    (Cat::FnDecl, Some(name)) => vec![Item::Def {
+                        name: self.text(name),
+                        line: line(node),
+                        node: def,
+                    }],
+                    // A decorated class, or a nameless declaration.
+                    _ => Vec::new(),
+                }
+            }
+            Cat::Assign => {
+                let target = field(node, f.left).or_else(|| field(node, f.pattern));
+                let value = field(node, f.right).or_else(|| field(node, f.value));
+                let simple = target.filter(|t| is(&sp.k.identifier, *t));
+                if self.is_fn(value)
+                    && let Some(name) = simple
+                {
+                    return vec![Item::Def {
+                        name: self.text(name),
+                        line: line(node),
+                        node: value.expect("checked"),
+                    }];
+                }
+                let mut out = self.walk(value, ctx);
+                if simple.is_none() {
+                    out.extend(self.walk(target, ctx));
+                }
+                // Rust `let … else { … }`.
+                if let Some(alt) = field(node, f.alternative) {
+                    let b = self.walk(Some(alt), &ctx.with_cond());
+                    if meaningful(&b) {
+                        out.push(block(
+                            BlockKind::Cond,
+                            "else",
+                            "if the pattern does not match".into(),
+                            b,
+                            line(alt),
+                        ));
+                    }
+                }
+                out
+            }
+            Cat::Match => {
+                let (subject, arms) = self.lang.match_arms(node, self.src);
+                let mut out = self.walk(subject, ctx);
+                let inner = ctx.with_cond();
+                for arm in arms {
+                    let mut children =
+                        self.walk(arm.guard, &inner.with_arg_of(Rc::from("(condition)")));
+                    children.extend(self.walk(arm.body, &inner));
+                    if meaningful(&children) {
+                        out.push(block(
+                            BlockKind::Cond,
+                            sp.style.match_kw,
+                            arm.label,
+                            children,
+                            arm.line,
+                        ));
+                    }
+                }
+                out
+            }
+            Cat::With => {
+                let body = field(node, f.body);
+                let clause = named(node).find(|c| Some(*c) != body && sp.cat(*c) != Cat::Skip);
+                let mut out = self.walk(clause, ctx);
+                let children = self.walk(body, ctx);
+                if meaningful(&children) {
+                    out.push(block(
+                        BlockKind::Try,
+                        "with",
+                        clause.map(|c| self.t(c, 60)).unwrap_or_default(),
+                        children,
+                        line(node),
+                    ));
+                }
+                out
+            }
+            Cat::Comprehension => {
+                let body = field(node, f.body);
+                let clauses: Vec<Node<'t>> = named(node)
+                    .filter(|c| Some(*c) != body && sp.cat(*c) != Cat::Skip)
+                    .collect();
+                let first = clauses
+                    .iter()
+                    .position(|c| c.kind() == sp.style.for_in_clause);
+                let Some(first) = first else {
+                    return self.walk_all(node, ctx);
+                };
+                let head_clause = clauses[first];
+                let left = field(head_clause, f.left);
+                let right = field(head_clause, f.right);
+                let mut out = self.walk(right, ctx);
+                let inner = ctx.with_cond();
+                let mut b = Vec::new();
+                for (i, c) in clauses.iter().enumerate() {
+                    if i == first {
+                        continue;
+                    }
+                    if c.kind() == sp.style.for_in_clause {
+                        b.extend(self.walk(field(*c, f.right), &inner));
+                    } else {
+                        b.extend(self.walk(Some(*c), &inner));
+                    }
+                }
+                b.extend(self.walk(body, &inner));
+                if meaningful(&b) {
+                    let head = self.for_head(
+                        left.map(|l| self.t(l, 24)).unwrap_or_default(),
+                        sp.style.for_op,
+                        right.map(|r| self.t(r, 30)).unwrap_or_default(),
+                    );
+                    out.push(block(BlockKind::Loop, "loop", head, b, line(node)));
+                }
+                out
+            }
+            Cat::TryOp => {
+                let mut out = self.walk(self.first_value(node), ctx);
+                out.push(Item::Exit {
+                    kind: ExitKind::Throw,
+                    label: self.t(node, 46),
+                    line: line(node),
+                    early: None,
+                    methods: None,
+                });
+                out
+            }
+            Cat::Macro => self.macro_item(node, ctx),
             Cat::Other => self.walk_all(node, ctx),
         }
     }
 
+    /// Python `for … else` / `while … else`: runs when the loop ends without `break`.
+    fn loop_else(&self, node: Node<'t>, ctx: &Ctx<'t, 's, '_>) -> Vec<Item<'t, 's>> {
+        let Some(alt) = field(node, self.spec.f.alternative) else {
+            return Vec::new();
+        };
+        let b = self.walk(field(alt, self.spec.f.body), &ctx.with_cond());
+        if !meaningful(&b) {
+            return Vec::new();
+        }
+        vec![block(
+            BlockKind::Cond,
+            "else",
+            "if the loop ends without break".into(),
+            b,
+            line(alt),
+        )]
+    }
+
+    /// A macro invocation: the calls in its token tree, then the macro itself as a call, or
+    /// as an exit for macros that never return (`panic!`).
+    fn macro_item(&self, node: Node<'t>, ctx: &Ctx<'t, 's, '_>) -> Vec<Item<'t, 's>> {
+        let st = self.spec.style;
+        let Some((name_n, tree)) = self.lang.macro_parts(node) else {
+            return Vec::new();
+        };
+        let name = self.text(name_n);
+        let base = name.rsplit("::").next().unwrap_or(name);
+        let label: Rc<str> = Rc::from(format!("{}!", label(name, 47)));
+        let mut out = match tree {
+            Some(t) => self.token_items(t, &label, ctx),
+            None => Vec::new(),
+        };
+        if st.exit_macros.contains(&base) {
+            out.push(Item::Exit {
+                kind: ExitKind::Throw,
+                label: self.t(node, 46),
+                line: line(node),
+                early: None,
+                methods: None,
+            });
+            return out;
+        }
+        let target = if st.builtin_macros.contains(&base) {
+            target(FlowTargetKind::Builtin, label.to_string())
+        } else if let Some(m) = self.file.imports.get(name) {
+            FlowTarget {
+                module: Some(m.clone()),
+                ..target(FlowTargetKind::Ext, label.to_string())
+            }
+        } else {
+            other_target()
+        };
+        out.push(Item::Call {
+            label: label.to_string(),
+            target,
+            line: line(node),
+            awaited: false,
+            optional: false,
+            arg_of: ctx.arg_of.clone(),
+            inner: Vec::new(),
+        });
+        out
+    }
+
+    /// Calls in a token tree, arguments first, each `argOf` the call or macro it sits in.
+    fn token_items(
+        &self,
+        tree: Node<'t>,
+        arg_of: &Rc<str>,
+        ctx: &Ctx<'t, 's, '_>,
+    ) -> Vec<Item<'t, 's>> {
+        let d = self.depth.get();
+        if d > MAX_DEPTH {
+            return Vec::new();
+        }
+        self.depth.set(d + 1);
+        let mut out = Vec::new();
+        for tc in self.lang.token_calls(tree, self.src) {
+            let lbl: Rc<str> = Rc::from(label(&tc.label, 48));
+            if let Some(args) = tc.args {
+                out.extend(self.token_items(args, &lbl, ctx));
+            }
+            let target = match &tc.callee {
+                TokenCallee::Ident(n) => self.ident_target(n, ctx),
+                TokenCallee::Path(segs) => {
+                    let segs: Vec<&str> = segs.iter().map(String::as_str).collect();
+                    self.path_target(&segs)
+                }
+                TokenCallee::Method { name, on_self } => {
+                    let mut t = target(FlowTargetKind::Method, name.clone());
+                    if *on_self {
+                        t.unit = self.self_unit(name);
+                    }
+                    t
+                }
+            };
+            out.push(Item::Call {
+                label: lbl.to_string(),
+                target,
+                line: tc.line,
+                awaited: false,
+                optional: false,
+                arg_of: Some(arg_of.clone()),
+                inner: Vec::new(),
+            });
+        }
+        self.depth.set(d);
+        out
+    }
+
+    /// Target of a call by bare name.
+    fn ident_target(&self, n: &str, ctx: &Ctx<'t, 's, '_>) -> FlowTarget {
+        if !self.prefix.is_empty() {
+            let scoped = format!("{}{n}", self.prefix);
+            if self.unit_ids.contains(scoped.as_str()) {
+                return target(FlowTargetKind::Fn, scoped);
+            }
+        }
+        if self.file.top_fns.contains(n) {
+            target(FlowTargetKind::Fn, n)
+        } else if let Some(m) = self.file.imports.get(n) {
+            FlowTarget {
+                module: Some(m.clone()),
+                ..target(FlowTargetKind::Ext, n)
+            }
+        } else if self.scope.locals.contains_key(n) {
+            target(FlowTargetKind::Local, n)
+        } else if ctx.has_param(n) {
+            target(FlowTargetKind::Param, n)
+        } else if self.spec.style.builtin_fns.contains(&n) {
+            target(FlowTargetKind::Builtin, n)
+        } else {
+            other_target()
+        }
+    }
+
+    fn path_target(&self, segs: &[&str]) -> FlowTarget {
+        let cx = PathCx {
+            file: self.file,
+            unit_ids: self.unit_ids,
+            owner: self.owner,
+            prefix: self.prefix,
+        };
+        self.lang.path_target(segs, &cx)
+    }
+
+    /// The leftmost operand of a member/subscript chain (`np` in `np.linalg.norm`).
+    fn chain_root(&self, mut n: Node<'t>) -> Node<'t> {
+        let sp = self.spec;
+        loop {
+            let next = if is(&sp.k.member, n) {
+                field(n, sp.f.member_object)
+            } else if is(&sp.k.subscript, n) {
+                field(n, sp.f.subscript_object)
+            } else {
+                None
+            };
+            match next {
+                Some(x) => n = x,
+                None => return n,
+            }
+        }
+    }
+
+    /// `Type.m` when the unit is a method of `Type` and `Type.m` is a unit too.
+    fn self_unit(&self, m: &str) -> Option<String> {
+        let id = format!("{}.{m}", self.owner?);
+        self.unit_ids.contains(id.as_str()).then_some(id)
+    }
+
     fn walk_if(&self, node: Node<'t>, ctx: &Ctx<'t, 's, '_>) -> Vec<Item<'t, 's>> {
-        let f = &self.spec.f;
+        let sp = self.spec;
+        let f = &sp.f;
         let cond_n = field(node, f.condition);
         let mut out = self.walk(cond_n, &ctx.with_arg_of(Rc::from("(condition)")));
         let inner = ctx.with_cond();
         let a = self.walk(field(node, f.consequence), &inner);
-        let else_stmt = field(node, f.alternative).and_then(|e| {
-            if is(&self.spec.k.else_clause, e) {
+        let lbl = self.cond_label(
+            cond_n
+                .map(|c| self.t(self.unparen(c), 72))
+                .unwrap_or_default(),
+        );
+        let alts: Vec<Node<'t>> = field_children(node, f.alternative).collect();
+        if alts
+            .iter()
+            .any(|a| sp.style.elif_clauses.contains(&a.kind()))
+        {
+            // Python `if … elif … else`: one flat block per clause.
+            let mut blocks = vec![block(BlockKind::Cond, "if", lbl, a, line(node))];
+            for alt in alts {
+                if sp.style.elif_clauses.contains(&alt.kind()) {
+                    let c = field(alt, f.condition);
+                    let mut b = self.walk(c, &inner.with_arg_of(Rc::from("(condition)")));
+                    b.extend(self.walk(field(alt, f.consequence), &inner));
+                    let l =
+                        self.cond_label(c.map(|c| self.t(self.unparen(c), 72)).unwrap_or_default());
+                    blocks.push(block(BlockKind::Cond, "elif", l, b, line(alt)));
+                } else {
+                    let b = self.walk(self.first_value(alt), &inner);
+                    blocks.push(block(BlockKind::Cond, "else", String::new(), b, line(alt)));
+                }
+            }
+            if blocks.iter().any(|b| match b {
+                Item::Block { children, .. } => meaningful(children),
+                _ => false,
+            }) {
+                out.extend(blocks);
+            }
+            return out;
+        }
+        let else_clause = alts.first().copied();
+        let else_stmt = else_clause.and_then(|e| {
+            if is(&sp.k.else_clause, e) {
                 self.first_value(e)
             } else {
                 Some(e)
             }
         });
-        let lbl = format!(
-            "({})",
-            cond_n
-                .map(|c| self.t(self.unparen(c), 72))
-                .unwrap_or_default()
-        );
         match else_stmt {
             None => {
                 if meaningful(&a) {
@@ -677,9 +1214,13 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
             }
             Some(e) => {
                 let b = self.walk(Some(e), &inner);
+                let else_line = match else_clause {
+                    Some(c) if sp.style.else_line_from_clause => line(c),
+                    _ => line(e),
+                };
                 if meaningful(&a) || meaningful(&b) {
                     out.push(block(BlockKind::Cond, "if", lbl, a, line(node)));
-                    out.push(block(BlockKind::Cond, "else", String::new(), b, line(e)));
+                    out.push(block(BlockKind::Cond, "else", String::new(), b, else_line));
                 }
             }
         }
@@ -755,6 +1296,48 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
             self.walk(field(node, f.body), ctx),
             line(node),
         )];
+        let st = self.spec.style;
+        if !st.catch_clauses.is_empty() {
+            // Python: `except`, `else` and `finally` clauses are children, not fields.
+            for c in named(node) {
+                let k = c.kind();
+                let body = named(c).find(|b| self.spec.cat(*b) == Cat::Block);
+                if st.catch_clauses.contains(&k) {
+                    let head: Vec<Node> = named(c).filter(|n| Some(*n) != body).collect();
+                    let lbl = match (head.first(), head.last()) {
+                        (Some(a), Some(b)) => label(&self.src[a.start_byte()..b.end_byte()], 60),
+                        _ => String::new(),
+                    };
+                    let children = self.walk(body, &ctx.with_cond());
+                    if meaningful(&children) {
+                        out.push(block(BlockKind::Catch, st.catch_kw, lbl, children, line(c)));
+                    }
+                } else if st.try_else_clauses.contains(&k) {
+                    let children = self.walk(body, &ctx.with_cond());
+                    if meaningful(&children) {
+                        out.push(block(
+                            BlockKind::Cond,
+                            "else",
+                            "if no exception".into(),
+                            children,
+                            line(c),
+                        ));
+                    }
+                } else if st.finally_clauses.contains(&k) {
+                    let children = self.walk(body, ctx);
+                    if meaningful(&children) {
+                        out.push(block(
+                            BlockKind::Finally,
+                            "finally",
+                            "always runs".into(),
+                            children,
+                            line(c),
+                        ));
+                    }
+                }
+            }
+            return out;
+        }
         if let Some(h) = field(node, f.handler) {
             let lbl = field(h, f.parameter)
                 .map(|p| format!("({})", self.text(p)))
@@ -788,9 +1371,10 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
         } else {
             field(node, f.function)
         };
-        let Some(mut callee) = callee else {
+        let Some(callee) = callee else {
             return self.walk_all(node, ctx);
         };
+        let mut callee = self.lang.unwrap_callee(callee);
         let misplaced = self.lang.misplaced_prefix(callee);
         let callee_text = match misplaced {
             Some((prefix, operand)) => {
@@ -804,51 +1388,53 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
         };
         let mut pre = Vec::new();
         let is_member = is(&sp.k.member, callee);
-        if !is_new && (is_member || is(&sp.k.subscript, callee)) {
-            pre = self.walk(field(callee, f.object), ctx);
+        if !is_new && is_member {
+            pre = self.walk(field(callee, f.member_object), ctx);
+        } else if !is_new && is(&sp.k.subscript, callee) {
+            pre = self.walk(field(callee, f.subscript_object), ctx);
         }
         let label: Rc<str> = if is_new {
             Rc::from(format!("new {}", label(callee_text, 48)))
         } else {
             Rc::from(label(callee_text, 48))
         };
-        let mut target = FlowTarget {
-            kind: FlowTargetKind::Other,
-            id: None,
-            module: None,
-            unit: None,
-            of: None,
-            note: None,
-            ext: None,
-        };
-        let mut iter_name: Option<&str> = None;
+        let mut target = other_target();
+        // How a callback argument is shown: `each item of .map()` or `each item of map()`.
+        let mut iter_name: Option<String> = None;
+        let st = sp.style;
         if is(&sp.k.identifier, callee) {
             let n = self.text(callee);
-            if self.file.top_fns.contains(n) {
-                target.kind = FlowTargetKind::Fn;
-                target.id = Some(n.into());
-            } else if let Some(m) = self.file.imports.get(n) {
-                target.kind = FlowTargetKind::Ext;
-                target.id = Some(n.into());
-                target.module = Some((*m).into());
-            } else if self.scope.locals.contains_key(n) {
-                target.kind = FlowTargetKind::Local;
-                target.id = Some(n.into());
-            } else if ctx.has_param(n) {
-                target.kind = FlowTargetKind::Param;
-                target.id = Some(n.into());
+            target = self.ident_target(n, ctx);
+            if st.iter_fns.contains(&n) {
+                iter_name = Some(format!("{n}()"));
             }
+        } else if st.path_kinds.contains(&callee.kind()) {
+            let text: String = callee_text.chars().filter(|c| !c.is_whitespace()).collect();
+            let text = strip_generics(&text);
+            let segs: Vec<&str> = text.split("::").collect();
+            target = self.path_target(&segs);
         } else if is_member {
-            let obj = field(callee, f.object);
-            let m = field(callee, f.property)
+            let obj = field(callee, f.member_object);
+            let m = field(callee, f.member_property)
                 .map(|p| self.text(p))
                 .unwrap_or("");
             if sp.iter_methods.contains(&m) {
-                iter_name = Some(m);
+                iter_name = Some(format!(".{m}()"));
             }
             target.kind = FlowTargetKind::Method;
             target.id = Some(m.into());
-            if let Some(obj) = obj.filter(|o| is(&sp.k.identifier, *o)) {
+            let root = obj.map(|o| self.chain_root(o));
+            let root_import = root
+                .filter(|r| st.member_roots_ext && is(&sp.k.identifier, *r))
+                .and_then(|r| self.file.import_paths.get(self.text(r)));
+            if let Some(module) = root_import {
+                target = FlowTarget {
+                    module: Some(module.clone()),
+                    ..self::target(FlowTargetKind::Ext, collapse(callee_text))
+                };
+            } else if obj.is_some_and(|o| st.self_names.contains(&self.text(o))) {
+                target.unit = self.self_unit(m);
+            } else if let Some(obj) = obj.filter(|o| is(&sp.k.identifier, *o)) {
                 let o = self.text(obj);
                 let origin = self.scope.origins.get(o).copied();
                 let fp = origin.and_then(|origin| {
@@ -880,18 +1466,25 @@ impl<'w, 't, 's> Walker<'w, 't, 's> {
         let mut args = Vec::new();
         let mut inner = Vec::new();
         if let Some(arg_list) = field(node, f.arguments) {
-            for a in named(arg_list) {
+            // Python `f(x for x in xs)`: the generator is the only argument.
+            let list: Vec<Node<'t>> = if self.spec.cat(arg_list) == Cat::Comprehension {
+                vec![arg_list]
+            } else {
+                named(arg_list).collect()
+            };
+            for a in list {
+                let a = self.lang.unwrap_arg(a);
                 if self.spec.cat(a) == Cat::Skip {
                     continue;
                 }
                 if self.is_fn(Some(a)) {
                     let body = self.walk_fn(a, ctx);
                     if meaningful(&body) {
-                        inner.push(match iter_name {
+                        inner.push(match &iter_name {
                             Some(it) => block(
                                 BlockKind::Loop,
                                 "loop",
-                                format!("each item of .{it}()"),
+                                format!("each item of {it}"),
                                 body,
                                 line(a),
                             ),

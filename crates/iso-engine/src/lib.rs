@@ -151,6 +151,22 @@ impl Engine {
             .write(|tx| iso_index::meta_set(tx, "ai_enabled", if on { "1" } else { "0" }))
     }
 
+    /// Background queue state and cache hit rate, for `get_jobs`.
+    pub fn jobs_state(&self) -> iso_core::ipc::JobsState {
+        let (queued, running) = self.queue.sizes();
+        let (hits, misses) = self.derived.stats.snapshot();
+        iso_core::ipc::JobsState {
+            queued: queued as u32,
+            running: running as u32,
+            done: self.queue.counters.done.load(Ordering::Relaxed) as u32,
+            failed: self.queue.counters.failed.load(Ordering::Relaxed) as u32,
+            cache_hits: hits,
+            cache_misses: misses,
+            hit_rate: self.derived.stats.hit_rate(),
+            pending_files: self.queue.queued_targets(iso_core::jobs::JobKind::Parse, 200),
+        }
+    }
+
     pub fn set_ai_hook(&self, hook: Option<Arc<dyn AiHook>>) {
         *self.ai_hook.write() = hook;
     }

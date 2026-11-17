@@ -1,0 +1,14 @@
+{
+  "name": "isoline-app",
+  "private": true,
+  "description": "Tauri CLI for the Isoline desktop app. The UI lives in ui/, the shell in src-tauri/.",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon src-tauri/icons/icon.svg -o src-tauri/icons"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.5"
+  }
+}

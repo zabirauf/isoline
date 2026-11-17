@@ -1,0 +1,85 @@
+# Validation repo set (implementation plan, phase 5).
+#
+# Local repos run as they are. Remote repos are cloned into eval/work/<name> at the pinned
+# commit only with `iso-cli eval --fetch`, and only once a human sets `approved = true`.
+# Commits were pinned on 2026-11-16.
+
+[[repo]]
+name = "isoline"
+covers = "this repo: Rust workspace with several crates plus a TypeScript UI"
+path = ".."
+approved = true
+
+[[repo]]
+name = "openclaw"
+covers = "large TypeScript monorepo (pnpm workspaces, path aliases), over 1M lines, source of the prototype's file"
+path = "~/Documents/Projects/Opensource/openclaw"
+approved = true
+
+[[repo]]
+name = "crosspoint-reader"
+covers = "mostly unsupported languages (C++ firmware) with some tier-1 code"
+path = "~/Documents/Projects/Opensource/crosspoint-reader"
+approved = true
+
+[[repo]]
+name = "openclaw-atlas"
+covers = "tiny repo under 50 files, first-run experience"
+path = "~/Documents/Projects/Opensource/openclaw-atlas"
+approved = true
+
+[[repo]]
+name = "vscode"
+covers = "large TypeScript monorepo with path aliases and project references; over 1M lines"
+url = "https://github.com/microsoft/vscode"
+commit = "0f52bf696558"
+approved = false
+
+[[repo]]
+name = "express"
+covers = "older JavaScript codebase on CommonJS"
+url = "https://github.com/expressjs/express"
+commit = "43fca52d28a4"
+approved = false
+
+[[repo]]
+name = "flask"
+covers = "Python application with packages and relative imports"
+url = "https://github.com/pallets/flask"
+commit = "49943b5a9441"
+approved = false
+
+[[repo]]
+name = "ripgrep"
+covers = "Rust workspace with several crates"
+url = "https://github.com/BurntSushi/ripgrep"
+commit = "178cc027e283"
+approved = false
+
+[[repo]]
+name = "prometheus"
+covers = "polyglot: Go (tier 2) with a TypeScript web UI (tier 1)"
+url = "https://github.com/prometheus/prometheus"
+commit = "d1c0c209db6c"
+approved = false
+
+[[repo]]
+name = "elixir"
+covers = "mostly unsupported languages (Elixir, Erlang)"
+url = "https://github.com/elixir-lang/elixir"
+commit = "2fe54ff89d38"
+approved = false
+
+[[repo]]
+name = "slugify"
+covers = "tiny repo under 50 files"
+url = "https://github.com/sindresorhus/slugify"
+commit = "99b35c2b0d6c"
+approved = false
+
+[[repo]]
+name = "bootstrap"
+covers = "committed generated code (dist/) to test ignore rules"
+url = "https://github.com/twbs/bootstrap"
+commit = "da71a1044296"
+approved = false

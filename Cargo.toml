@@ -12,6 +12,7 @@ members = [
   "crates/iso-ai",
   "crates/iso-engine",
   "crates/iso-cli",
+  "app/src-tauri",
 ]
 default-members = [
   "crates/iso-core",

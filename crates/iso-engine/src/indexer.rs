@@ -801,7 +801,9 @@ impl Engine {
         if read.binary {
             tier = Tier::Text;
             status = "skipped";
-        } else if w.size > iso_walk::MAX_PARSE_BYTES {
+        } else if w.size > iso_walk::MAX_PARSE_BYTES
+            || (tier != Tier::Text && iso_walk::looks_minified(&w.rel, &read.text, read.lines))
+        {
             tier = Tier::Text;
         }
         let mut row = FileRow {

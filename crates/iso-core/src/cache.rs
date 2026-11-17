@@ -25,7 +25,7 @@ impl DerivedKind {
 }
 
 /// Bumped when any extractor's output changes shape.
-pub const EXTRACTOR_VERSION: u32 = 2;
+pub const EXTRACTOR_VERSION: u32 = 3;
 
 /// Key for a derived result: kind + content hash + version.
 pub fn derived_key(kind: DerivedKind, content_hash: &str, version: u32) -> u64 {

@@ -153,6 +153,20 @@ pub fn classify(rel: &str, bytes: Vec<u8>) -> ReadFile {
     }
 }
 
+/// Minified or generated-looking text: `*.min.js`/`*.min.css`, or lines far longer than
+/// anyone writes by hand. Such files open in the text tier instead of being parsed.
+pub fn looks_minified(rel: &str, text: &str, lines: u32) -> bool {
+    let name = rel.rsplit('/').next().unwrap_or(rel).to_ascii_lowercase();
+    if name.contains(".min.") || name.ends_with(".bundle.js") {
+        return true;
+    }
+    if text.len() < 20_000 {
+        return false;
+    }
+    let avg = text.len() / lines.max(1) as usize;
+    avg > 300 || text.lines().any(|l| l.len() > 5_000)
+}
+
 pub fn count_lines(s: &str) -> u32 {
     if s.is_empty() {
         return 0;
@@ -567,6 +581,15 @@ mod tests {
         std::fs::write(r.join(".gitignore"), "gen/\n").unwrap();
         let files: Vec<String> = walk(r).into_iter().map(|f| f.rel).collect();
         assert_eq!(files, vec!["src/a.ts"]);
+    }
+
+    #[test]
+    fn minified_files_are_detected() {
+        assert!(looks_minified("a/jszip.min.js", "x", 1));
+        let long = "a".repeat(30_000);
+        assert!(looks_minified("a/b.js", &long, 1));
+        let normal = "let a = 1;\n".repeat(3_000);
+        assert!(!looks_minified("a/b.js", &normal, 3_000));
     }
 
     #[test]

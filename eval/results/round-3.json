@@ -15,42 +15,46 @@
       "error": null,
       "report": {
         "repo": "~/Documents/Projects/my-github/isoline",
-        "files": 456,
-        "lines": 65169,
+        "files": 481,
+        "lines": 72810,
         "cores": 12,
         "cold": {
-          "files": 456,
-          "lines": 65169,
-          "hashed": 456,
-          "parsed": 286,
+          "files": 481,
+          "lines": 72810,
+          "hashed": 481,
+          "parsed": 296,
           "facts_cache_hits": 7,
           "unchanged": 0,
-          "added": 456,
+          "added": 481,
           "deleted": 0,
-          "facts_changed": 293,
-          "exports_changed": 293,
-          "resolved_files": 226,
-          "imports_resolved": 957,
+          "facts_changed": 303,
+          "exports_changed": 303,
+          "resolved_files": 233,
+          "imports_resolved": 1000,
           "imports_unresolved": 113,
-          "edge_files": 293,
+          "edge_files": 303,
           "dependents_recomputed": 0,
           "reclustered": true,
-          "root_hash": "8b7449f935e6d6a1ebeabc7f25ab4b68ee406b94992b60fcede5a79dc3a80135",
-          "ms_walk": 8,
-          "ms_parse": 75,
-          "ms_resolve": 8,
-          "ms_edges": 25,
-          "ms_tree": 2,
-          "ms_total": 123
+          "root_hash": "f29c19da71130159b5aa34010b8e90ad53d405e8ff3da52fc785aebcd9eede59",
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 189,
+          "tree_changed_sample": [],
+          "ms_walk": 5,
+          "ms_parse": 70,
+          "ms_resolve": 6,
+          "ms_edges": 26,
+          "ms_tree": 3,
+          "ms_total": 115
         },
-        "cold_lines_per_min": 31523747.69402166,
+        "cold_lines_per_min": 37845726.572846815,
         "reopen": {
-          "files": 456,
-          "lines": 65169,
+          "files": 481,
+          "lines": 72810,
           "hashed": 0,
           "parsed": 0,
           "facts_cache_hits": 0,
-          "unchanged": 456,
+          "unchanged": 481,
           "added": 0,
           "deleted": 0,
           "facts_changed": 0,
@@ -61,36 +65,40 @@
           "edge_files": 0,
           "dependents_recomputed": 0,
           "reclustered": false,
-          "root_hash": "8b7449f935e6d6a1ebeabc7f25ab4b68ee406b94992b60fcede5a79dc3a80135",
+          "root_hash": "f29c19da71130159b5aa34010b8e90ad53d405e8ff3da52fc785aebcd9eede59",
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 0,
+          "tree_changed_sample": [],
           "ms_walk": 5,
           "ms_parse": 0,
           "ms_resolve": 1,
           "ms_edges": 0,
           "ms_tree": 0,
-          "ms_total": 7
+          "ms_total": 8
         },
-        "reopen_ms": 8,
+        "reopen_ms": 9,
         "reopen_hit_rate": 1.0,
         "open_file": {
           "n": 200,
-          "p50_ms": 0.315917,
-          "p95_ms": 5.439458999999999,
-          "max_ms": 13.649417
+          "p50_ms": 0.375583,
+          "p95_ms": 3.807333,
+          "max_ms": 9.545333
         },
         "open_file_failures": 0,
-        "flow_trees": 1087,
+        "flow_trees": 1190,
         "flow_failures": 0,
         "empty_flow_files": 0,
         "edit": {
           "n": 50,
-          "p50_ms": 1.25025,
-          "p95_ms": 7.900333000000001,
-          "max_ms": 9.264750000000001
+          "p50_ms": 1.4892079999999999,
+          "p95_ms": 8.299917,
+          "max_ms": 10.015791
         },
         "edit_reparsed_max": 1,
         "edit_dependents_max": 0,
         "branch_switch_files_reported": 3,
-        "unresolved_imports_pct": 6.954887218045113,
+        "unresolved_imports_pct": 6.711003627569529,
         "unresolved_by_lang": [
           [
             "css",
@@ -114,27 +122,27 @@
           ],
           [
             "rust",
-            1098,
+            1111,
             17
           ],
           [
             "tsx",
-            141,
+            174,
             5
           ],
           [
             "typescript",
-            230,
+            242,
             74
           ]
         ],
         "tiers": [
-          281,
+          291,
           12,
-          163
+          178
         ],
-        "peak_rss_mb": 74.765625,
-        "edges": 2676,
+        "peak_rss_mb": 73.640625,
+        "edges": 2832,
         "panics": 0
       }
     },
@@ -172,14 +180,18 @@
           "dependents_recomputed": 0,
           "reclustered": true,
           "root_hash": "e33b0761137aca86d2d57c953222d66e35687f38c5f3d59b07092455fe288173",
-          "ms_walk": 334,
-          "ms_parse": 32096,
-          "ms_resolve": 1899,
-          "ms_edges": 10309,
-          "ms_tree": 599,
-          "ms_total": 45462
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 2148,
+          "tree_changed_sample": [],
+          "ms_walk": 103,
+          "ms_parse": 28053,
+          "ms_resolve": 1949,
+          "ms_edges": 10212,
+          "ms_tree": 644,
+          "ms_total": 41188
         },
-        "cold_lines_per_min": 19201370.515854254,
+        "cold_lines_per_min": 21189447.45331136,
         "reopen": {
           "files": 64228,
           "lines": 14568311,
@@ -198,20 +210,24 @@
           "dependents_recomputed": 0,
           "reclustered": false,
           "root_hash": "e33b0761137aca86d2d57c953222d66e35687f38c5f3d59b07092455fe288173",
-          "ms_walk": 107,
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 0,
+          "tree_changed_sample": [],
+          "ms_walk": 104,
           "ms_parse": 0,
-          "ms_resolve": 85,
+          "ms_resolve": 84,
           "ms_edges": 0,
-          "ms_tree": 3,
-          "ms_total": 287
+          "ms_tree": 26,
+          "ms_total": 310
         },
-        "reopen_ms": 341,
+        "reopen_ms": 366,
         "reopen_hit_rate": 1.0,
         "open_file": {
           "n": 200,
-          "p50_ms": 1.971875,
-          "p95_ms": 7.934458,
-          "max_ms": 27.531292
+          "p50_ms": 1.800292,
+          "p95_ms": 6.733167,
+          "max_ms": 25.260209
         },
         "open_file_failures": 0,
         "flow_trees": 1013,
@@ -219,9 +235,9 @@
         "empty_flow_files": 0,
         "edit": {
           "n": 50,
-          "p50_ms": 14.305209,
-          "p95_ms": 75.472708,
-          "max_ms": 152.504041
+          "p50_ms": 27.426583,
+          "p95_ms": 41.82325,
+          "max_ms": 163.140292
         },
         "edit_reparsed_max": 1,
         "edit_dependents_max": 0,
@@ -269,7 +285,7 @@
           30,
           8338
         ],
-        "peak_rss_mb": 1080.734375,
+        "peak_rss_mb": 1250.53125,
         "edges": 652232,
         "panics": 0
       }
@@ -308,14 +324,18 @@
           "dependents_recomputed": 0,
           "reclustered": true,
           "root_hash": "050a46aed1a422c8f833f7eb21bb70f52b9fdc60912343a27d0a1cd00e852113",
-          "ms_walk": 10,
-          "ms_parse": 40,
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 140,
+          "tree_changed_sample": [],
+          "ms_walk": 8,
+          "ms_parse": 52,
           "ms_resolve": 1,
           "ms_edges": 4,
           "ms_tree": 4,
-          "ms_total": 63
+          "ms_total": 73
         },
-        "cold_lines_per_min": 344412494.49791795,
+        "cold_lines_per_min": 298667650.1695196,
         "reopen": {
           "files": 857,
           "lines": 368408,
@@ -334,20 +354,24 @@
           "dependents_recomputed": 0,
           "reclustered": false,
           "root_hash": "050a46aed1a422c8f833f7eb21bb70f52b9fdc60912343a27d0a1cd00e852113",
-          "ms_walk": 4,
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 0,
+          "tree_changed_sample": [],
+          "ms_walk": 5,
           "ms_parse": 0,
           "ms_resolve": 0,
           "ms_edges": 0,
           "ms_tree": 0,
-          "ms_total": 6
+          "ms_total": 7
         },
-        "reopen_ms": 7,
+        "reopen_ms": 8,
         "reopen_hit_rate": 1.0,
         "open_file": {
           "n": 148,
-          "p50_ms": 0.333667,
-          "p95_ms": 6.250125,
-          "max_ms": 28.284958
+          "p50_ms": 0.339084,
+          "p95_ms": 5.995958,
+          "max_ms": 27.261750000000003
         },
         "open_file_failures": 0,
         "flow_trees": 722,
@@ -355,9 +379,9 @@
         "empty_flow_files": 5,
         "edit": {
           "n": 50,
-          "p50_ms": 2.945417,
-          "p95_ms": 52.454792,
-          "max_ms": 52.926458000000004
+          "p50_ms": 4.019416,
+          "p95_ms": 52.228625,
+          "max_ms": 54.164457999999996
         },
         "edit_reparsed_max": 1,
         "edit_dependents_max": 0,
@@ -380,7 +404,7 @@
           0,
           820
         ],
-        "peak_rss_mb": 1086.015625,
+        "peak_rss_mb": 966.53125,
         "edges": 416,
         "panics": 0
       }
@@ -419,14 +443,18 @@
           "dependents_recomputed": 0,
           "reclustered": true,
           "root_hash": "419e78d483d76bc0a3d74721281b0ef365b655e0e4a074a4cd1e450e6a0b392f",
-          "ms_walk": 4,
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 4,
+          "tree_changed_sample": [],
+          "ms_walk": 3,
           "ms_parse": 17,
           "ms_resolve": 0,
           "ms_edges": 2,
           "ms_tree": 0,
-          "ms_total": 25
+          "ms_total": 23
         },
-        "cold_lines_per_min": 65398451.45920191,
+        "cold_lines_per_min": 69527739.37545511,
         "reopen": {
           "files": 21,
           "lines": 27451,
@@ -445,6 +473,10 @@
           "dependents_recomputed": 0,
           "reclustered": false,
           "root_hash": "419e78d483d76bc0a3d74721281b0ef365b655e0e4a074a4cd1e450e6a0b392f",
+          "tree_changed_files": 0,
+          "tree_dirs_visited": 0,
+          "tree_dirs_total": 0,
+          "tree_changed_sample": [],
           "ms_walk": 2,
           "ms_parse": 0,
           "ms_resolve": 0,
@@ -456,9 +488,9 @@
         "reopen_hit_rate": 1.0,
         "open_file": {
           "n": 36,
-          "p50_ms": 0.44491600000000003,
-          "p95_ms": 5.089417,
-          "max_ms": 7.613917000000001
+          "p50_ms": 0.397333,
+          "p95_ms": 4.952375,
+          "max_ms": 7.5239579999999995
         },
         "open_file_failures": 0,
         "flow_trees": 122,
@@ -466,9 +498,9 @@
         "empty_flow_files": 8,
         "edit": {
           "n": 50,
-          "p50_ms": 12.666833,
-          "p95_ms": 20.567167,
-          "max_ms": 25.734292
+          "p50_ms": 12.593333999999999,
+          "p95_ms": 17.267999999999997,
+          "max_ms": 20.503583
         },
         "edit_reparsed_max": 1,
         "edit_dependents_max": 0,
@@ -486,7 +518,7 @@
           0,
           12
         ],
-        "peak_rss_mb": 1086.125,
+        "peak_rss_mb": 966.53125,
         "edges": 199,
         "panics": 0
       }

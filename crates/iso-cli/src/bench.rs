@@ -261,8 +261,19 @@ pub fn bench(repo: &Path, args: &BenchArgs) -> Result<BenchReport> {
             std::fs::write(&abs, format!("\n{text}"))?;
             let t = Instant::now();
             let rep = e2.index_paths(std::slice::from_ref(p))?;
+            let t_index = t.elapsed().as_secs_f64() * 1000.0;
             let _ = e2.file_view(p)?;
             times.push(t.elapsed().as_secs_f64() * 1000.0);
+            if std::env::var_os("ISO_BENCH_VERBOSE").is_some() {
+                eprintln!(
+                    "edit {p}: index {t_index:.1} ms [parse {} resolve {} edges {} tree {}] view {:.1} ms",
+                    rep.ms_parse,
+                    rep.ms_resolve,
+                    rep.ms_edges,
+                    rep.ms_tree,
+                    times.last().unwrap() - t_index
+                );
+            }
             r.edit_reparsed_max = r.edit_reparsed_max.max(rep.parsed);
             r.edit_dependents_max = r.edit_dependents_max.max(rep.dependents_recomputed);
         }

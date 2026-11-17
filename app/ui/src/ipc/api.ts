@@ -29,6 +29,15 @@ export interface BackendEvents {
 }
 export type EventName = keyof BackendEvents;
 export type Unlisten = () => void;
+export interface LaunchArgs {
+  repo: string | null;
+  open: string | null;
+}
+
+function urlLaunchArgs(): LaunchArgs {
+  const q = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+  return { repo: q.get("repo"), open: q.get("open") };
+}
 
 export interface Backend {
   readonly kind: "tauri" | "mock" | "http";
@@ -49,6 +58,8 @@ export interface Backend {
   getJobs(): Promise<JobsState>;
   renameModule(id: string, name?: string, color?: string): Promise<ModuleInfo>;
   recentRepos(): Promise<string[]>;
+  /** Repo and file to open at launch: command-line arguments in Tauri, `?repo=`/`?open=` elsewhere. */
+  launchArgs(): Promise<LaunchArgs>;
   /** Folder picker: the dialog plugin in Tauri, a fixed answer in the mock. */
   pickFolder(): Promise<string | null>;
   listen<E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void): Promise<Unlisten>;
@@ -82,6 +93,7 @@ async function createTauriBackend(): Promise<Backend> {
     getJobs: () => call("get_jobs"),
     renameModule: (id, name, color) => call("rename_module", { id, name: name ?? null, color: color ?? null }),
     recentRepos: () => call("recent_repos"),
+    launchArgs: () => call("launch_args"),
     pickFolder: async () => {
       const { open } = await import("@tauri-apps/plugin-dialog");
       const picked = await open({ directory: true, multiple: false, title: "Open repo" });
@@ -132,6 +144,7 @@ function createHttpBackend(): Backend {
     getJobs: () => call("get_jobs"),
     renameModule: (id, name, color) => call("rename_module", { id, name: name ?? null, color: color ?? null }),
     recentRepos: () => call("recent_repos"),
+    launchArgs: async () => urlLaunchArgs(),
     pickFolder: async () => window.prompt("Repo folder") || null,
     listen: async (event, cb) => {
       ensureSource();
@@ -180,6 +193,7 @@ export const api = {
   renameModule: async (id: string, name?: string, color?: string) => (await backend()).renameModule(id, name, color),
   recentRepos: async () => (await backend()).recentRepos(),
   pickFolder: async () => (await backend()).pickFolder(),
+  launchArgs: async () => (await backend()).launchArgs(),
   listen: async <E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void) => (await backend()).listen(event, cb),
 };
 

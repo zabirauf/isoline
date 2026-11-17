@@ -294,6 +294,10 @@ export function createMockBackend(): Backend {
         return toModuleInfo(clone(m));
       }),
     recentRepos: () => delay(() => clone(D.recent)),
+    launchArgs: async () => {
+      const q = new URLSearchParams(location.search);
+      return { repo: q.get("repo"), open: q.get("open") };
+    },
     pickFolder: () => delay(() => D.repo.root),
     listen: async (event, cb) => {
       let set = listeners.get(event);

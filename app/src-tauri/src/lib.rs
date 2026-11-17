@@ -158,6 +158,21 @@ async fn rename_module(
     blocking(move || e.rename_module(&id, name.as_deref(), color.as_deref())).await
 }
 
+/// Repo (and optionally a file in it) given on the command line: `isoline <repo> [file]`.
+#[tauri::command]
+async fn launch_args() -> CmdResult<serde_json::Value> {
+    let args: Vec<String> = std::env::args()
+        .skip(1)
+        .filter(|a| !a.starts_with('-'))
+        .collect();
+    let repo = args.first().map(|p| {
+        std::fs::canonicalize(p)
+            .map(|c| c.to_string_lossy().into_owned())
+            .unwrap_or_else(|_| p.clone())
+    });
+    Ok(serde_json::json!({ "repo": repo, "open": args.get(1) }))
+}
+
 #[tauri::command]
 async fn recent_repos() -> CmdResult<Vec<String>> {
     Ok(iso_engine::recent_repos(&iso_engine::data_dir()))
@@ -169,10 +184,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState::default())
         .setup(|app| {
-            // Open a repo given on the command line: `isoline /path/to/repo`.
-            if let Some(path) = std::env::args().nth(1).filter(|a| !a.starts_with('-')) {
-                let _ = app.emit("open_requested", path);
-            }
             let _ = app.get_webview_window("main");
             Ok(())
         })
@@ -189,6 +200,7 @@ pub fn run() {
             get_jobs,
             rename_module,
             recent_repos,
+            launch_args,
             ai::ai_status,
             ai::ai_sign_in,
             ai::ai_sign_out,

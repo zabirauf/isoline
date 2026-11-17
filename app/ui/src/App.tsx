@@ -137,17 +137,14 @@ export function App() {
     };
   }, [file?.path]);
 
-  // Deep link for the mock: ?open=<path> opens the first recent repo and that file.
+  // Launch arguments: `isoline <repo> [file]` in the app, `?repo=`/`?open=` in a browser.
   useEffect(() => {
-    if (mode !== "mock" && mode !== "http") return;
-    const q = new URLSearchParams(location.search);
-    const p = q.get("open");
-    const repo = q.get("repo");
-    if (p === null && repo === null) return;
-    void api.recentRepos().then(async (r) => {
-      const root = repo ?? r[0];
+    if (mode === null) return;
+    void api.launchArgs().then(async ({ repo, open }) => {
+      if (repo === null && open === null) return;
+      const root = repo ?? (await api.recentRepos())[0];
       if (root) await openRepo(root);
-      if (p) openFile(p);
+      if (open) openFile(open);
     });
   }, [mode]);
 

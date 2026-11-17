@@ -431,7 +431,7 @@ pub fn set_import_resolution(conn: &Connection, rowid: i64, to: &ResolvedTo) -> 
 /// Files that import `file_id`, with the import line.
 pub fn importers_of(conn: &Connection, file_id: FileId) -> Result<Vec<(FileId, u32)>> {
     let mut st = conn
-        .prepare_cached("SELECT file_id, MIN(line) FROM imports WHERE resolved_file_id = ?1 GROUP BY file_id ORDER BY file_id")?;
+        .prepare_cached("SELECT file_id, MIN(line) FROM imports WHERE resolved_file_id = ?1 AND file_id != ?1 GROUP BY file_id ORDER BY file_id")?;
     Ok(st
         .query_map([file_id.as_i64()], |r| {
             Ok((FileId::from_i64(r.get(0)?), r.get(1)?))

@@ -251,6 +251,7 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
                 color.as_deref(),
             )?)?
         }
+        "launch_args" => json!({ "repo": null, "open": null }),
         "recent_repos" => serde_json::to_value(iso_engine::recent_repos(
             &st.data.clone().unwrap_or_else(iso_engine::data_dir),
         ))?,

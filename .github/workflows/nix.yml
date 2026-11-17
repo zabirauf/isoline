@@ -1,0 +1,30 @@
+name: nix
+on:
+  push:
+    branches: [main]
+    paths: ["flake.nix", "flake.lock", "nix/**", "Cargo.lock", "app/ui/package-lock.json", "sidecar/**", ".github/workflows/nix.yml"]
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Lock nixpkgs (first run only)
+        run: '[ -f flake.lock ] || nix flake lock'
+      - run: nix flake check --no-build
+      - run: nix build -L .#copilot-sidecar
+      - run: nix build -L .#iso-cli && ./result/bin/iso-cli --help | head -5
+      - run: nix build -L .#isoline && ls -R result | head -30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flake-lock-${{ matrix.os }}
+          path: flake.lock

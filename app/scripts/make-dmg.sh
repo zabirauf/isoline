@@ -4,11 +4,18 @@
 # without it; this produces the same installable image without that step.
 set -eu
 here=$(cd "$(dirname "$0")/../.." && pwd)
-app="$here/target/release/bundle/macos/Isoline.app"
-out="$here/target/release/bundle/dmg"
+# Optional first argument: a Rust target triple, for apps built with `tauri build --target`.
+triple=${1:-}
+if [ -n "$triple" ]; then rel="$here/target/$triple/release"; else rel="$here/target/release"; fi
+app="$rel/bundle/macos/Isoline.app"
+out="$rel/bundle/dmg"
 [ -d "$app" ] || { echo "make-dmg: build the app first (npm run build:app)" >&2; exit 1; }
 version=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' "$here/app/src-tauri/tauri.conf.json" | head -1)
-arch=$(uname -m)
+case "$triple" in
+  aarch64-*) arch=aarch64 ;;
+  x86_64-*) arch=x64 ;;
+  *) arch=$(uname -m) ;;
+esac
 mkdir -p "$out"
 dmg="$out/Isoline_${version}_${arch}.dmg"
 hdiutil create -volname Isoline -srcfolder "$app" -ov -format UDZO "$dmg" >/dev/null

@@ -4,7 +4,8 @@
 #
 #   ./build.sh [--mock-only] [--embed-cli] [target-triple]
 #
-# The target defaults to the host triple from `rustc -vV`.
+# The target defaults to $TAURI_ENV_TARGET_TRIPLE (set by `tauri build`), then to the host
+# triple from `rustc -vV`.
 #
 # By default the live build (./live, which links the GitHub Copilot SDK) is tried first. The
 # SDK needs Go 1.26; GOTOOLCHAIN=auto lets an older go fetch that toolchain once. If the
@@ -39,6 +40,8 @@ for arg in "$@"; do
   esac
 done
 
+# Inside `tauri build --target <triple>`, Tauri names the target it is building for.
+[ -z "$triple" ] && triple=${TAURI_ENV_TARGET_TRIPLE:-}
 if [ -z "$triple" ]; then
   if ! command -v rustc >/dev/null 2>&1 && [ -f "$HOME/.cargo/env" ]; then
     . "$HOME/.cargo/env"

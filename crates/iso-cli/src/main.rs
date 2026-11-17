@@ -68,6 +68,12 @@ enum Cmd {
     Modules,
     /// Repo summary.
     Summary,
+    /// Run installed precise indexers (or import a SCIP file) and upgrade edges.
+    Precise {
+        /// Import this SCIP file instead of running indexers.
+        #[arg(long)]
+        scip: Option<PathBuf>,
+    },
     /// Benchmark the performance targets on this repo.
     Bench(bench::BenchArgs),
     /// Run the validation loop over eval/repos.toml and write eval/results/<round>.json.
@@ -179,6 +185,10 @@ fn main() -> Result<()> {
                 }
                 Cmd::Modules => print(&eng.module_map()?, cli.pretty),
                 Cmd::Summary => print(&eng.summary()?, cli.pretty),
+                Cmd::Precise { scip } => match scip {
+                    Some(p) => print(&eng.import_scip(&std::fs::read(p)?)?, cli.pretty),
+                    None => print(&eng.run_precise()?, cli.pretty),
+                },
                 Cmd::Facts { .. } | Cmd::Flows { .. } | Cmd::Bench(_) | Cmd::Eval(_) => {
                     unreachable!()
                 }

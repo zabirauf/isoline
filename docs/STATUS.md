@@ -29,6 +29,19 @@ Added after the plan, at the product owner's request: typed parameter signatures
 origin colors, definition peek on hover, go to definition with back and forward, links
 without underlines, and Glance / Read / Dig detail levels (`docs/ux/progressive-disclosure.md`).
 
+## Distribution
+
+- **Releases:** `.github/workflows/release.yml` builds the app and `iso-cli` for macOS,
+  Windows and Linux on arm64 and x64 (macOS x64 and Windows arm64 are cross-compiled) and
+  publishes them with checksums when a `v*` tag is pushed.
+- **Nix:** `flake.nix` builds `isoline` (Tauri, from source), `iso-cli` and
+  `copilot-sidecar`; `.github/workflows/nix.yml` builds all three on Linux x64, Linux arm64
+  and macOS.
+- **Demo:** `app/ui/scripts/demo-video.mjs` records the annotated demo against the real
+  engine through `iso-cli serve`.
+- **Windows:** CI runs the whole test suite on `windows-latest`; this found that
+  `std::fs::canonicalize`'s `\\?\` paths broke import resolution, now fixed with `dunce`.
+
 ## Decisions that refine the plan
 
 - **One engine crate** (`iso-engine`) behind both the CLI and the app, so they cannot disagree.

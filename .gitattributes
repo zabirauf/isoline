@@ -1,0 +1,9 @@
+# Check out text with LF everywhere: fixtures and goldens hold byte offsets and hashes of
+# the exact source text, which CRLF conversion on Windows would change.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.icns binary
+*.docx binary
+*.zip binary

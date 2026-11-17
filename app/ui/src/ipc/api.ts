@@ -1,0 +1,155 @@
+// Typed wrappers for every IPC command and event in CONTRACTS.md section 4.
+// Inside Tauri (window.__TAURI_INTERNALS__ present) calls go to the Rust backend through
+// `invoke`/`listen`; in a plain browser they go to the mock backend in ./mock, which serves the
+// prototype's data. The mock is loaded with a dynamic import so it never ships in the hot path.
+import type { AiEstimate } from "./bindings/AiEstimate";
+import type { AiProgress } from "./bindings/AiProgress";
+import type { AiRunHandle } from "./bindings/AiRunHandle";
+import type { AiScope } from "./bindings/AiScope";
+import type { AiStatus } from "./bindings/AiStatus";
+import type { FileView } from "./bindings/FileView";
+import type { FlowUnit } from "./bindings/FlowUnit";
+import type { Impact } from "./bindings/Impact";
+import type { IndexProgress } from "./bindings/IndexProgress";
+import type { JobsState } from "./bindings/JobsState";
+import type { ModuleInfo } from "./bindings/ModuleInfo";
+import type { ModuleMap } from "./bindings/ModuleMap";
+import type { RepoSummary } from "./bindings/RepoSummary";
+import type { SearchHit } from "./bindings/SearchHit";
+import type { SourceSlice } from "./bindings/SourceSlice";
+import type { TreeNode } from "./bindings/TreeNode";
+
+/** Payloads of the events the backend emits. */
+export interface BackendEvents {
+  index_progress: IndexProgress;
+  index_done: RepoSummary;
+  ai_progress: AiProgress;
+  summary_ready: { path: string };
+  job_progress: JobsState;
+}
+export type EventName = keyof BackendEvents;
+export type Unlisten = () => void;
+
+export interface Backend {
+  readonly kind: "tauri" | "mock";
+  openRepo(path: string): Promise<RepoSummary>;
+  getTree(): Promise<TreeNode>;
+  getFileView(path: string): Promise<FileView>;
+  getFlow(path: string, unit: string): Promise<FlowUnit>;
+  getSource(path: string, start?: number, end?: number): Promise<SourceSlice>;
+  getImpact(symbol: string, transitive: boolean): Promise<Impact>;
+  getModuleMap(): Promise<ModuleMap>;
+  search(query: string, limit?: number): Promise<SearchHit[]>;
+  aiStatus(): Promise<AiStatus>;
+  aiSignIn(): Promise<AiStatus>;
+  aiSignOut(): Promise<AiStatus>;
+  aiEstimate(scope: AiScope, path?: string): Promise<AiEstimate>;
+  aiRun(scope: AiScope, path: string | undefined, budgetUsd: number): Promise<AiRunHandle>;
+  aiEnable(enabled: boolean): Promise<AiStatus>;
+  getJobs(): Promise<JobsState>;
+  renameModule(id: string, name?: string, color?: string): Promise<ModuleInfo>;
+  recentRepos(): Promise<string[]>;
+  /** Folder picker: the dialog plugin in Tauri, a fixed answer in the mock. */
+  pickFolder(): Promise<string | null>;
+  listen<E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void): Promise<Unlisten>;
+}
+
+export function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+async function createTauriBackend(): Promise<Backend> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  const { listen } = await import("@tauri-apps/api/event");
+  // Tauri maps camelCase argument names to the Rust command's snake_case parameters.
+  const call = <T>(cmd: string, args?: Record<string, unknown>) => invoke<T>(cmd, args);
+  return {
+    kind: "tauri",
+    openRepo: (path) => call("open_repo", { path }),
+    getTree: () => call("get_tree"),
+    getFileView: (path) => call("get_file_view", { path }),
+    getFlow: (path, unit) => call("get_flow", { path, unit }),
+    getSource: (path, start, end) => call("get_source", { path, start: start ?? null, end: end ?? null }),
+    getImpact: (symbol, transitive) => call("get_impact", { symbol, transitive }),
+    getModuleMap: () => call("get_module_map"),
+    search: (query, limit) => call("search", { query, limit: limit ?? null }),
+    aiStatus: () => call("ai_status"),
+    aiSignIn: () => call("ai_sign_in"),
+    aiSignOut: () => call("ai_sign_out"),
+    aiEstimate: (scope, path) => call("ai_estimate", { scope, path: path ?? null }),
+    aiRun: (scope, path, budgetUsd) => call("ai_run", { scope, path: path ?? null, budgetUsd }),
+    aiEnable: (enabled) => call("ai_enable", { enabled }),
+    getJobs: () => call("get_jobs"),
+    renameModule: (id, name, color) => call("rename_module", { id, name: name ?? null, color: color ?? null }),
+    recentRepos: () => call("recent_repos"),
+    pickFolder: async () => {
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const picked = await open({ directory: true, multiple: false, title: "Open repo" });
+      return typeof picked === "string" ? picked : null;
+    },
+    listen: async (event, cb) => listen(event, (e) => cb(e.payload as BackendEvents[typeof event])),
+  };
+}
+
+let backendPromise: Promise<Backend> | null = null;
+
+export function backend(): Promise<Backend> {
+  if (!backendPromise) backendPromise = isTauri() ? createTauriBackend() : import("./mock").then((m) => m.createMockBackend());
+  return backendPromise;
+}
+
+/** Same commands as `Backend`, resolving the backend on first use. */
+export const api = {
+  openRepo: async (path: string) => (await backend()).openRepo(path),
+  getTree: async () => (await backend()).getTree(),
+  getFileView: async (path: string) => (await backend()).getFileView(path),
+  getFlow: async (path: string, unit: string) => (await backend()).getFlow(path, unit),
+  getSource: async (path: string, start?: number, end?: number) => (await backend()).getSource(path, start, end),
+  getImpact: async (symbol: string, transitive: boolean) => (await backend()).getImpact(symbol, transitive),
+  getModuleMap: async () => (await backend()).getModuleMap(),
+  search: async (query: string, limit?: number) => (await backend()).search(query, limit),
+  aiStatus: async () => (await backend()).aiStatus(),
+  aiSignIn: async () => (await backend()).aiSignIn(),
+  aiSignOut: async () => (await backend()).aiSignOut(),
+  aiEstimate: async (scope: AiScope, path?: string) => (await backend()).aiEstimate(scope, path),
+  aiRun: async (scope: AiScope, path: string | undefined, budgetUsd: number) => (await backend()).aiRun(scope, path, budgetUsd),
+  aiEnable: async (enabled: boolean) => (await backend()).aiEnable(enabled),
+  getJobs: async () => (await backend()).getJobs(),
+  renameModule: async (id: string, name?: string, color?: string) => (await backend()).renameModule(id, name, color),
+  recentRepos: async () => (await backend()).recentRepos(),
+  pickFolder: async () => (await backend()).pickFolder(),
+  listen: async <E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void) => (await backend()).listen(event, cb),
+};
+
+// ---------- caches for data that does not change while a file's content hash is the same ----------
+const sourceCache = new Map<string, Promise<SourceSlice>>();
+const flowCache = new Map<string, Promise<FlowUnit>>();
+
+/** get_source, memoized per path and range until `invalidate(path)`. */
+export function cachedSource(path: string, start?: number, end?: number): Promise<SourceSlice> {
+  const k = `${path}\u0000${start ?? ""}\u0000${end ?? ""}`;
+  let p = sourceCache.get(k);
+  if (!p) {
+    p = api.getSource(path, start, end);
+    p.catch(() => sourceCache.delete(k));
+    sourceCache.set(k, p);
+  }
+  return p;
+}
+
+export function cachedFlow(path: string, unit: string): Promise<FlowUnit> {
+  const k = `${path}\u0000${unit}`;
+  let p = flowCache.get(k);
+  if (!p) {
+    p = api.getFlow(path, unit);
+    p.catch(() => flowCache.delete(k));
+    flowCache.set(k, p);
+  }
+  return p;
+}
+
+export function invalidate(path?: string) {
+  for (const c of [sourceCache, flowCache] as Map<string, unknown>[]) {
+    for (const k of [...c.keys()]) if (!path || k.startsWith(path + "\u0000")) c.delete(k);
+  }
+}

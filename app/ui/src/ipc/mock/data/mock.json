@@ -1,0 +1,6109 @@
+{
+ "generatedFrom": [
+  "docs/handoff/prototype/code-map.html",
+  "fixtures/ts/lifecycle/lifecycle.ts",
+  "fixtures/ts/lifecycle/expected/flows.json"
+ ],
+ "repo": {
+  "root": "~/code/openclaw",
+  "name": "openclaw",
+  "files": 50,
+  "lines": 6461,
+  "tiers": {
+   "full": 42,
+   "outline": 1,
+   "text": 7
+  },
+  "languages": [
+   {
+    "lang": "typescript",
+    "label": "TypeScript",
+    "files": 41,
+    "lines": 5751
+   },
+   {
+    "lang": "markdown",
+    "label": "Markdown",
+    "files": 3,
+    "lines": 260
+   },
+   {
+    "lang": "css",
+    "label": "CSS",
+    "files": 1,
+    "lines": 210
+   },
+   {
+    "lang": "json",
+    "label": "JSON",
+    "files": 2,
+    "lines": 92
+   },
+   {
+    "lang": "go",
+    "label": "Go",
+    "files": 1,
+    "lines": 75
+   },
+   {
+    "lang": "yaml",
+    "label": "YAML",
+    "files": 1,
+    "lines": 52
+   },
+   {
+    "lang": "other",
+    "label": "Plain text",
+    "files": 1,
+    "lines": 21
+   }
+  ],
+  "indexed": 46,
+  "rootHash": "7366b07c0ffcaf0b",
+  "aiEnabled": false
+ },
+ "recent": [
+  "~/code/openclaw",
+  "~/code/isoline",
+  "~/work/payments-api"
+ ],
+ "tree": {
+  "name": "openclaw",
+  "path": "",
+  "isDir": true,
+  "lang": null,
+  "tier": null,
+  "module": null,
+  "color": null,
+  "status": "pending",
+  "lines": 6461,
+  "children": [
+   {
+    "name": ".github",
+    "path": ".github",
+    "isDir": true,
+    "lang": null,
+    "tier": null,
+    "module": null,
+    "color": null,
+    "status": "indexed",
+    "lines": 52,
+    "children": [
+     {
+      "name": "workflows",
+      "path": ".github/workflows",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": null,
+      "color": null,
+      "status": "indexed",
+      "lines": 52,
+      "children": [
+       {
+        "name": "ci.yaml",
+        "path": ".github/workflows/ci.yaml",
+        "isDir": false,
+        "lang": "yaml",
+        "tier": "text",
+        "module": null,
+        "color": null,
+        "status": "indexed",
+        "lines": 52,
+        "children": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "docs",
+    "path": "docs",
+    "isDir": true,
+    "lang": null,
+    "tier": null,
+    "module": "docs",
+    "color": "#7d7466",
+    "status": "indexed",
+    "lines": 236,
+    "children": [
+     {
+      "name": "architecture.md",
+      "path": "docs/architecture.md",
+      "isDir": false,
+      "lang": "markdown",
+      "tier": "text",
+      "module": "docs",
+      "color": "#7d7466",
+      "status": "indexed",
+      "lines": 140,
+      "children": []
+     },
+     {
+      "name": "diagnostics.md",
+      "path": "docs/diagnostics.md",
+      "isDir": false,
+      "lang": "markdown",
+      "tier": "text",
+      "module": "docs",
+      "color": "#7d7466",
+      "status": "indexed",
+      "lines": 96,
+      "children": []
+     }
+    ]
+   },
+   {
+    "name": "src",
+    "path": "src",
+    "isDir": true,
+    "lang": null,
+    "tier": null,
+    "module": null,
+    "color": null,
+    "status": "pending",
+    "lines": 5961,
+    "children": [
+     {
+      "name": "agents",
+      "path": "src/agents",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "agents-core",
+      "color": "#3d8a7a",
+      "status": "indexed",
+      "lines": 1981,
+      "children": [
+       {
+        "name": "embedded-agent-runner",
+        "path": "src/agents/embedded-agent-runner",
+        "isDir": true,
+        "lang": null,
+        "tier": null,
+        "module": "agents-runner",
+        "color": "#7a5bb5",
+        "status": "indexed",
+        "lines": 691,
+        "children": [
+         {
+          "name": "run",
+          "path": "src/agents/embedded-agent-runner/run",
+          "isDir": true,
+          "lang": null,
+          "tier": null,
+          "module": null,
+          "color": null,
+          "status": "indexed",
+          "lines": 279,
+          "children": [
+           {
+            "name": "attempt.ts",
+            "path": "src/agents/embedded-agent-runner/run/attempt.ts",
+            "isDir": false,
+            "lang": "typescript",
+            "tier": "full",
+            "module": "agents-runner",
+            "color": "#7a5bb5",
+            "status": "indexed",
+            "lines": 268,
+            "children": []
+           },
+           {
+            "name": "helpers.ts",
+            "path": "src/agents/embedded-agent-runner/run/helpers.ts",
+            "isDir": false,
+            "lang": "typescript",
+            "tier": "full",
+            "module": "agents-runner",
+            "color": "#7a5bb5",
+            "status": "indexed",
+            "lines": 5,
+            "children": []
+           },
+           {
+            "name": "types.ts",
+            "path": "src/agents/embedded-agent-runner/run/types.ts",
+            "isDir": false,
+            "lang": "typescript",
+            "tier": "full",
+            "module": "agents-runner",
+            "color": "#7a5bb5",
+            "status": "indexed",
+            "lines": 6,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "runner.ts",
+          "path": "src/agents/embedded-agent-runner/runner.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-runner",
+          "color": "#7a5bb5",
+          "status": "indexed",
+          "lines": 412,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "harness",
+        "path": "src/agents/harness",
+        "isDir": true,
+        "lang": null,
+        "tier": null,
+        "module": "agents-harness",
+        "color": "#2f6fb0",
+        "status": "indexed",
+        "lines": 1035,
+        "children": [
+         {
+          "name": "commentary-diagnostics.ts",
+          "path": "src/agents/harness/commentary-diagnostics.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 5,
+          "children": []
+         },
+         {
+          "name": "errors.ts",
+          "path": "src/agents/harness/errors.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 5,
+          "children": []
+         },
+         {
+          "name": "index.ts",
+          "path": "src/agents/harness/index.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 38,
+          "children": []
+         },
+         {
+          "name": "lifecycle.ts",
+          "path": "src/agents/harness/lifecycle.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 486,
+          "children": []
+         },
+         {
+          "name": "openclaw-harness.ts",
+          "path": "src/agents/harness/openclaw-harness.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 311,
+          "children": []
+         },
+         {
+          "name": "registry.ts",
+          "path": "src/agents/harness/registry.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 142,
+          "children": []
+         },
+         {
+          "name": "settled-turn-finalization-outcome.ts",
+          "path": "src/agents/harness/settled-turn-finalization-outcome.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 12,
+          "children": []
+         },
+         {
+          "name": "settled-turn-finalization-result.ts",
+          "path": "src/agents/harness/settled-turn-finalization-result.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 5,
+          "children": []
+         },
+         {
+          "name": "types.ts",
+          "path": "src/agents/harness/types.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-harness",
+          "color": "#2f6fb0",
+          "status": "indexed",
+          "lines": 31,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "tools",
+        "path": "src/agents/tools",
+        "isDir": true,
+        "lang": null,
+        "tier": null,
+        "module": null,
+        "color": null,
+        "status": "indexed",
+        "lines": 246,
+        "children": [
+         {
+          "name": "index.ts",
+          "path": "src/agents/tools/index.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-core",
+          "color": "#3d8a7a",
+          "status": "indexed",
+          "lines": 54,
+          "children": []
+         },
+         {
+          "name": "tts-tool-result-provenance.ts",
+          "path": "src/agents/tools/tts-tool-result-provenance.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-core",
+          "color": "#3d8a7a",
+          "status": "indexed",
+          "lines": 5,
+          "children": []
+         },
+         {
+          "name": "web-search.ts",
+          "path": "src/agents/tools/web-search.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "agents-core",
+          "color": "#3d8a7a",
+          "status": "indexed",
+          "lines": 187,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "agent-run-terminal-outcome.ts",
+        "path": "src/agents/agent-run-terminal-outcome.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "agents-core",
+        "color": "#3d8a7a",
+        "status": "indexed",
+        "lines": 9,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "channels",
+      "path": "src/channels",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "channels",
+      "color": "#9a5b2e",
+      "status": "pending",
+      "lines": 1039,
+      "children": [
+       {
+        "name": "discord",
+        "path": "src/channels/discord",
+        "isDir": true,
+        "lang": null,
+        "tier": null,
+        "module": null,
+        "color": null,
+        "status": "pending",
+        "lines": 377,
+        "children": [
+         {
+          "name": "adapter.ts",
+          "path": "src/channels/discord/adapter.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "channels",
+          "color": "#9a5b2e",
+          "status": "pending",
+          "lines": 377,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "slack",
+        "path": "src/channels/slack",
+        "isDir": true,
+        "lang": null,
+        "tier": null,
+        "module": null,
+        "color": null,
+        "status": "indexed",
+        "lines": 522,
+        "children": [
+         {
+          "name": "adapter.ts",
+          "path": "src/channels/slack/adapter.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "channels",
+          "color": "#9a5b2e",
+          "status": "indexed",
+          "lines": 402,
+          "children": []
+         },
+         {
+          "name": "format.ts",
+          "path": "src/channels/slack/format.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "channels",
+          "color": "#9a5b2e",
+          "status": "indexed",
+          "lines": 120,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "terminal",
+        "path": "src/channels/terminal",
+        "isDir": true,
+        "lang": null,
+        "tier": null,
+        "module": null,
+        "color": null,
+        "status": "indexed",
+        "lines": 140,
+        "children": [
+         {
+          "name": "adapter.ts",
+          "path": "src/channels/terminal/adapter.ts",
+          "isDir": false,
+          "lang": "typescript",
+          "tier": "full",
+          "module": "channels",
+          "color": "#9a5b2e",
+          "status": "indexed",
+          "lines": 140,
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "cli",
+      "path": "src/cli",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "cli",
+      "color": "#80539a",
+      "status": "pending",
+      "lines": 250,
+      "children": [
+       {
+        "name": "index.ts",
+        "path": "src/cli/index.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "cli",
+        "color": "#80539a",
+        "status": "indexed",
+        "lines": 61,
+        "children": []
+       },
+       {
+        "name": "run.ts",
+        "path": "src/cli/run.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "cli",
+        "color": "#80539a",
+        "status": "pending",
+        "lines": 189,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "config",
+      "path": "src/config",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "config",
+      "color": "#5d7a2a",
+      "status": "indexed",
+      "lines": 613,
+      "children": [
+       {
+        "name": "config.ts",
+        "path": "src/config/config.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "config",
+        "color": "#5d7a2a",
+        "status": "indexed",
+        "lines": 5,
+        "children": []
+       },
+       {
+        "name": "defaults.ts",
+        "path": "src/config/defaults.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "config",
+        "color": "#5d7a2a",
+        "status": "indexed",
+        "lines": 88,
+        "children": []
+       },
+       {
+        "name": "schema.ts",
+        "path": "src/config/schema.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "config",
+        "color": "#5d7a2a",
+        "status": "indexed",
+        "lines": 520,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "context-engine",
+      "path": "src/context-engine",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "context-engine",
+      "color": "#a8467a",
+      "status": "indexed",
+      "lines": 386,
+      "children": [
+       {
+        "name": "host-compat.ts",
+        "path": "src/context-engine/host-compat.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "context-engine",
+        "color": "#a8467a",
+        "status": "indexed",
+        "lines": 5,
+        "children": []
+       },
+       {
+        "name": "legacy.ts",
+        "path": "src/context-engine/legacy.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "context-engine",
+        "color": "#a8467a",
+        "status": "indexed",
+        "lines": 205,
+        "children": []
+       },
+       {
+        "name": "registry.ts",
+        "path": "src/context-engine/registry.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "context-engine",
+        "color": "#a8467a",
+        "status": "indexed",
+        "lines": 176,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "gateway",
+      "path": "src/gateway",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "gateway",
+      "color": "#1f7f99",
+      "status": "indexed",
+      "lines": 793,
+      "children": [
+       {
+        "name": "agent-session.ts",
+        "path": "src/gateway/agent-session.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "gateway",
+        "color": "#1f7f99",
+        "status": "indexed",
+        "lines": 298,
+        "children": []
+       },
+       {
+        "name": "server.ts",
+        "path": "src/gateway/server.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "gateway",
+        "color": "#1f7f99",
+        "status": "indexed",
+        "lines": 344,
+        "children": []
+       },
+       {
+        "name": "ws.ts",
+        "path": "src/gateway/ws.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "gateway",
+        "color": "#1f7f99",
+        "status": "indexed",
+        "lines": 151,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "infra",
+      "path": "src/infra",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "infra-diagnostics",
+      "color": "#b5651d",
+      "status": "indexed",
+      "lines": 289,
+      "children": [
+       {
+        "name": "diagnostic-content.ts",
+        "path": "src/infra/diagnostic-content.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "infra-diagnostics",
+        "color": "#b5651d",
+        "status": "indexed",
+        "lines": 5,
+        "children": []
+       },
+       {
+        "name": "diagnostic-error-metadata.ts",
+        "path": "src/infra/diagnostic-error-metadata.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "infra-diagnostics",
+        "color": "#b5651d",
+        "status": "indexed",
+        "lines": 9,
+        "children": []
+       },
+       {
+        "name": "diagnostic-events.ts",
+        "path": "src/infra/diagnostic-events.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "infra-diagnostics",
+        "color": "#b5651d",
+        "status": "indexed",
+        "lines": 19,
+        "children": []
+       },
+       {
+        "name": "diagnostic-llm-content.ts",
+        "path": "src/infra/diagnostic-llm-content.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "infra-diagnostics",
+        "color": "#b5651d",
+        "status": "indexed",
+        "lines": 5,
+        "children": []
+       },
+       {
+        "name": "diagnostic-sinks.ts",
+        "path": "src/infra/diagnostic-sinks.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "infra-diagnostics",
+        "color": "#b5651d",
+        "status": "indexed",
+        "lines": 133,
+        "children": []
+       },
+       {
+        "name": "diagnostic-trace-context.ts",
+        "path": "src/infra/diagnostic-trace-context.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "infra-diagnostics",
+        "color": "#b5651d",
+        "status": "indexed",
+        "lines": 22,
+        "children": []
+       },
+       {
+        "name": "logger.ts",
+        "path": "src/infra/logger.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "infra-diagnostics",
+        "color": "#b5651d",
+        "status": "indexed",
+        "lines": 96,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "plugins",
+      "path": "src/plugins",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "plugins",
+      "color": "#6b6f2a",
+      "status": "pending",
+      "lines": 400,
+      "children": [
+       {
+        "name": "hooks.ts",
+        "path": "src/plugins/hooks.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "plugins",
+        "color": "#6b6f2a",
+        "status": "pending",
+        "lines": 167,
+        "children": []
+       },
+       {
+        "name": "loader.ts",
+        "path": "src/plugins/loader.ts",
+        "isDir": false,
+        "lang": "typescript",
+        "tier": "full",
+        "module": "plugins",
+        "color": "#6b6f2a",
+        "status": "indexed",
+        "lines": 233,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "ui",
+      "path": "src/ui",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": null,
+      "color": null,
+      "status": "indexed",
+      "lines": 210,
+      "children": [
+       {
+        "name": "panel.css",
+        "path": "src/ui/panel.css",
+        "isDir": false,
+        "lang": "css",
+        "tier": "full",
+        "module": null,
+        "color": null,
+        "status": "failed",
+        "lines": 210,
+        "children": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "tools",
+    "path": "tools",
+    "isDir": true,
+    "lang": null,
+    "tier": null,
+    "module": null,
+    "color": null,
+    "status": "indexed",
+    "lines": 75,
+    "children": [
+     {
+      "name": "relay",
+      "path": "tools/relay",
+      "isDir": true,
+      "lang": null,
+      "tier": null,
+      "module": "relay",
+      "color": "#46708f",
+      "status": "indexed",
+      "lines": 75,
+      "children": [
+       {
+        "name": "main.go",
+        "path": "tools/relay/main.go",
+        "isDir": false,
+        "lang": "go",
+        "tier": "outline",
+        "module": "relay",
+        "color": "#46708f",
+        "status": "indexed",
+        "lines": 75,
+        "children": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "LICENSE",
+    "path": "LICENSE",
+    "isDir": false,
+    "lang": "other",
+    "tier": "text",
+    "module": null,
+    "color": null,
+    "status": "indexed",
+    "lines": 21,
+    "children": []
+   },
+   {
+    "name": "package.json",
+    "path": "package.json",
+    "isDir": false,
+    "lang": "json",
+    "tier": "text",
+    "module": null,
+    "color": null,
+    "status": "indexed",
+    "lines": 64,
+    "children": []
+   },
+   {
+    "name": "README.md",
+    "path": "README.md",
+    "isDir": false,
+    "lang": "markdown",
+    "tier": "text",
+    "module": null,
+    "color": null,
+    "status": "indexed",
+    "lines": 24,
+    "children": []
+   },
+   {
+    "name": "tsconfig.json",
+    "path": "tsconfig.json",
+    "isDir": false,
+    "lang": "json",
+    "tier": "text",
+    "module": null,
+    "color": null,
+    "status": "indexed",
+    "lines": 28,
+    "children": []
+   }
+  ]
+ },
+ "moduleMap": {
+  "modules": [
+   {
+    "id": "agents-harness",
+    "name": "Agent harness",
+    "role": "Runs agent harnesses under diagnostics",
+    "color": "#2f6fb0",
+    "source": "ai",
+    "dir": "src/agents/harness",
+    "files": 9,
+    "lines": 1035
+   },
+   {
+    "id": "agents-runner",
+    "name": "Embedded runner",
+    "role": "Runs agents in-process",
+    "color": "#7a5bb5",
+    "source": "ai",
+    "dir": "src/agents/embedded-agent-runner",
+    "files": 4,
+    "lines": 691
+   },
+   {
+    "id": "agents-core",
+    "name": "Agent core",
+    "role": "Shared agent outcomes and tools",
+    "color": "#3d8a7a",
+    "source": "cluster",
+    "dir": "src/agents",
+    "files": 4,
+    "lines": 255
+   },
+   {
+    "id": "infra-diagnostics",
+    "name": "Diagnostics",
+    "role": "Events, traces and content policy",
+    "color": "#b5651d",
+    "source": "ai",
+    "dir": "src/infra",
+    "files": 7,
+    "lines": 289
+   },
+   {
+    "id": "config",
+    "name": "Config",
+    "role": "Runtime configuration snapshots",
+    "color": "#5d7a2a",
+    "source": "cluster",
+    "dir": "src/config",
+    "files": 3,
+    "lines": 613
+   },
+   {
+    "id": "context-engine",
+    "name": "Context engine",
+    "role": "Context engine host checks",
+    "color": "#a8467a",
+    "source": "ai",
+    "dir": "src/context-engine",
+    "files": 3,
+    "lines": 386
+   },
+   {
+    "id": "gateway",
+    "name": "Gateway",
+    "role": "HTTP and WebSocket entry points",
+    "color": "#1f7f99",
+    "source": "cluster",
+    "dir": "src/gateway",
+    "files": 3,
+    "lines": 793
+   },
+   {
+    "id": "channels",
+    "name": "Channels",
+    "role": "Chat channel adapters",
+    "color": "#9a5b2e",
+    "source": "cluster",
+    "dir": "src/channels",
+    "files": 4,
+    "lines": 1039
+   },
+   {
+    "id": "plugins",
+    "name": "Plugins",
+    "role": "Plugin loading and hooks",
+    "color": "#6b6f2a",
+    "source": "user",
+    "dir": "src/plugins",
+    "files": 2,
+    "lines": 400
+   },
+   {
+    "id": "cli",
+    "name": "CLI",
+    "role": "Command-line entry points",
+    "color": "#80539a",
+    "source": "cluster",
+    "dir": "src/cli",
+    "files": 2,
+    "lines": 250
+   },
+   {
+    "id": "relay",
+    "name": "Relay (Go)",
+    "role": "Event relay service",
+    "color": "#46708f",
+    "source": "cluster",
+    "dir": "tools/relay",
+    "files": 1,
+    "lines": 75
+   },
+   {
+    "id": "docs",
+    "name": "Docs",
+    "role": null,
+    "color": "#7d7466",
+    "source": "cluster",
+    "dir": "docs",
+    "files": 2,
+    "lines": 236
+   }
+  ],
+  "edges": [
+   {
+    "from": "cli",
+    "to": "gateway",
+    "weight": 3
+   },
+   {
+    "from": "cli",
+    "to": "config",
+    "weight": 2
+   },
+   {
+    "from": "gateway",
+    "to": "agents-harness",
+    "weight": 4
+   },
+   {
+    "from": "gateway",
+    "to": "channels",
+    "weight": 5
+   },
+   {
+    "from": "gateway",
+    "to": "config",
+    "weight": 2
+   },
+   {
+    "from": "channels",
+    "to": "agents-runner",
+    "weight": 3
+   },
+   {
+    "from": "channels",
+    "to": "infra-diagnostics",
+    "weight": 2
+   },
+   {
+    "from": "agents-runner",
+    "to": "agents-harness",
+    "weight": 6
+   },
+   {
+    "from": "agents-runner",
+    "to": "agents-core",
+    "weight": 4
+   },
+   {
+    "from": "agents-harness",
+    "to": "agents-core",
+    "weight": 5
+   },
+   {
+    "from": "agents-harness",
+    "to": "infra-diagnostics",
+    "weight": 9
+   },
+   {
+    "from": "agents-harness",
+    "to": "config",
+    "weight": 1
+   },
+   {
+    "from": "agents-harness",
+    "to": "context-engine",
+    "weight": 1
+   },
+   {
+    "from": "agents-core",
+    "to": "infra-diagnostics",
+    "weight": 3
+   },
+   {
+    "from": "context-engine",
+    "to": "config",
+    "weight": 2
+   },
+   {
+    "from": "plugins",
+    "to": "agents-harness",
+    "weight": 2
+   },
+   {
+    "from": "agents-harness",
+    "to": "plugins",
+    "weight": 1
+   },
+   {
+    "from": "plugins",
+    "to": "config",
+    "weight": 1
+   },
+   {
+    "from": "infra-diagnostics",
+    "to": "config",
+    "weight": 2
+   },
+   {
+    "from": "relay",
+    "to": "infra-diagnostics",
+    "weight": 1
+   }
+  ],
+  "cycles": [
+   [
+    "agents-harness",
+    "plugins"
+   ]
+  ]
+ },
+ "files": {
+  "src/agents/harness/lifecycle.ts": {
+   "source": "import { getRuntimeConfigSnapshot } from \"../../config/config.js\";\nimport { assertContextEngineHostSupport } from \"../../context-engine/host-compat.js\";\nimport { truncateDiagnosticContent } from \"../../infra/diagnostic-content.js\";\nimport {\n  diagnosticErrorCategory,\n  diagnosticErrorMessage,\n} from \"../../infra/diagnostic-error-metadata.js\";\nimport {\n  emitTrustedDiagnosticEvent,\n  emitTrustedDiagnosticEventWithPrivateData,\n  type DiagnosticHarnessRunErrorEvent,\n  type DiagnosticHarnessRunOutcome,\n} from \"../../infra/diagnostic-events.js\";\nimport { resolveDiagnosticModelContentCapturePolicy } from \"../../infra/diagnostic-llm-content.js\";\nimport {\n  createChildDiagnosticTraceContext,\n  freezeDiagnosticTraceContext,\n  getActiveDiagnosticTraceContext,\n  runWithDiagnosticTraceContext,\n  type DiagnosticTraceContext,\n} from \"../../infra/diagnostic-trace-context.js\";\nimport {\n  normalizeAgentRunAttemptTerminal,\n  projectAgentRunAttemptTerminal,\n} from \"../agent-run-terminal-outcome.js\";\nimport { resolveFinalMessageRawText } from \"../embedded-agent-runner/run/helpers.js\";\nimport type { EmbeddedRunAttemptResult } from \"../embedded-agent-runner/run/types.js\";\nimport { copyCoreTtsAttemptResultProvenance } from \"../tools/tts-tool-result-provenance.js\";\nimport { subscribeAgentCommentaryDiagnostics } from \"./commentary-diagnostics.js\";\nimport { recordAgentHarnessPreflightOwner } from \"./errors.js\";\nimport {\n  EmptySettledTurnFinalizationError,\n  type PreparedSettledTurnFinalizationResult,\n} from \"./settled-turn-finalization-outcome.js\";\nimport { assertSettledTurnFinalizationResult } from \"./settled-turn-finalization-result.js\";\nimport type {\n  AgentHarness,\n  AgentHarnessAttemptParams,\n  AgentHarnessAttemptParamsV2,\n  AgentHarnessAttemptResult,\n  AgentHarnessSettledTurnFinalizationAttemptParams,\n  AgentHarnessSettledTurnFinalizationResult,\n} from \"./types.js\";\n\ntype AgentHarnessLifecycleFinalizationOutcome = {\n  outcome: \"answered\" | \"empty\";\n  result: PreparedSettledTurnFinalizationResult;\n};\n\ntype AgentHarnessLifecyclePhase = DiagnosticHarnessRunErrorEvent[\"phase\"];\ntype AgentRunCompletion = {\n  outcome: \"completed\" | \"aborted\" | \"blocked\" | \"error\";\n  blockedBy?: string;\n  error?: unknown;\n  messageContent?: AgentRunMessageContent;\n};\ntype AgentRunMessageContent = { userPrompt?: string; finalResponse?: string };\n\n/** Gated, bounded prompt/answer for child run.completed, like embedded and CLI runs. */\nfunction agentRunMessageContent(\n  prompt: string | undefined,\n  assistant?: Parameters<typeof resolveFinalMessageRawText>[0],\n): AgentRunMessageContent | undefined {\n  const policy = resolveDiagnosticModelContentCapturePolicy(getRuntimeConfigSnapshot());\n  const finalText = policy.outputMessages ? resolveFinalMessageRawText(assistant) : undefined;\n  const finalResponse = finalText ? truncateDiagnosticContent(finalText) : undefined;\n  const userPrompt = policy.inputMessages && prompt ? truncateDiagnosticContent(prompt) : undefined;\n  return userPrompt || finalResponse\n    ? { ...(userPrompt ? { userPrompt } : {}), ...(finalResponse ? { finalResponse } : {}) }\n    : undefined;\n}\n\nfunction assertAgentHarnessContextEngineSupport(\n  harness: AgentHarness,\n  params: AgentHarnessAttemptParamsV2,\n): void {\n  if (!params.contextEngine || params.contextEngine.info.id === \"legacy\") {\n    return;\n  }\n  assertContextEngineHostSupport({\n    contextEngine: params.contextEngine,\n    operation: \"agent-run\",\n    host: {\n      id: `agent-harness:${harness.id}`,\n      label: `agent harness \"${harness.id}\"`,\n      capabilities: harness.contextEngineHostCapabilities ?? [],\n    },\n  });\n}\n\nfunction agentHarnessDiagnosticBase(\n  harness: AgentHarness,\n  params: AgentHarnessAttemptParams,\n  trace?: DiagnosticTraceContext,\n) {\n  const diagnosticTrace = trace ?? getActiveDiagnosticTraceContext();\n  const channel = params.messageChannel ?? params.messageProvider;\n  return {\n    runId: params.runId,\n    sessionId: params.sessionId,\n    ...(params.agentId ? { agentId: params.agentId } : {}),\n    provider: params.provider,\n    model: params.modelId,\n    harnessId: harness.id,\n    ...(harness.pluginId ? { pluginId: harness.pluginId } : {}),\n    ...(params.sessionKey ? { sessionKey: params.sessionKey } : {}),\n    ...(params.trigger ? { trigger: params.trigger } : {}),\n    ...(channel ? { channel } : {}),\n    ...(diagnosticTrace ? { trace: freezeDiagnosticTraceContext(diagnosticTrace) } : {}),\n  };\n}\n\nfunction normalizeAgentHarnessAttemptResult(\n  result: AgentHarnessAttemptResult,\n): EmbeddedRunAttemptResult {\n  const {\n    aborted,\n    externalAbort,\n    idleTimedOut,\n    promptError,\n    promptErrorSource,\n    timedOut,\n    timedOutByRunBudget,\n    timedOutDuringCompaction,\n    timedOutDuringToolExecution,\n    ...canonical\n  } = result;\n  // Legacy harnesses omit the field and report this attempt only through lastAssistant.\n  // Explicit undefined is the current contract's no-response fact and must survive unchanged.\n  const currentAttemptProvenance = Object.hasOwn(result, \"currentAttemptAssistant\")\n    ? { currentAttemptAssistant: result.currentAttemptAssistant }\n    : result.lastAssistant\n      ? { currentAttemptAssistant: result.lastAssistant }\n      : {};\n  const canonicalWithAttemptProvenance = {\n    ...canonical,\n    ...currentAttemptProvenance,\n  };\n  if (\"terminal\" in canonicalWithAttemptProvenance) {\n    return canonicalWithAttemptProvenance;\n  }\n  const terminal = normalizeAgentRunAttemptTerminal({\n    aborted,\n    externalAbort,\n    idleTimedOut,\n    promptError,\n    promptErrorSource,\n    timedOut,\n    timedOutByRunBudget,\n    timedOutDuringCompaction,\n    timedOutDuringToolExecution,\n  });\n  return { ...canonicalWithAttemptProvenance, terminal };\n}\n\nfunction agentRunDiagnosticBase(params: AgentHarnessAttemptParams, trace: DiagnosticTraceContext) {\n  const channel = params.messageChannel ?? params.messageProvider;\n  return {\n    runId: params.runId,\n    ...(params.sessionKey ? { sessionKey: params.sessionKey } : {}),\n    ...(params.sessionId ? { sessionId: params.sessionId } : {}),\n    ...(params.agentId ? { agentId: params.agentId } : {}),\n    provider: params.provider,\n    model: params.modelId,\n    ...(params.trigger ? { trigger: params.trigger } : {}),\n    ...(channel ? { channel } : {}),\n    trace,\n  };\n}\n\nfunction emitAgentRunCompleted(\n  params: AgentHarnessAttemptParams,\n  trace: DiagnosticTraceContext | undefined,\n  startedAt: number,\n  completion: AgentRunCompletion,\n  classifyMissingError = false,\n): void {\n  if (!trace) {\n    return;\n  }\n  const failed =\n    completion.outcome === \"error\" && (completion.error != null || classifyMissingError);\n  const errorMessage = failed ? diagnosticErrorMessage(completion.error) : undefined;\n  emitTrustedDiagnosticEventWithPrivateData(\n    {\n      type: \"run.completed\",\n      ...agentRunDiagnosticBase(params, trace),\n      durationMs: Date.now() - startedAt,\n      outcome: completion.outcome,\n      ...(completion.blockedBy ? { blockedBy: completion.blockedBy } : {}),\n      ...(failed ? { errorCategory: diagnosticErrorCategory(completion.error) } : {}),\n    },\n    errorMessage || completion.messageContent\n      ? {\n          ...(errorMessage ? { errorMessage } : {}),\n          ...(completion.messageContent ? { messageContent: completion.messageContent } : {}),\n        }\n      : undefined,\n  );\n}\n\nfunction agentRunCompletion(result: EmbeddedRunAttemptResult): AgentRunCompletion {\n  const terminal = projectAgentRunAttemptTerminal(result.terminal);\n  if (terminal.timedOut || terminal.externalAbort || terminal.aborted) {\n    return { outcome: \"aborted\" };\n  }\n  if (terminal.promptErrorSource === \"hook:before_agent_run\") {\n    return { outcome: \"blocked\", blockedBy: \"before_agent_run\" };\n  }\n  if (terminal.promptErrorSource !== null) {\n    return { outcome: \"error\", error: terminal.promptError };\n  }\n  return { outcome: \"completed\" };\n}\n\nfunction withFallbackDiagnosticTrace(\n  result: EmbeddedRunAttemptResult,\n  trace: DiagnosticTraceContext | undefined,\n): EmbeddedRunAttemptResult {\n  if (result.diagnosticTrace || !trace) {\n    return result;\n  }\n  return copyCoreTtsAttemptResultProvenance(result, {\n    ...result,\n    diagnosticTrace: freezeDiagnosticTraceContext(trace),\n  });\n}\n\nfunction emitAgentHarnessRunCompleted(params: {\n  harness: AgentHarness;\n  attemptParams: AgentHarnessAttemptParams;\n  result: EmbeddedRunAttemptResult;\n  startedAt: number;\n  trace?: DiagnosticTraceContext;\n}): void {\n  const { harness, attemptParams, result, startedAt, trace } = params;\n  const completion = agentRunCompletion(result);\n  const terminal = projectAgentRunAttemptTerminal(result.terminal);\n  const outcome: DiagnosticHarnessRunOutcome = terminal.timedOut\n    ? \"timed_out\"\n    : completion.outcome === \"blocked\"\n      ? \"error\"\n      : completion.outcome;\n  // A classified (non-thrown) failure carries its error on result.terminal;\n  // forward the message so the error span shows more than a bare category.\n  const errorMessage =\n    outcome === \"error\" ? diagnosticErrorMessage(terminal.promptError) : undefined;\n  const harnessContent = agentRunMessageContent(\n    undefined,\n    result.currentAttemptAssistant ?? result.currentAttemptCompletedAssistant,\n  );\n  emitTrustedDiagnosticEventWithPrivateData(\n    {\n      type: \"harness.run.completed\",\n      ...agentHarnessDiagnosticBase(harness, attemptParams, trace ?? result.diagnosticTrace),\n      durationMs: Date.now() - startedAt,\n      outcome,\n      ...(result.agentHarnessResultClassification\n        ? { resultClassification: result.agentHarnessResultClassification }\n        : {}),\n      ...(typeof result.yieldDetected === \"boolean\" ? { yieldDetected: result.yieldDetected } : {}),\n      itemLifecycle: { ...result.itemLifecycle },\n    },\n    {\n      ...(errorMessage ? { errorMessage } : {}),\n      ...(harnessContent ? { harnessContent } : {}),\n    },\n  );\n}\n\nfunction createAgentHarnessLifecycleDiagnostics(\n  harness: AgentHarness,\n  params: AgentHarnessAttemptParams,\n  finalizing = false,\n) {\n  const startedAt = Date.now();\n  const trace = getActiveDiagnosticTraceContext();\n  const createRunTrace = () =>\n    harness.id !== \"openclaw\" && trace\n      ? freezeDiagnosticTraceContext(createChildDiagnosticTraceContext(trace))\n      : undefined;\n  let agentRunTrace = finalizing ? createRunTrace() : undefined;\n  let agentRunStartedAt = finalizing ? startedAt : 0;\n  let phase: AgentHarnessLifecyclePhase = \"prepare\";\n  const contentPolicy = resolveDiagnosticModelContentCapturePolicy(getRuntimeConfigSnapshot());\n  const harnessContent =\n    contentPolicy.inputMessages && params.prompt\n      ? { userPrompt: truncateDiagnosticContent(params.prompt) }\n      : undefined;\n  emitTrustedDiagnosticEventWithPrivateData(\n    {\n      type: \"harness.run.started\",\n      ...agentHarnessDiagnosticBase(harness, params, trace),\n    },\n    harnessContent ? { harnessContent } : undefined,\n  );\n  const unsubscribe = subscribeAgentCommentaryDiagnostics(\n    params.config,\n    agentHarnessDiagnosticBase(harness, params, trace),\n  );\n  const complete = (completion: AgentRunCompletion, classifyMissingError = false) =>\n    emitAgentRunCompleted(\n      params,\n      agentRunTrace,\n      agentRunStartedAt,\n      completion,\n      classifyMissingError,\n    );\n  return {\n    startedAt,\n    trace,\n    unsubscribe,\n    complete,\n    setPhase(value: AgentHarnessLifecyclePhase) {\n      phase = value;\n    },\n    startAgentRun() {\n      if (!finalizing) {\n        agentRunTrace = createRunTrace();\n        if (agentRunTrace) {\n          agentRunStartedAt = Date.now();\n        }\n      }\n      if (agentRunTrace) {\n        emitTrustedDiagnosticEvent({\n          type: \"run.started\",\n          ...agentRunDiagnosticBase(params, agentRunTrace),\n        });\n      }\n    },\n    run<T>(execute: () => Promise<T>): Promise<T> {\n      return agentRunTrace ? runWithDiagnosticTraceContext(agentRunTrace, execute) : execute();\n    },\n    fail(error: unknown) {\n      if (!finalizing) {\n        recordAgentHarnessPreflightOwner(error, harness.id);\n      }\n      const errorMessage = diagnosticErrorMessage(error);\n      emitTrustedDiagnosticEventWithPrivateData(\n        {\n          type: \"harness.run.error\",\n          ...agentHarnessDiagnosticBase(harness, params, trace),\n          durationMs: Date.now() - startedAt,\n          phase,\n          errorCategory: diagnosticErrorCategory(error),\n        },\n        errorMessage ? { errorMessage } : undefined,\n      );\n      complete(\n        { outcome: \"error\", error, messageContent: agentRunMessageContent(params.prompt) },\n        finalizing,\n      );\n    },\n  };\n}\n\nexport async function runAgentHarnessLifecycleAttempt(\n  harness: AgentHarness,\n  params: AgentHarnessAttemptParamsV2,\n  execute: (params: AgentHarnessAttemptParamsV2) => Promise<AgentHarnessAttemptResult> = (\n    attemptParams,\n  ) => harness.runAttempt(attemptParams),\n): Promise<EmbeddedRunAttemptResult> {\n  let result: EmbeddedRunAttemptResult;\n  const diagnostics = createAgentHarnessLifecycleDiagnostics(harness, params);\n  try {\n    assertAgentHarnessContextEngineSupport(harness, params);\n    diagnostics.startAgentRun();\n    const runAndClassify = async () => {\n      diagnostics.setPhase(\"send\");\n      const rawResult = await execute(params);\n      diagnostics.setPhase(\"resolve\");\n      // Classification happens inside the diagnostic phase so failures identify\n      // whether they came from send or result resolution.\n      let classifiedResult: AgentHarnessAttemptResult;\n      if (!harness.classify) {\n        classifiedResult = { ...rawResult, agentHarnessId: harness.id };\n      } else {\n        // Reclassify from the raw result so retries or wrappers cannot preserve an\n        // obsolete classification from an earlier harness.\n        const {\n          agentHarnessResultClassification: _previousClassification,\n          ...resultWithoutPrevious\n        } = rawResult;\n        const classification = harness.classify(resultWithoutPrevious, params);\n        classifiedResult = {\n          ...resultWithoutPrevious,\n          agentHarnessId: harness.id,\n          ...(classification && classification !== \"ok\"\n            ? { agentHarnessResultClassification: classification }\n            : {}),\n        };\n      }\n      return copyCoreTtsAttemptResultProvenance(\n        rawResult,\n        normalizeAgentHarnessAttemptResult(classifiedResult),\n      );\n    };\n    result = await diagnostics.run(runAndClassify);\n    result = withFallbackDiagnosticTrace(result, diagnostics.trace);\n  } catch (error) {\n    diagnostics.fail(error);\n    throw error;\n  } finally {\n    diagnostics.unsubscribe();\n  }\n\n  diagnostics.complete({\n    ...agentRunCompletion(result),\n    messageContent: agentRunMessageContent(\n      params.prompt,\n      result.currentAttemptAssistant ?? result.currentAttemptCompletedAssistant,\n    ),\n  });\n  emitAgentHarnessRunCompleted({\n    harness,\n    attemptParams: params,\n    result,\n    startedAt: diagnostics.startedAt,\n    trace: diagnostics.trace,\n  });\n  return result;\n}\n\nexport async function runAgentHarnessLifecycleFinalization(\n  harness: AgentHarness,\n  params: AgentHarnessSettledTurnFinalizationAttemptParams<AgentHarnessAttemptParamsV2>,\n  execute: () => Promise<AgentHarnessSettledTurnFinalizationResult>,\n): Promise<AgentHarnessLifecycleFinalizationOutcome> {\n  const diagnostics = createAgentHarnessLifecycleDiagnostics(harness, params, true);\n  diagnostics.startAgentRun();\n  try {\n    const runAndValidate = async () => {\n      diagnostics.setPhase(\"send\");\n      try {\n        const rawResult = await execute();\n        diagnostics.setPhase(\"resolve\");\n        return {\n          outcome: \"answered\" as const,\n          result: assertSettledTurnFinalizationResult(rawResult),\n        };\n      } catch (error) {\n        if (error instanceof EmptySettledTurnFinalizationError) {\n          return { outcome: \"empty\" as const, result: error.result };\n        }\n        throw error;\n      }\n    };\n    const rawResult = await diagnostics.run(runAndValidate);\n    const result = {\n      ...rawResult,\n      result:\n        rawResult.result.diagnosticTrace || !diagnostics.trace\n          ? rawResult.result\n          : {\n              ...rawResult.result,\n              diagnosticTrace: freezeDiagnosticTraceContext(diagnostics.trace),\n            },\n    };\n    diagnostics.complete({\n      outcome: \"completed\",\n      messageContent: agentRunMessageContent(params.prompt, result.result.assistant),\n    });\n    const harnessContent = agentRunMessageContent(undefined, result.result.assistant);\n    emitTrustedDiagnosticEventWithPrivateData(\n      {\n        type: \"harness.run.completed\",\n        ...agentHarnessDiagnosticBase(\n          harness,\n          params,\n          result.result.diagnosticTrace ?? diagnostics.trace,\n        ),\n        durationMs: Date.now() - diagnostics.startedAt,\n        outcome: \"completed\",\n        itemLifecycle: { startedCount: 0, completedCount: 0, activeCount: 0 },\n      },\n      harnessContent ? { harnessContent } : undefined,\n    );\n    return result;\n  } catch (error) {\n    diagnostics.fail(error);\n    throw error;\n  } finally {\n    diagnostics.unsubscribe();\n  }\n}",
+   "flows": {
+    "agentRunMessageContent": {
+     "id": "agentRunMessageContent",
+     "owner": "agentRunMessageContent",
+     "method": null,
+     "start": 60,
+     "end": 71,
+     "async": false,
+     "params": [
+      "prompt",
+      "assistant"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "getRuntimeConfigSnapshot",
+       "target": {
+        "kind": "ext",
+        "id": "getRuntimeConfigSnapshot",
+        "module": "../../config/config.js"
+       },
+       "line": 64,
+       "await": false,
+       "optional": false,
+       "argOf": "resolveDiagnosticModelContentCapturePolicy",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "resolveDiagnosticModelContentCapturePolicy",
+       "target": {
+        "kind": "ext",
+        "id": "resolveDiagnosticModelContentCapturePolicy",
+        "module": "../../infra/diagnostic-llm-content.js"
+       },
+       "line": 64,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(policy.outputMessages)",
+       "line": 65,
+       "children": [
+        {
+         "t": "call",
+         "label": "resolveFinalMessageRawText",
+         "target": {
+          "kind": "ext",
+          "id": "resolveFinalMessageRawText",
+          "module": "../embedded-agent-runner/run/helpers.js"
+         },
+         "line": 65,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(finalText)",
+       "line": 66,
+       "children": [
+        {
+         "t": "call",
+         "label": "truncateDiagnosticContent",
+         "target": {
+          "kind": "ext",
+          "id": "truncateDiagnosticContent",
+          "module": "../../infra/diagnostic-content.js"
+         },
+         "line": 66,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(policy.inputMessages && prompt)",
+       "line": 67,
+       "children": [
+        {
+         "t": "call",
+         "label": "truncateDiagnosticContent",
+         "target": {
+          "kind": "ext",
+          "id": "truncateDiagnosticContent",
+          "module": "../../infra/diagnostic-content.js"
+         },
+         "line": 67,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "userPrompt || finalResponse ? { ...(userPromp…",
+       "line": 68,
+       "early": false
+      }
+     ]
+    },
+    "assertAgentHarnessContextEngineSupport": {
+     "id": "assertAgentHarnessContextEngineSupport",
+     "owner": "assertAgentHarnessContextEngineSupport",
+     "method": null,
+     "start": 73,
+     "end": 89,
+     "async": false,
+     "params": [
+      "harness",
+      "params"
+     ],
+     "tree": [
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(!params.contextEngine || params.contextEngine.info.id === \"legacy\")",
+       "line": 77,
+       "children": [
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "",
+         "line": 78,
+         "early": true
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "assertContextEngineHostSupport",
+       "target": {
+        "kind": "ext",
+        "id": "assertContextEngineHostSupport",
+        "module": "../../context-engine/host-compat.js"
+       },
+       "line": 80,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      }
+     ]
+    },
+    "agentHarnessDiagnosticBase": {
+     "id": "agentHarnessDiagnosticBase",
+     "owner": "agentHarnessDiagnosticBase",
+     "method": null,
+     "start": 91,
+     "end": 111,
+     "async": false,
+     "params": [
+      "harness",
+      "params",
+      "trace"
+     ],
+     "tree": [
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if nullish",
+       "label": "trace",
+       "line": 96,
+       "children": [
+        {
+         "t": "call",
+         "label": "getActiveDiagnosticTraceContext",
+         "target": {
+          "kind": "ext",
+          "id": "getActiveDiagnosticTraceContext",
+          "module": "../../infra/diagnostic-trace-context.js"
+         },
+         "line": 96,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(diagnosticTrace)",
+       "line": 109,
+       "children": [
+        {
+         "t": "call",
+         "label": "freezeDiagnosticTraceContext",
+         "target": {
+          "kind": "ext",
+          "id": "freezeDiagnosticTraceContext",
+          "module": "../../infra/diagnostic-trace-context.js"
+         },
+         "line": 109,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "{ runId: params.runId, sessionId: params.sess…",
+       "line": 98,
+       "early": false
+      }
+     ]
+    },
+    "normalizeAgentHarnessAttemptResult": {
+     "id": "normalizeAgentHarnessAttemptResult",
+     "owner": "normalizeAgentHarnessAttemptResult",
+     "method": null,
+     "start": 113,
+     "end": 154,
+     "async": false,
+     "params": [
+      "result"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "Object.hasOwn",
+       "target": {
+        "kind": "builtin",
+        "id": "Object.hasOwn"
+       },
+       "line": 130,
+       "await": false,
+       "optional": false,
+       "argOf": "(condition)",
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(\"terminal\" in canonicalWithAttemptProvenance)",
+       "line": 139,
+       "children": [
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "canonicalWithAttemptProvenance",
+         "line": 140,
+         "early": true
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "normalizeAgentRunAttemptTerminal",
+       "target": {
+        "kind": "ext",
+        "id": "normalizeAgentRunAttemptTerminal",
+        "module": "../agent-run-terminal-outcome.js"
+       },
+       "line": 142,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "{ ...canonicalWithAttemptProvenance, terminal…",
+       "line": 153,
+       "early": false
+      }
+     ]
+    },
+    "agentRunDiagnosticBase": {
+     "id": "agentRunDiagnosticBase",
+     "owner": "agentRunDiagnosticBase",
+     "method": null,
+     "start": 156,
+     "end": 169,
+     "async": false,
+     "params": [
+      "params",
+      "trace"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "{ runId: params.runId, ...(params.sessionKey …",
+       "line": 158,
+       "early": false
+      }
+     ]
+    },
+    "emitAgentRunCompleted": {
+     "id": "emitAgentRunCompleted",
+     "owner": "emitAgentRunCompleted",
+     "method": null,
+     "start": 171,
+     "end": 200,
+     "async": false,
+     "params": [
+      "params",
+      "trace",
+      "startedAt",
+      "completion",
+      "classifyMissingError = …"
+     ],
+     "tree": [
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(!trace)",
+       "line": 178,
+       "children": [
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "",
+         "line": 179,
+         "early": true
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(failed)",
+       "line": 183,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnosticErrorMessage",
+         "target": {
+          "kind": "ext",
+          "id": "diagnosticErrorMessage",
+          "module": "../../infra/diagnostic-error-metadata.js"
+         },
+         "line": 183,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "agentRunDiagnosticBase",
+       "target": {
+        "kind": "fn",
+        "id": "agentRunDiagnosticBase"
+       },
+       "line": 187,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "Date.now",
+       "target": {
+        "kind": "builtin",
+        "id": "Date.now"
+       },
+       "line": 188,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(failed)",
+       "line": 191,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnosticErrorCategory",
+         "target": {
+          "kind": "ext",
+          "id": "diagnosticErrorCategory",
+          "module": "../../infra/diagnostic-error-metadata.js"
+         },
+         "line": 191,
+         "await": false,
+         "optional": false,
+         "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "emitTrustedDiagnosticEventWithPrivateData",
+       "target": {
+        "kind": "ext",
+        "id": "emitTrustedDiagnosticEventWithPrivateData",
+        "module": "../../infra/diagnostic-events.js"
+       },
+       "line": 184,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      }
+     ]
+    },
+    "agentRunCompletion": {
+     "id": "agentRunCompletion",
+     "owner": "agentRunCompletion",
+     "method": null,
+     "start": 202,
+     "end": 214,
+     "async": false,
+     "params": [
+      "result"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "projectAgentRunAttemptTerminal",
+       "target": {
+        "kind": "ext",
+        "id": "projectAgentRunAttemptTerminal",
+        "module": "../agent-run-terminal-outcome.js"
+       },
+       "line": 203,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(terminal.timedOut || terminal.externalAbort || terminal.aborted)",
+       "line": 204,
+       "children": [
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "{ outcome: \"aborted\" }",
+         "line": 205,
+         "early": true
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(terminal.promptErrorSource === \"hook:before_agent_run\")",
+       "line": 207,
+       "children": [
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "{ outcome: \"blocked\", blockedBy: \"before_agen…",
+         "line": 208,
+         "early": true
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(terminal.promptErrorSource !== null)",
+       "line": 210,
+       "children": [
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "{ outcome: \"error\", error: terminal.promptErr…",
+         "line": 211,
+         "early": true
+        }
+       ]
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "{ outcome: \"completed\" }",
+       "line": 213,
+       "early": false
+      }
+     ]
+    },
+    "withFallbackDiagnosticTrace": {
+     "id": "withFallbackDiagnosticTrace",
+     "owner": "withFallbackDiagnosticTrace",
+     "method": null,
+     "start": 216,
+     "end": 227,
+     "async": false,
+     "params": [
+      "result",
+      "trace"
+     ],
+     "tree": [
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(result.diagnosticTrace || !trace)",
+       "line": 220,
+       "children": [
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "result",
+         "line": 221,
+         "early": true
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "freezeDiagnosticTraceContext",
+       "target": {
+        "kind": "ext",
+        "id": "freezeDiagnosticTraceContext",
+        "module": "../../infra/diagnostic-trace-context.js"
+       },
+       "line": 225,
+       "await": false,
+       "optional": false,
+       "argOf": "copyCoreTtsAttemptResultProvenance",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "copyCoreTtsAttemptResultProvenance",
+       "target": {
+        "kind": "ext",
+        "id": "copyCoreTtsAttemptResultProvenance",
+        "module": "../tools/tts-tool-result-provenance.js"
+       },
+       "line": 223,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "copyCoreTtsAttemptResultProvenance(result, { …",
+       "line": 223,
+       "early": false
+      }
+     ]
+    },
+    "emitAgentHarnessRunCompleted": {
+     "id": "emitAgentHarnessRunCompleted",
+     "owner": "emitAgentHarnessRunCompleted",
+     "method": null,
+     "start": 229,
+     "end": 269,
+     "async": false,
+     "params": [
+      "params"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "agentRunCompletion",
+       "target": {
+        "kind": "fn",
+        "id": "agentRunCompletion"
+       },
+       "line": 237,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "projectAgentRunAttemptTerminal",
+       "target": {
+        "kind": "ext",
+        "id": "projectAgentRunAttemptTerminal",
+        "module": "../agent-run-terminal-outcome.js"
+       },
+       "line": 238,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(outcome === \"error\")",
+       "line": 247,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnosticErrorMessage",
+         "target": {
+          "kind": "ext",
+          "id": "diagnosticErrorMessage",
+          "module": "../../infra/diagnostic-error-metadata.js"
+         },
+         "line": 247,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "agentRunMessageContent",
+       "target": {
+        "kind": "fn",
+        "id": "agentRunMessageContent"
+       },
+       "line": 248,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "agentHarnessDiagnosticBase",
+       "target": {
+        "kind": "fn",
+        "id": "agentHarnessDiagnosticBase"
+       },
+       "line": 255,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "Date.now",
+       "target": {
+        "kind": "builtin",
+        "id": "Date.now"
+       },
+       "line": 256,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "emitTrustedDiagnosticEventWithPrivateData",
+       "target": {
+        "kind": "ext",
+        "id": "emitTrustedDiagnosticEventWithPrivateData",
+        "module": "../../infra/diagnostic-events.js"
+       },
+       "line": 252,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      }
+     ]
+    },
+    "createAgentHarnessLifecycleDiagnostics": {
+     "id": "createAgentHarnessLifecycleDiagnostics",
+     "owner": "createAgentHarnessLifecycleDiagnostics",
+     "method": null,
+     "start": 271,
+     "end": 355,
+     "async": false,
+     "params": [
+      "harness",
+      "params",
+      "finalizing = …"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "Date.now",
+       "target": {
+        "kind": "builtin",
+        "id": "Date.now"
+       },
+       "line": 276,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "getActiveDiagnosticTraceContext",
+       "target": {
+        "kind": "ext",
+        "id": "getActiveDiagnosticTraceContext",
+        "module": "../../infra/diagnostic-trace-context.js"
+       },
+       "line": 277,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(finalizing)",
+       "line": 282,
+       "children": [
+        {
+         "t": "call",
+         "label": "createRunTrace",
+         "target": {
+          "kind": "local",
+          "id": "createRunTrace"
+         },
+         "line": 282,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": [
+          {
+           "t": "block",
+           "kind": "inline",
+           "kw": "body",
+           "label": "createRunTrace()",
+           "line": 278,
+           "children": [
+            {
+             "t": "block",
+             "kind": "cond",
+             "kw": "if",
+             "label": "(harness.id !== \"openclaw\" && trace)",
+             "line": 279,
+             "children": [
+              {
+               "t": "call",
+               "label": "createChildDiagnosticTraceContext",
+               "target": {
+                "kind": "ext",
+                "id": "createChildDiagnosticTraceContext",
+                "module": "../../infra/diagnostic-trace-context.js"
+               },
+               "line": 280,
+               "await": false,
+               "optional": false,
+               "argOf": "freezeDiagnosticTraceContext",
+               "inner": []
+              },
+              {
+               "t": "call",
+               "label": "freezeDiagnosticTraceContext",
+               "target": {
+                "kind": "ext",
+                "id": "freezeDiagnosticTraceContext",
+                "module": "../../infra/diagnostic-trace-context.js"
+               },
+               "line": 280,
+               "await": false,
+               "optional": false,
+               "argOf": null,
+               "inner": []
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "getRuntimeConfigSnapshot",
+       "target": {
+        "kind": "ext",
+        "id": "getRuntimeConfigSnapshot",
+        "module": "../../config/config.js"
+       },
+       "line": 285,
+       "await": false,
+       "optional": false,
+       "argOf": "resolveDiagnosticModelContentCapturePolicy",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "resolveDiagnosticModelContentCapturePolicy",
+       "target": {
+        "kind": "ext",
+        "id": "resolveDiagnosticModelContentCapturePolicy",
+        "module": "../../infra/diagnostic-llm-content.js"
+       },
+       "line": 285,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(contentPolicy.inputMessages && params.prompt)",
+       "line": 287,
+       "children": [
+        {
+         "t": "call",
+         "label": "truncateDiagnosticContent",
+         "target": {
+          "kind": "ext",
+          "id": "truncateDiagnosticContent",
+          "module": "../../infra/diagnostic-content.js"
+         },
+         "line": 288,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "agentHarnessDiagnosticBase",
+       "target": {
+        "kind": "fn",
+        "id": "agentHarnessDiagnosticBase"
+       },
+       "line": 293,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "emitTrustedDiagnosticEventWithPrivateData",
+       "target": {
+        "kind": "ext",
+        "id": "emitTrustedDiagnosticEventWithPrivateData",
+        "module": "../../infra/diagnostic-events.js"
+       },
+       "line": 290,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "agentHarnessDiagnosticBase",
+       "target": {
+        "kind": "fn",
+        "id": "agentHarnessDiagnosticBase"
+       },
+       "line": 299,
+       "await": false,
+       "optional": false,
+       "argOf": "subscribeAgentCommentaryDiagnostics",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "subscribeAgentCommentaryDiagnostics",
+       "target": {
+        "kind": "ext",
+        "id": "subscribeAgentCommentaryDiagnostics",
+        "module": "./commentary-diagnostics.js"
+       },
+       "line": 297,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "controller object",
+       "methods": [
+        {
+         "name": "trace",
+         "unit": null,
+         "from": "getActiveDiagnosticTraceContext"
+        },
+        {
+         "name": "unsubscribe",
+         "unit": null,
+         "from": "subscribeAgentCommentaryDiagnostics"
+        },
+        {
+         "name": "complete",
+         "unit": "createAgentHarnessLifecycleDiagnostics.complete",
+         "from": null
+        },
+        {
+         "name": "setPhase",
+         "unit": "createAgentHarnessLifecycleDiagnostics.setPhase",
+         "from": null
+        },
+        {
+         "name": "startAgentRun",
+         "unit": "createAgentHarnessLifecycleDiagnostics.startAgentRun",
+         "from": null
+        },
+        {
+         "name": "run",
+         "unit": "createAgentHarnessLifecycleDiagnostics.run",
+         "from": null
+        },
+        {
+         "name": "fail",
+         "unit": "createAgentHarnessLifecycleDiagnostics.fail",
+         "from": null
+        }
+       ],
+       "line": 309,
+       "early": false
+      }
+     ]
+    },
+    "createAgentHarnessLifecycleDiagnostics.complete": {
+     "id": "createAgentHarnessLifecycleDiagnostics.complete",
+     "owner": "createAgentHarnessLifecycleDiagnostics",
+     "method": "complete",
+     "start": 301,
+     "end": 308,
+     "async": false,
+     "params": [
+      "completion",
+      "classifyMissingError = …"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "emitAgentRunCompleted",
+       "target": {
+        "kind": "fn",
+        "id": "emitAgentRunCompleted"
+       },
+       "line": 302,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      }
+     ]
+    },
+    "createAgentHarnessLifecycleDiagnostics.setPhase": {
+     "id": "createAgentHarnessLifecycleDiagnostics.setPhase",
+     "owner": "createAgentHarnessLifecycleDiagnostics",
+     "method": "setPhase",
+     "start": 314,
+     "end": 316,
+     "async": false,
+     "params": [
+      "value"
+     ],
+     "tree": []
+    },
+    "createAgentHarnessLifecycleDiagnostics.startAgentRun": {
+     "id": "createAgentHarnessLifecycleDiagnostics.startAgentRun",
+     "owner": "createAgentHarnessLifecycleDiagnostics",
+     "method": "startAgentRun",
+     "start": 317,
+     "end": 330,
+     "async": false,
+     "params": [],
+     "tree": [
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(!finalizing)",
+       "line": 318,
+       "children": [
+        {
+         "t": "call",
+         "label": "createRunTrace",
+         "target": {
+          "kind": "local",
+          "id": "createRunTrace"
+         },
+         "line": 319,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": [
+          {
+           "t": "block",
+           "kind": "inline",
+           "kw": "body",
+           "label": "createRunTrace()",
+           "line": 278,
+           "children": [
+            {
+             "t": "block",
+             "kind": "cond",
+             "kw": "if",
+             "label": "(harness.id !== \"openclaw\" && trace)",
+             "line": 279,
+             "children": [
+              {
+               "t": "call",
+               "label": "createChildDiagnosticTraceContext",
+               "target": {
+                "kind": "ext",
+                "id": "createChildDiagnosticTraceContext",
+                "module": "../../infra/diagnostic-trace-context.js"
+               },
+               "line": 280,
+               "await": false,
+               "optional": false,
+               "argOf": "freezeDiagnosticTraceContext",
+               "inner": []
+              },
+              {
+               "t": "call",
+               "label": "freezeDiagnosticTraceContext",
+               "target": {
+                "kind": "ext",
+                "id": "freezeDiagnosticTraceContext",
+                "module": "../../infra/diagnostic-trace-context.js"
+               },
+               "line": 280,
+               "await": false,
+               "optional": false,
+               "argOf": null,
+               "inner": []
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "block",
+         "kind": "cond",
+         "kw": "if",
+         "label": "(agentRunTrace)",
+         "line": 320,
+         "children": [
+          {
+           "t": "call",
+           "label": "Date.now",
+           "target": {
+            "kind": "builtin",
+            "id": "Date.now"
+           },
+           "line": 321,
+           "await": false,
+           "optional": false,
+           "argOf": null,
+           "inner": []
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(agentRunTrace)",
+       "line": 324,
+       "children": [
+        {
+         "t": "call",
+         "label": "agentRunDiagnosticBase",
+         "target": {
+          "kind": "fn",
+          "id": "agentRunDiagnosticBase"
+         },
+         "line": 327,
+         "await": false,
+         "optional": false,
+         "argOf": "emitTrustedDiagnosticEvent",
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "emitTrustedDiagnosticEvent",
+         "target": {
+          "kind": "ext",
+          "id": "emitTrustedDiagnosticEvent",
+          "module": "../../infra/diagnostic-events.js"
+         },
+         "line": 325,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      }
+     ]
+    },
+    "createAgentHarnessLifecycleDiagnostics.run": {
+     "id": "createAgentHarnessLifecycleDiagnostics.run",
+     "owner": "createAgentHarnessLifecycleDiagnostics",
+     "method": "run",
+     "start": 331,
+     "end": 333,
+     "async": false,
+     "params": [
+      "execute"
+     ],
+     "tree": [
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(agentRunTrace)",
+       "line": 332,
+       "children": [
+        {
+         "t": "call",
+         "label": "runWithDiagnosticTraceContext",
+         "target": {
+          "kind": "ext",
+          "id": "runWithDiagnosticTraceContext",
+          "module": "../../infra/diagnostic-trace-context.js"
+         },
+         "line": 332,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "else",
+       "label": "",
+       "line": 332,
+       "children": [
+        {
+         "t": "call",
+         "label": "execute",
+         "target": {
+          "kind": "param",
+          "id": "execute"
+         },
+         "line": 332,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "agentRunTrace ? runWithDiagnosticTraceContext…",
+       "line": 332,
+       "early": false
+      }
+     ]
+    },
+    "createAgentHarnessLifecycleDiagnostics.fail": {
+     "id": "createAgentHarnessLifecycleDiagnostics.fail",
+     "owner": "createAgentHarnessLifecycleDiagnostics",
+     "method": "fail",
+     "start": 334,
+     "end": 353,
+     "async": false,
+     "params": [
+      "error"
+     ],
+     "tree": [
+      {
+       "t": "block",
+       "kind": "cond",
+       "kw": "if",
+       "label": "(!finalizing)",
+       "line": 335,
+       "children": [
+        {
+         "t": "call",
+         "label": "recordAgentHarnessPreflightOwner",
+         "target": {
+          "kind": "ext",
+          "id": "recordAgentHarnessPreflightOwner",
+          "module": "./errors.js"
+         },
+         "line": 336,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "diagnosticErrorMessage",
+       "target": {
+        "kind": "ext",
+        "id": "diagnosticErrorMessage",
+        "module": "../../infra/diagnostic-error-metadata.js"
+       },
+       "line": 338,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "agentHarnessDiagnosticBase",
+       "target": {
+        "kind": "fn",
+        "id": "agentHarnessDiagnosticBase"
+       },
+       "line": 342,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "Date.now",
+       "target": {
+        "kind": "builtin",
+        "id": "Date.now"
+       },
+       "line": 343,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "diagnosticErrorCategory",
+       "target": {
+        "kind": "ext",
+        "id": "diagnosticErrorCategory",
+        "module": "../../infra/diagnostic-error-metadata.js"
+       },
+       "line": 345,
+       "await": false,
+       "optional": false,
+       "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "emitTrustedDiagnosticEventWithPrivateData",
+       "target": {
+        "kind": "ext",
+        "id": "emitTrustedDiagnosticEventWithPrivateData",
+        "module": "../../infra/diagnostic-events.js"
+       },
+       "line": 339,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "agentRunMessageContent",
+       "target": {
+        "kind": "fn",
+        "id": "agentRunMessageContent"
+       },
+       "line": 350,
+       "await": false,
+       "optional": false,
+       "argOf": "complete",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "complete",
+       "target": {
+        "kind": "local",
+        "id": "complete"
+       },
+       "line": 349,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": [
+        {
+         "t": "block",
+         "kind": "inline",
+         "kw": "body",
+         "label": "complete()",
+         "line": 301,
+         "children": [
+          {
+           "t": "call",
+           "label": "emitAgentRunCompleted",
+           "target": {
+            "kind": "fn",
+            "id": "emitAgentRunCompleted"
+           },
+           "line": 302,
+           "await": false,
+           "optional": false,
+           "argOf": null,
+           "inner": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "runAgentHarnessLifecycleAttempt": {
+     "id": "runAgentHarnessLifecycleAttempt",
+     "owner": "runAgentHarnessLifecycleAttempt",
+     "method": null,
+     "start": 357,
+     "end": 423,
+     "async": true,
+     "params": [
+      "harness",
+      "params",
+      "execute = …"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "createAgentHarnessLifecycleDiagnostics",
+       "target": {
+        "kind": "fn",
+        "id": "createAgentHarnessLifecycleDiagnostics"
+       },
+       "line": 365,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "try",
+       "kw": "try",
+       "label": "",
+       "line": 366,
+       "children": [
+        {
+         "t": "call",
+         "label": "assertAgentHarnessContextEngineSupport",
+         "target": {
+          "kind": "fn",
+          "id": "assertAgentHarnessContextEngineSupport"
+         },
+         "line": 367,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "diagnostics.startAgentRun",
+         "target": {
+          "kind": "method",
+          "id": "startAgentRun",
+          "unit": "createAgentHarnessLifecycleDiagnostics.startAgentRun",
+          "of": "createAgentHarnessLifecycleDiagnostics"
+         },
+         "line": 368,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "diagnostics.run",
+         "target": {
+          "kind": "method",
+          "id": "run",
+          "unit": "createAgentHarnessLifecycleDiagnostics.run",
+          "of": "createAgentHarnessLifecycleDiagnostics"
+         },
+         "line": 399,
+         "await": true,
+         "optional": false,
+         "argOf": null,
+         "inner": [
+          {
+           "t": "block",
+           "kind": "callback",
+           "kw": "callback",
+           "label": "runAndClassify() runs inside diagnostics.run()",
+           "line": 369,
+           "children": [
+            {
+             "t": "call",
+             "label": "diagnostics.setPhase",
+             "target": {
+              "kind": "method",
+              "id": "setPhase",
+              "unit": "createAgentHarnessLifecycleDiagnostics.setPhase",
+              "of": "createAgentHarnessLifecycleDiagnostics"
+             },
+             "line": 370,
+             "await": false,
+             "optional": false,
+             "argOf": null,
+             "inner": []
+            },
+            {
+             "t": "call",
+             "label": "execute",
+             "target": {
+              "kind": "param",
+              "id": "execute"
+             },
+             "line": 371,
+             "await": true,
+             "optional": false,
+             "argOf": null,
+             "inner": [
+              {
+               "t": "block",
+               "kind": "inline",
+               "kw": "default",
+               "label": "execute = ( attemptParams, ) => harness.runAttempt(attemp… (unless the caller passes one)",
+               "line": 360,
+               "children": [
+                {
+                 "t": "call",
+                 "label": "harness.runAttempt",
+                 "target": {
+                  "kind": "method",
+                  "id": "runAttempt"
+                 },
+                 "line": 362,
+                 "await": false,
+                 "optional": false,
+                 "argOf": null,
+                 "inner": []
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "call",
+             "label": "diagnostics.setPhase",
+             "target": {
+              "kind": "method",
+              "id": "setPhase",
+              "unit": "createAgentHarnessLifecycleDiagnostics.setPhase",
+              "of": "createAgentHarnessLifecycleDiagnostics"
+             },
+             "line": 372,
+             "await": false,
+             "optional": false,
+             "argOf": null,
+             "inner": []
+            },
+            {
+             "t": "block",
+             "kind": "cond",
+             "kw": "if",
+             "label": "(!harness.classify)",
+             "line": 376,
+             "children": []
+            },
+            {
+             "t": "block",
+             "kind": "cond",
+             "kw": "else",
+             "label": "",
+             "line": 378,
+             "children": [
+              {
+               "t": "call",
+               "label": "harness.classify",
+               "target": {
+                "kind": "method",
+                "id": "classify"
+               },
+               "line": 385,
+               "await": false,
+               "optional": false,
+               "argOf": null,
+               "inner": []
+              }
+             ]
+            },
+            {
+             "t": "call",
+             "label": "normalizeAgentHarnessAttemptResult",
+             "target": {
+              "kind": "fn",
+              "id": "normalizeAgentHarnessAttemptResult"
+             },
+             "line": 396,
+             "await": false,
+             "optional": false,
+             "argOf": "copyCoreTtsAttemptResultProvenance",
+             "inner": []
+            },
+            {
+             "t": "call",
+             "label": "copyCoreTtsAttemptResultProvenance",
+             "target": {
+              "kind": "ext",
+              "id": "copyCoreTtsAttemptResultProvenance",
+              "module": "../tools/tts-tool-result-provenance.js"
+             },
+             "line": 394,
+             "await": false,
+             "optional": false,
+             "argOf": null,
+             "inner": []
+            },
+            {
+             "t": "exit",
+             "kind": "return",
+             "label": "copyCoreTtsAttemptResultProvenance( rawResult…",
+             "line": 394,
+             "early": false
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "call",
+         "label": "withFallbackDiagnosticTrace",
+         "target": {
+          "kind": "fn",
+          "id": "withFallbackDiagnosticTrace"
+         },
+         "line": 400,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "catch",
+       "kw": "catch",
+       "label": "(error)",
+       "line": 401,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnostics.fail",
+         "target": {
+          "kind": "method",
+          "id": "fail",
+          "unit": "createAgentHarnessLifecycleDiagnostics.fail",
+          "of": "createAgentHarnessLifecycleDiagnostics"
+         },
+         "line": 402,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        },
+        {
+         "t": "exit",
+         "kind": "throw",
+         "label": "error",
+         "line": 403
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "finally",
+       "kw": "finally",
+       "label": "always runs",
+       "line": 404,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnostics.unsubscribe",
+         "target": {
+          "kind": "method",
+          "id": "unsubscribe",
+          "of": "createAgentHarnessLifecycleDiagnostics",
+          "note": "function returned by subscribeAgentCommentaryDiagnostics()",
+          "ext": "subscribeAgentCommentaryDiagnostics"
+         },
+         "line": 405,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      },
+      {
+       "t": "call",
+       "label": "agentRunCompletion",
+       "target": {
+        "kind": "fn",
+        "id": "agentRunCompletion"
+       },
+       "line": 409,
+       "await": false,
+       "optional": false,
+       "argOf": "diagnostics.complete",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "agentRunMessageContent",
+       "target": {
+        "kind": "fn",
+        "id": "agentRunMessageContent"
+       },
+       "line": 410,
+       "await": false,
+       "optional": false,
+       "argOf": "diagnostics.complete",
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "diagnostics.complete",
+       "target": {
+        "kind": "method",
+        "id": "complete",
+        "unit": "createAgentHarnessLifecycleDiagnostics.complete",
+        "of": "createAgentHarnessLifecycleDiagnostics"
+       },
+       "line": 408,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "emitAgentHarnessRunCompleted",
+       "target": {
+        "kind": "fn",
+        "id": "emitAgentHarnessRunCompleted"
+       },
+       "line": 415,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "result",
+       "line": 422,
+       "early": false
+      }
+     ]
+    },
+    "runAgentHarnessLifecycleFinalization": {
+     "id": "runAgentHarnessLifecycleFinalization",
+     "owner": "runAgentHarnessLifecycleFinalization",
+     "method": null,
+     "start": 425,
+     "end": 486,
+     "async": true,
+     "params": [
+      "harness",
+      "params",
+      "execute"
+     ],
+     "tree": [
+      {
+       "t": "call",
+       "label": "createAgentHarnessLifecycleDiagnostics",
+       "target": {
+        "kind": "fn",
+        "id": "createAgentHarnessLifecycleDiagnostics"
+       },
+       "line": 430,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "call",
+       "label": "diagnostics.startAgentRun",
+       "target": {
+        "kind": "method",
+        "id": "startAgentRun",
+        "unit": "createAgentHarnessLifecycleDiagnostics.startAgentRun",
+        "of": "createAgentHarnessLifecycleDiagnostics"
+       },
+       "line": 431,
+       "await": false,
+       "optional": false,
+       "argOf": null,
+       "inner": []
+      },
+      {
+       "t": "block",
+       "kind": "try",
+       "kw": "try",
+       "label": "",
+       "line": 432,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnostics.run",
+         "target": {
+          "kind": "method",
+          "id": "run",
+          "unit": "createAgentHarnessLifecycleDiagnostics.run",
+          "of": "createAgentHarnessLifecycleDiagnostics"
+         },
+         "line": 449,
+         "await": true,
+         "optional": false,
+         "argOf": null,
+         "inner": [
+          {
+           "t": "block",
+           "kind": "callback",
+           "kw": "callback",
+           "label": "runAndValidate() runs inside diagnostics.run()",
+           "line": 433,
+           "children": [
+            {
+             "t": "call",
+             "label": "diagnostics.setPhase",
+             "target": {
+              "kind": "method",
+              "id": "setPhase",
+              "unit": "createAgentHarnessLifecycleDiagnostics.setPhase",
+              "of": "createAgentHarnessLifecycleDiagnostics"
+             },
+             "line": 434,
+             "await": false,
+             "optional": false,
+             "argOf": null,
+             "inner": []
+            },
+            {
+             "t": "block",
+             "kind": "try",
+             "kw": "try",
+             "label": "",
+             "line": 435,
+             "children": [
+              {
+               "t": "call",
+               "label": "execute",
+               "target": {
+                "kind": "param",
+                "id": "execute"
+               },
+               "line": 436,
+               "await": true,
+               "optional": false,
+               "argOf": null,
+               "inner": []
+              },
+              {
+               "t": "call",
+               "label": "diagnostics.setPhase",
+               "target": {
+                "kind": "method",
+                "id": "setPhase",
+                "unit": "createAgentHarnessLifecycleDiagnostics.setPhase",
+                "of": "createAgentHarnessLifecycleDiagnostics"
+               },
+               "line": 437,
+               "await": false,
+               "optional": false,
+               "argOf": null,
+               "inner": []
+              },
+              {
+               "t": "call",
+               "label": "assertSettledTurnFinalizationResult",
+               "target": {
+                "kind": "ext",
+                "id": "assertSettledTurnFinalizationResult",
+                "module": "./settled-turn-finalization-result.js"
+               },
+               "line": 440,
+               "await": false,
+               "optional": false,
+               "argOf": null,
+               "inner": []
+              },
+              {
+               "t": "exit",
+               "kind": "return",
+               "label": "{ outcome: \"answered\" as const, result: asser…",
+               "line": 438,
+               "early": false
+              }
+             ]
+            },
+            {
+             "t": "block",
+             "kind": "catch",
+             "kw": "catch",
+             "label": "(error)",
+             "line": 442,
+             "children": [
+              {
+               "t": "block",
+               "kind": "cond",
+               "kw": "if",
+               "label": "(error instanceof EmptySettledTurnFinalizationError)",
+               "line": 443,
+               "children": [
+                {
+                 "t": "exit",
+                 "kind": "return",
+                 "label": "{ outcome: \"empty\" as const, result: error.re…",
+                 "line": 444,
+                 "early": true
+                }
+               ]
+              },
+              {
+               "t": "exit",
+               "kind": "throw",
+               "label": "error",
+               "line": 446
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "block",
+         "kind": "cond",
+         "kw": "unless",
+         "label": "(rawResult.result.diagnosticTrace || !diagnostics.trace)",
+         "line": 455,
+         "children": [
+          {
+           "t": "call",
+           "label": "freezeDiagnosticTraceContext",
+           "target": {
+            "kind": "ext",
+            "id": "freezeDiagnosticTraceContext",
+            "module": "../../infra/diagnostic-trace-context.js"
+           },
+           "line": 457,
+           "await": false,
+           "optional": false,
+           "argOf": null,
+           "inner": []
+          }
+         ]
+        },
+        {
+         "t": "call",
+         "label": "agentRunMessageContent",
+         "target": {
+          "kind": "fn",
+          "id": "agentRunMessageContent"
+         },
+         "line": 462,
+         "await": false,
+         "optional": false,
+         "argOf": "diagnostics.complete",
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "diagnostics.complete",
+         "target": {
+          "kind": "method",
+          "id": "complete",
+          "unit": "createAgentHarnessLifecycleDiagnostics.complete",
+          "of": "createAgentHarnessLifecycleDiagnostics"
+         },
+         "line": 460,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "agentRunMessageContent",
+         "target": {
+          "kind": "fn",
+          "id": "agentRunMessageContent"
+         },
+         "line": 464,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "agentHarnessDiagnosticBase",
+         "target": {
+          "kind": "fn",
+          "id": "agentHarnessDiagnosticBase"
+         },
+         "line": 468,
+         "await": false,
+         "optional": false,
+         "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "Date.now",
+         "target": {
+          "kind": "builtin",
+          "id": "Date.now"
+         },
+         "line": 473,
+         "await": false,
+         "optional": false,
+         "argOf": "emitTrustedDiagnosticEventWithPrivateData",
+         "inner": []
+        },
+        {
+         "t": "call",
+         "label": "emitTrustedDiagnosticEventWithPrivateData",
+         "target": {
+          "kind": "ext",
+          "id": "emitTrustedDiagnosticEventWithPrivateData",
+          "module": "../../infra/diagnostic-events.js"
+         },
+         "line": 465,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        },
+        {
+         "t": "exit",
+         "kind": "return",
+         "label": "result",
+         "line": 479,
+         "early": false
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "catch",
+       "kw": "catch",
+       "label": "(error)",
+       "line": 480,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnostics.fail",
+         "target": {
+          "kind": "method",
+          "id": "fail",
+          "unit": "createAgentHarnessLifecycleDiagnostics.fail",
+          "of": "createAgentHarnessLifecycleDiagnostics"
+         },
+         "line": 481,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        },
+        {
+         "t": "exit",
+         "kind": "throw",
+         "label": "error",
+         "line": 482
+        }
+       ]
+      },
+      {
+       "t": "block",
+       "kind": "finally",
+       "kw": "finally",
+       "label": "always runs",
+       "line": 483,
+       "children": [
+        {
+         "t": "call",
+         "label": "diagnostics.unsubscribe",
+         "target": {
+          "kind": "method",
+          "id": "unsubscribe",
+          "of": "createAgentHarnessLifecycleDiagnostics",
+          "note": "function returned by subscribeAgentCommentaryDiagnostics()",
+          "ext": "subscribeAgentCommentaryDiagnostics"
+         },
+         "line": 484,
+         "await": false,
+         "optional": false,
+         "argOf": null,
+         "inner": []
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/agents/harness/lifecycle.ts",
+    "name": "lifecycle.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 486,
+    "contentHash": "cfe59ed1342aec56",
+    "layers": 4,
+    "functions": [
+     {
+      "id": "062fe274a35ae241",
+      "name": "agentRunMessageContent",
+      "qualifiedName": "agentRunMessageContent",
+      "kind": "function",
+      "start": 59,
+      "end": 71,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function agentRunMessageContent( prompt: string | undefined, assistant?: Parameters<typeof resolveFinalMessageRawText>[0], ): AgentRunMessageContent | undefined",
+      "doc": "Gated, bounded prompt/answer for child run.completed, like embedded and CLI runs.",
+      "level": 0,
+      "calls": [],
+      "calledBy": [
+       "emitAgentHarnessRunCompleted",
+       "createAgentHarnessLifecycleDiagnostics",
+       "runAgentHarnessLifecycleAttempt",
+       "runAgentHarnessLifecycleFinalization"
+      ],
+      "uses": [
+       "getRuntimeConfigSnapshot",
+       "truncateDiagnosticContent",
+       "resolveDiagnosticModelContentCapturePolicy",
+       "resolveFinalMessageRawText"
+      ],
+      "typeUses": [],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Builds the optional, privacy-gated prompt/answer text that rides along on completion events.",
+       "algo": [
+        "Read the content-capture policy from the runtime config snapshot.",
+        "If output capture is allowed, pull the assistant's final raw text and truncate it.",
+        "If input capture is allowed and a prompt exists, truncate the prompt.",
+        "Return whichever fields survived, or undefined when neither did."
+       ],
+       "notes": [
+        {
+         "kind": "info",
+         "text": "Prompt and answer are gated independently, so a payload can carry one without the other."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "agentRunMessageContent"
+     },
+     {
+      "id": "83d4dd1f58fb1f4c",
+      "name": "assertAgentHarnessContextEngineSupport",
+      "qualifiedName": "assertAgentHarnessContextEngineSupport",
+      "kind": "function",
+      "start": 73,
+      "end": 89,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function assertAgentHarnessContextEngineSupport( harness: AgentHarness, params: AgentHarnessAttemptParamsV2, ): void",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [
+       "runAgentHarnessLifecycleAttempt"
+      ],
+      "uses": [
+       "assertContextEngineHostSupport"
+      ],
+      "typeUses": [
+       "AgentHarness",
+       "AgentHarnessAttemptParamsV2"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Fails fast when the harness cannot host the configured (non-legacy) context engine.",
+       "algo": [
+        "No context engine, or the \"legacy\" one: return, it is always supported.",
+        "Otherwise describe the host: id and label from the harness, capabilities from contextEngineHostCapabilities (default []).",
+        "Call assertContextEngineHostSupport for operation \"agent-run\"; it throws on a mismatch."
+       ],
+       "notes": [],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "assertAgentHarnessContextEngineSupport"
+     },
+     {
+      "id": "6ca13e56368be23c",
+      "name": "agentHarnessDiagnosticBase",
+      "qualifiedName": "agentHarnessDiagnosticBase",
+      "kind": "function",
+      "start": 91,
+      "end": 111,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function agentHarnessDiagnosticBase( harness: AgentHarness, params: AgentHarnessAttemptParams, trace?: DiagnosticTraceContext, )",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [
+       "emitAgentHarnessRunCompleted",
+       "createAgentHarnessLifecycleDiagnostics",
+       "runAgentHarnessLifecycleFinalization"
+      ],
+      "uses": [
+       "freezeDiagnosticTraceContext",
+       "getActiveDiagnosticTraceContext"
+      ],
+      "typeUses": [
+       "DiagnosticTraceContext",
+       "AgentHarness",
+       "AgentHarnessAttemptParams"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Builds the identity fields shared by every harness.* diagnostic event.",
+       "algo": [
+        "Use the trace passed in, else the active diagnostic trace.",
+        "Channel is messageChannel, falling back to messageProvider.",
+        "Always include runId, sessionId, provider, model and harnessId.",
+        "Add agentId, pluginId, sessionKey, trigger, channel and a frozen trace only when present."
+       ],
+       "notes": [],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "agentHarnessDiagnosticBase"
+     },
+     {
+      "id": "c8af90135f0c6583",
+      "name": "normalizeAgentHarnessAttemptResult",
+      "qualifiedName": "normalizeAgentHarnessAttemptResult",
+      "kind": "function",
+      "start": 113,
+      "end": 154,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function normalizeAgentHarnessAttemptResult( result: AgentHarnessAttemptResult, ): EmbeddedRunAttemptResult",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [
+       "runAgentHarnessLifecycleAttempt"
+      ],
+      "uses": [
+       "normalizeAgentRunAttemptTerminal"
+      ],
+      "typeUses": [
+       "EmbeddedRunAttemptResult",
+       "AgentHarnessAttemptResult"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Converts a harness result from the legacy or current contract into the canonical shape with a single terminal field.",
+       "algo": [
+        "Strip the nine legacy terminal flags (aborted, timedOut, promptError and friends); keep the rest as canonical.",
+        "Resolve attempt provenance: keep currentAttemptAssistant if the key exists, else fall back to lastAssistant for legacy harnesses.",
+        "If the result already has terminal (current contract), return canonical plus provenance.",
+        "Otherwise build terminal from the legacy flags with normalizeAgentRunAttemptTerminal and attach it."
+       ],
+       "notes": [
+        {
+         "kind": "info",
+         "text": "Object.hasOwn separates an explicit undefined (\"no response this attempt\") from a missing key (legacy harness)."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "normalizeAgentHarnessAttemptResult"
+     },
+     {
+      "id": "3667529a03c402d3",
+      "name": "agentRunDiagnosticBase",
+      "qualifiedName": "agentRunDiagnosticBase",
+      "kind": "function",
+      "start": 156,
+      "end": 169,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function agentRunDiagnosticBase(params: AgentHarnessAttemptParams, trace: DiagnosticTraceContext)",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [
+       "emitAgentRunCompleted",
+       "createAgentHarnessLifecycleDiagnostics"
+      ],
+      "uses": [],
+      "typeUses": [
+       "DiagnosticTraceContext",
+       "AgentHarnessAttemptParams"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Builds the shared fields for run.* events on the child agent-run span.",
+       "algo": [
+        "Channel is messageChannel, falling back to messageProvider.",
+        "Always include runId, provider, model and the trace passed in.",
+        "Add sessionKey, sessionId, agentId, trigger and channel only when present."
+       ],
+       "notes": [
+        {
+         "kind": "info",
+         "text": "Differs from the harness base: no harnessId or pluginId, sessionId is optional, and the trace is required and not re-frozen."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "agentRunDiagnosticBase"
+     },
+     {
+      "id": "e9625ca9b2b568c3",
+      "name": "emitAgentRunCompleted",
+      "qualifiedName": "emitAgentRunCompleted",
+      "kind": "function",
+      "start": 171,
+      "end": 200,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function emitAgentRunCompleted( params: AgentHarnessAttemptParams, trace: DiagnosticTraceContext | undefined, startedAt: number, completion: AgentRunCompletion, classifyMissingError = false, ): void",
+      "doc": null,
+      "level": 1,
+      "calls": [
+       "agentRunDiagnosticBase"
+      ],
+      "calledBy": [
+       "createAgentHarnessLifecycleDiagnostics"
+      ],
+      "uses": [
+       "diagnosticErrorCategory",
+       "diagnosticErrorMessage",
+       "emitTrustedDiagnosticEventWithPrivateData"
+      ],
+      "typeUses": [
+       "DiagnosticTraceContext",
+       "AgentHarnessAttemptParams"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Emits run.completed for the child run span, if one was opened.",
+       "algo": [
+        "No run trace: return (no run span was started).",
+        "failed = outcome is \"error\" and there is an error, or classifyMissingError is set.",
+        "Public fields: base, durationMs, outcome, plus blockedBy and errorCategory when relevant.",
+        "Private data: errorMessage and messageContent, sent only if at least one exists."
+       ],
+       "notes": [],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "emitAgentRunCompleted"
+     },
+     {
+      "id": "1347487e21ffb1c3",
+      "name": "agentRunCompletion",
+      "qualifiedName": "agentRunCompletion",
+      "kind": "function",
+      "start": 202,
+      "end": 214,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function agentRunCompletion(result: EmbeddedRunAttemptResult): AgentRunCompletion",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [
+       "emitAgentHarnessRunCompleted",
+       "runAgentHarnessLifecycleAttempt"
+      ],
+      "uses": [
+       "projectAgentRunAttemptTerminal"
+      ],
+      "typeUses": [
+       "EmbeddedRunAttemptResult"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Maps a normalized attempt terminal to a run outcome: aborted, blocked, error or completed.",
+       "algo": [
+        "Project the terminal into flat flags.",
+        "Timed out, externally aborted or aborted: \"aborted\".",
+        "Prompt error from hook:before_agent_run: \"blocked\" by before_agent_run.",
+        "Any other prompt error source: \"error\" carrying promptError.",
+        "Otherwise: \"completed\"."
+       ],
+       "notes": [
+        {
+         "kind": "info",
+         "text": "Check order is the priority: an abort wins over a hook block, which wins over an error."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "agentRunCompletion"
+     },
+     {
+      "id": "3b43f0281a309747",
+      "name": "withFallbackDiagnosticTrace",
+      "qualifiedName": "withFallbackDiagnosticTrace",
+      "kind": "function",
+      "start": 216,
+      "end": 227,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function withFallbackDiagnosticTrace( result: EmbeddedRunAttemptResult, trace: DiagnosticTraceContext | undefined, ): EmbeddedRunAttemptResult",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [
+       "runAgentHarnessLifecycleAttempt"
+      ],
+      "uses": [
+       "freezeDiagnosticTraceContext",
+       "copyCoreTtsAttemptResultProvenance"
+      ],
+      "typeUses": [
+       "DiagnosticTraceContext",
+       "EmbeddedRunAttemptResult"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Stamps the lifecycle's trace onto a result that came back without one.",
+       "algo": [
+        "Result already has a diagnosticTrace, or there is no trace to add: return it unchanged.",
+        "Otherwise copy the result with a frozen trace, carrying TTS tool-result provenance over to the copy."
+       ],
+       "notes": [],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "withFallbackDiagnosticTrace"
+     },
+     {
+      "id": "1096635299d2b4cd",
+      "name": "emitAgentHarnessRunCompleted",
+      "qualifiedName": "emitAgentHarnessRunCompleted",
+      "kind": "function",
+      "start": 229,
+      "end": 269,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function emitAgentHarnessRunCompleted(params: { harness: AgentHarness; attemptParams: AgentHarnessAttemptParams; result: EmbeddedRunAttemptResult; startedAt: number; trace?: DiagnosticTraceContext; }…",
+      "doc": null,
+      "level": 1,
+      "calls": [
+       "agentRunMessageContent",
+       "agentHarnessDiagnosticBase",
+       "agentRunCompletion"
+      ],
+      "calledBy": [
+       "runAgentHarnessLifecycleAttempt"
+      ],
+      "uses": [
+       "diagnosticErrorMessage",
+       "emitTrustedDiagnosticEventWithPrivateData",
+       "projectAgentRunAttemptTerminal"
+      ],
+      "typeUses": [
+       "DiagnosticHarnessRunOutcome",
+       "DiagnosticTraceContext",
+       "EmbeddedRunAttemptResult",
+       "AgentHarness",
+       "AgentHarnessAttemptParams"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Emits harness.run.completed with outcome, classification, item lifecycle and the gated final answer.",
+       "algo": [
+        "Derive the run completion and project the terminal.",
+        "Harness outcome: timed out becomes \"timed_out\", blocked becomes \"error\", otherwise the run outcome.",
+        "On error, take the message from terminal.promptError (a classified, non-thrown failure).",
+        "Build gated answer text (no prompt) from currentAttemptAssistant, else currentAttemptCompletedAssistant.",
+        "Emit with resultClassification, yieldDetected (if boolean) and a copy of itemLifecycle."
+       ],
+       "notes": [
+        {
+         "kind": "info",
+         "text": "The same timeout reads \"aborted\" on run.completed but \"timed_out\" here; a hook block reads \"blocked\" there and \"error\" here."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "emitAgentHarnessRunCompleted"
+     },
+     {
+      "id": "24ceb4a26627b8ba",
+      "name": "createAgentHarnessLifecycleDiagnostics",
+      "qualifiedName": "createAgentHarnessLifecycleDiagnostics",
+      "kind": "function",
+      "start": 271,
+      "end": 355,
+      "exported": false,
+      "isAsync": false,
+      "signature": "function createAgentHarnessLifecycleDiagnostics( harness: AgentHarness, params: AgentHarnessAttemptParams, finalizing = false, )",
+      "doc": null,
+      "level": 2,
+      "calls": [
+       "agentRunMessageContent",
+       "agentHarnessDiagnosticBase",
+       "agentRunDiagnosticBase",
+       "emitAgentRunCompleted"
+      ],
+      "calledBy": [
+       "runAgentHarnessLifecycleAttempt",
+       "runAgentHarnessLifecycleFinalization"
+      ],
+      "uses": [
+       "getRuntimeConfigSnapshot",
+       "truncateDiagnosticContent",
+       "diagnosticErrorCategory",
+       "diagnosticErrorMessage",
+       "emitTrustedDiagnosticEvent",
+       "emitTrustedDiagnosticEventWithPrivateData",
+       "resolveDiagnosticModelContentCapturePolicy",
+       "createChildDiagnosticTraceContext",
+       "freezeDiagnosticTraceContext",
+       "getActiveDiagnosticTraceContext",
+       "runWithDiagnosticTraceContext",
+       "subscribeAgentCommentaryDiagnostics",
+       "recordAgentHarnessPreflightOwner"
+      ],
+      "typeUses": [
+       "AgentHarness",
+       "AgentHarnessAttemptParams"
+      ],
+      "externalCallers": 0,
+      "summary": {
+       "desc": "Opens the harness span and returns a controller for phases, the child run span, failure and completion.",
+       "algo": [
+        "Capture startedAt and the active trace; emit harness.run.started with the gated prompt.",
+        "Subscribe to agent commentary diagnostics (unsubscribe is returned).",
+        "createRunTrace makes a child trace only for non-\"openclaw\" harnesses with an active trace; finalizing mode creates it up front.",
+        "startAgentRun: create the run trace if needed and emit run.started.",
+        "run(execute): execute inside the run trace context when there is one.",
+        "fail(error): record the preflight owner (attempts only), emit harness.run.error with the current phase, then run.completed as error."
+       ],
+       "notes": [
+        {
+         "kind": "info",
+         "text": "Phase starts at \"prepare\", so a throw before the send step is attributed to preparation."
+        },
+        {
+         "kind": "info",
+         "text": "If a failure happens before startAgentRun, no run.* events go out; only harness.run.error does."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "createAgentHarnessLifecycleDiagnostics"
+     },
+     {
+      "id": "6ee80b7ecfcadc00",
+      "name": "runAgentHarnessLifecycleAttempt",
+      "qualifiedName": "runAgentHarnessLifecycleAttempt",
+      "kind": "function",
+      "start": 357,
+      "end": 423,
+      "exported": true,
+      "isAsync": true,
+      "signature": "export async function runAgentHarnessLifecycleAttempt( harness: AgentHarness, params: AgentHarnessAttemptParamsV2, execute: (params: AgentHarnessAttemptParamsV2) => Promise<AgentHarnessAttemptResult>…",
+      "doc": null,
+      "level": 3,
+      "calls": [
+       "agentRunMessageContent",
+       "assertAgentHarnessContextEngineSupport",
+       "normalizeAgentHarnessAttemptResult",
+       "agentRunCompletion",
+       "withFallbackDiagnosticTrace",
+       "emitAgentHarnessRunCompleted",
+       "createAgentHarnessLifecycleDiagnostics"
+      ],
+      "calledBy": [],
+      "uses": [
+       "copyCoreTtsAttemptResultProvenance",
+       "runAttempt",
+       "classify"
+      ],
+      "typeUses": [
+       "EmbeddedRunAttemptResult",
+       "AgentHarness",
+       "AgentHarnessAttemptParamsV2",
+       "AgentHarnessAttemptResult"
+      ],
+      "externalCallers": 3,
+      "summary": {
+       "desc": "Entry point: runs one harness attempt inside full diagnostics, then classifies and normalizes the result.",
+       "algo": [
+        "Create lifecycle diagnostics (opens the harness span).",
+        "Phase prepare: assert context-engine support, then start the child run span.",
+        "Phase send: run execute(params) in the run trace (default: harness.runAttempt).",
+        "Phase resolve: without classify, just tag agentHarnessId; with it, drop any previous classification, reclassify, keep only non-\"ok\" labels.",
+        "Normalize to the canonical terminal shape, keep TTS provenance from the raw result, add the fallback trace.",
+        "On a throw: fail() emits the error events, then rethrow. Always unsubscribe.",
+        "On success: emit run.completed (prompt and answer) then harness.run.completed, and return."
+       ],
+       "notes": [
+        {
+         "kind": "info",
+         "text": "Completion events fire after the finally block, so a throwing emitter cannot trigger fail() and double-report."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "runAgentHarnessLifecycleAttempt"
+     },
+     {
+      "id": "e5c33c23aa8c1eb9",
+      "name": "runAgentHarnessLifecycleFinalization",
+      "qualifiedName": "runAgentHarnessLifecycleFinalization",
+      "kind": "function",
+      "start": 425,
+      "end": 486,
+      "exported": true,
+      "isAsync": true,
+      "signature": "export async function runAgentHarnessLifecycleFinalization( harness: AgentHarness, params: AgentHarnessSettledTurnFinalizationAttemptParams<AgentHarnessAttemptParamsV2>, execute: () => Promise<AgentH…",
+      "doc": null,
+      "level": 3,
+      "calls": [
+       "agentRunMessageContent",
+       "agentHarnessDiagnosticBase",
+       "createAgentHarnessLifecycleDiagnostics"
+      ],
+      "calledBy": [],
+      "uses": [
+       "emitTrustedDiagnosticEventWithPrivateData",
+       "freezeDiagnosticTraceContext",
+       "EmptySettledTurnFinalizationError",
+       "assertSettledTurnFinalizationResult"
+      ],
+      "typeUses": [
+       "AgentHarness",
+       "AgentHarnessAttemptParamsV2",
+       "AgentHarnessSettledTurnFinalizationAttemptParams",
+       "AgentHarnessSettledTurnFinalizationResult"
+      ],
+      "externalCallers": 1,
+      "summary": {
+       "desc": "Entry point: runs a settled-turn finalization under diagnostics, treating an empty result as a normal outcome.",
+       "algo": [
+        "Create diagnostics in finalizing mode (run trace up front) and emit run.started.",
+        "Phase send: run execute() in the run trace.",
+        "Phase resolve: validate with assertSettledTurnFinalizationResult, giving outcome \"answered\".",
+        "EmptySettledTurnFinalizationError is caught and becomes outcome \"empty\" with its result.",
+        "Add the fallback trace to the inner result if it has none.",
+        "Emit run.completed and harness.run.completed (zeroed itemLifecycle), return the outcome.",
+        "Any other error: fail() and rethrow. Always unsubscribe."
+       ],
+       "notes": [
+        {
+         "kind": "warn",
+         "text": "startAgentRun() sits outside the try, so if it throws, the commentary subscription is never unsubscribed."
+        },
+        {
+         "kind": "warn",
+         "text": "Completion events are emitted inside the try. If one throws, fail() sends a second run.completed, this time as error."
+        },
+        {
+         "kind": "info",
+         "text": "An \"empty\" finalization still reports outcome \"completed\" in both events."
+        }
+       ],
+       "model": "mock",
+       "ai": true
+      },
+      "unit": "runAgentHarnessLifecycleFinalization"
+     }
+    ],
+    "types": [
+     {
+      "id": "4da38f94f16316e6",
+      "name": "AgentHarnessLifecycleFinalizationOutcome",
+      "kind": "type",
+      "start": 45,
+      "end": 48,
+      "exported": false,
+      "doc": null,
+      "summary": "What the finalization entry point returns: answered or empty, plus the prepared result."
+     },
+     {
+      "id": "103ad343dce257a3",
+      "name": "AgentHarnessLifecyclePhase",
+      "kind": "type",
+      "start": 50,
+      "end": 50,
+      "exported": false,
+      "doc": null,
+      "summary": "The step a failure is attributed to (prepare, send, resolve), borrowed from the harness.run.error event type."
+     },
+     {
+      "id": "5ddf7d78c0e3573b",
+      "name": "AgentRunCompletion",
+      "kind": "type",
+      "start": 51,
+      "end": 56,
+      "exported": false,
+      "doc": null,
+      "summary": "Internal summary of how a run ended, fed to run.completed."
+     },
+     {
+      "id": "cf380dc5956f2375",
+      "name": "AgentRunMessageContent",
+      "kind": "type",
+      "start": 57,
+      "end": 57,
+      "exported": false,
+      "doc": null,
+      "summary": "Optional prompt and answer text attached to completion events as private data."
+     }
+    ],
+    "modules": [
+     {
+      "id": "../../config/config.js",
+      "kind": "static",
+      "resolved": "src/config/config.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "getRuntimeConfigSnapshot",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 1
+     },
+     {
+      "id": "../../context-engine/host-compat.js",
+      "kind": "static",
+      "resolved": "src/context-engine/host-compat.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "assertContextEngineHostSupport",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 2
+     },
+     {
+      "id": "../../infra/diagnostic-content.js",
+      "kind": "static",
+      "resolved": "src/infra/diagnostic-content.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "truncateDiagnosticContent",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 3
+     },
+     {
+      "id": "../../infra/diagnostic-error-metadata.js",
+      "kind": "static",
+      "resolved": "src/infra/diagnostic-error-metadata.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "diagnosticErrorCategory",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "diagnosticErrorMessage",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 4
+     },
+     {
+      "id": "../../infra/diagnostic-events.js",
+      "kind": "static",
+      "resolved": "src/infra/diagnostic-events.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "emitTrustedDiagnosticEvent",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "emitTrustedDiagnosticEventWithPrivateData",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "DiagnosticHarnessRunErrorEvent",
+        "typeOnly": true,
+        "member": false
+       },
+       {
+        "name": "DiagnosticHarnessRunOutcome",
+        "typeOnly": true,
+        "member": false
+       }
+      ],
+      "line": 8
+     },
+     {
+      "id": "../../infra/diagnostic-llm-content.js",
+      "kind": "static",
+      "resolved": "src/infra/diagnostic-llm-content.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "resolveDiagnosticModelContentCapturePolicy",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 14
+     },
+     {
+      "id": "../../infra/diagnostic-trace-context.js",
+      "kind": "static",
+      "resolved": "src/infra/diagnostic-trace-context.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "createChildDiagnosticTraceContext",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "freezeDiagnosticTraceContext",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "getActiveDiagnosticTraceContext",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "runWithDiagnosticTraceContext",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "DiagnosticTraceContext",
+        "typeOnly": true,
+        "member": false
+       }
+      ],
+      "line": 15
+     },
+     {
+      "id": "../agent-run-terminal-outcome.js",
+      "kind": "static",
+      "resolved": "src/agents/agent-run-terminal-outcome.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "normalizeAgentRunAttemptTerminal",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "projectAgentRunAttemptTerminal",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 22
+     },
+     {
+      "id": "../embedded-agent-runner/run/helpers.js",
+      "kind": "static",
+      "resolved": "src/agents/embedded-agent-runner/run/helpers.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "resolveFinalMessageRawText",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 26
+     },
+     {
+      "id": "../embedded-agent-runner/run/types.js",
+      "kind": "static",
+      "resolved": "src/agents/embedded-agent-runner/run/types.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "EmbeddedRunAttemptResult",
+        "typeOnly": true,
+        "member": false
+       }
+      ],
+      "line": 27
+     },
+     {
+      "id": "../tools/tts-tool-result-provenance.js",
+      "kind": "static",
+      "resolved": "src/agents/tools/tts-tool-result-provenance.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "copyCoreTtsAttemptResultProvenance",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 28
+     },
+     {
+      "id": "./commentary-diagnostics.js",
+      "kind": "static",
+      "resolved": "src/agents/harness/commentary-diagnostics.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "subscribeAgentCommentaryDiagnostics",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 29
+     },
+     {
+      "id": "./errors.js",
+      "kind": "static",
+      "resolved": "src/agents/harness/errors.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "recordAgentHarnessPreflightOwner",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 30
+     },
+     {
+      "id": "./settled-turn-finalization-outcome.js",
+      "kind": "static",
+      "resolved": "src/agents/harness/settled-turn-finalization-outcome.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "EmptySettledTurnFinalizationError",
+        "typeOnly": false,
+        "member": false
+       },
+       {
+        "name": "PreparedSettledTurnFinalizationResult",
+        "typeOnly": true,
+        "member": false
+       }
+      ],
+      "line": 31
+     },
+     {
+      "id": "./settled-turn-finalization-result.js",
+      "kind": "static",
+      "resolved": "src/agents/harness/settled-turn-finalization-result.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "assertSettledTurnFinalizationResult",
+        "typeOnly": false,
+        "member": false
+       }
+      ],
+      "line": 35
+     },
+     {
+      "id": "./types.js",
+      "kind": "static",
+      "resolved": "src/agents/harness/types.ts",
+      "external": false,
+      "symbols": [
+       {
+        "name": "AgentHarness",
+        "typeOnly": true,
+        "member": false
+       },
+       {
+        "name": "AgentHarnessAttemptParams",
+        "typeOnly": true,
+        "member": false
+       },
+       {
+        "name": "AgentHarnessAttemptParamsV2",
+        "typeOnly": true,
+        "member": false
+       },
+       {
+        "name": "AgentHarnessAttemptResult",
+        "typeOnly": true,
+        "member": false
+       },
+       {
+        "name": "AgentHarnessSettledTurnFinalizationAttemptParams",
+        "typeOnly": true,
+        "member": false
+       },
+       {
+        "name": "AgentHarnessSettledTurnFinalizationResult",
+        "typeOnly": true,
+        "member": false
+       }
+      ],
+      "line": 36
+     },
+     {
+      "id": "harness (AgentHarness param)",
+      "kind": "static",
+      "resolved": null,
+      "external": false,
+      "symbols": [
+       {
+        "name": "runAttempt",
+        "typeOnly": false,
+        "member": true
+       },
+       {
+        "name": "classify",
+        "typeOnly": false,
+        "member": true
+       }
+      ],
+      "line": 362
+     }
+    ],
+    "importsRange": {
+     "start": 1,
+     "end": 43
+    },
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "agentRunMessageContent",
+      "owner": "agentRunMessageContent",
+      "method": null,
+      "start": 60,
+      "end": 71
+     },
+     {
+      "id": "assertAgentHarnessContextEngineSupport",
+      "owner": "assertAgentHarnessContextEngineSupport",
+      "method": null,
+      "start": 73,
+      "end": 89
+     },
+     {
+      "id": "agentHarnessDiagnosticBase",
+      "owner": "agentHarnessDiagnosticBase",
+      "method": null,
+      "start": 91,
+      "end": 111
+     },
+     {
+      "id": "normalizeAgentHarnessAttemptResult",
+      "owner": "normalizeAgentHarnessAttemptResult",
+      "method": null,
+      "start": 113,
+      "end": 154
+     },
+     {
+      "id": "agentRunDiagnosticBase",
+      "owner": "agentRunDiagnosticBase",
+      "method": null,
+      "start": 156,
+      "end": 169
+     },
+     {
+      "id": "emitAgentRunCompleted",
+      "owner": "emitAgentRunCompleted",
+      "method": null,
+      "start": 171,
+      "end": 200
+     },
+     {
+      "id": "agentRunCompletion",
+      "owner": "agentRunCompletion",
+      "method": null,
+      "start": 202,
+      "end": 214
+     },
+     {
+      "id": "withFallbackDiagnosticTrace",
+      "owner": "withFallbackDiagnosticTrace",
+      "method": null,
+      "start": 216,
+      "end": 227
+     },
+     {
+      "id": "emitAgentHarnessRunCompleted",
+      "owner": "emitAgentHarnessRunCompleted",
+      "method": null,
+      "start": 229,
+      "end": 269
+     },
+     {
+      "id": "createAgentHarnessLifecycleDiagnostics",
+      "owner": "createAgentHarnessLifecycleDiagnostics",
+      "method": null,
+      "start": 271,
+      "end": 355
+     },
+     {
+      "id": "createAgentHarnessLifecycleDiagnostics.complete",
+      "owner": "createAgentHarnessLifecycleDiagnostics",
+      "method": "complete",
+      "start": 301,
+      "end": 308
+     },
+     {
+      "id": "createAgentHarnessLifecycleDiagnostics.setPhase",
+      "owner": "createAgentHarnessLifecycleDiagnostics",
+      "method": "setPhase",
+      "start": 314,
+      "end": 316
+     },
+     {
+      "id": "createAgentHarnessLifecycleDiagnostics.startAgentRun",
+      "owner": "createAgentHarnessLifecycleDiagnostics",
+      "method": "startAgentRun",
+      "start": 317,
+      "end": 330
+     },
+     {
+      "id": "createAgentHarnessLifecycleDiagnostics.run",
+      "owner": "createAgentHarnessLifecycleDiagnostics",
+      "method": "run",
+      "start": 331,
+      "end": 333
+     },
+     {
+      "id": "createAgentHarnessLifecycleDiagnostics.fail",
+      "owner": "createAgentHarnessLifecycleDiagnostics",
+      "method": "fail",
+      "start": 334,
+      "end": 353
+     },
+     {
+      "id": "runAgentHarnessLifecycleAttempt",
+      "owner": "runAgentHarnessLifecycleAttempt",
+      "method": null,
+      "start": 357,
+      "end": 423
+     },
+     {
+      "id": "runAgentHarnessLifecycleFinalization",
+      "owner": "runAgentHarnessLifecycleFinalization",
+      "method": null,
+      "start": 425,
+      "end": 486
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/index.ts",
+      "line": 4
+     },
+     {
+      "path": "src/agents/embedded-agent-runner/runner.ts",
+      "line": 12
+     },
+     {
+      "path": "src/gateway/agent-session.ts",
+      "line": 9
+     }
+    ],
+    "overview": {
+     "text": "Wraps every agent-harness execution in diagnostics. Each run gets an outer `harness.run` span and, for any harness other than `openclaw`, a child `run` span. Along the way it normalizes harness results to the canonical terminal-outcome contract and applies the harness's own classification. Prompt and answer text only leave through the private-data channel, and only when the content-capture policy allows it.",
+     "model": "mock"
+    },
+    "hasErrors": false,
+    "module": {
+     "id": "agents-harness",
+     "name": "Agent harness",
+     "color": "#2f6fb0"
+    }
+   }
+  },
+  "src/config/config.ts": {
+   "source": "// config.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function getRuntimeConfigSnapshot(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "getRuntimeConfigSnapshot": {
+     "id": "getRuntimeConfigSnapshot",
+     "owner": "getRuntimeConfigSnapshot",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/config/config.ts",
+    "name": "config.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "6fc24dd967de1ba4",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "95f3bff026c540b4",
+      "name": "getRuntimeConfigSnapshot",
+      "qualifiedName": "getRuntimeConfigSnapshot",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function getRuntimeConfigSnapshot(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "getRuntimeConfigSnapshot"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "getRuntimeConfigSnapshot",
+      "owner": "getRuntimeConfigSnapshot",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 1
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "config",
+     "name": "Config",
+     "color": "#5d7a2a"
+    }
+   }
+  },
+  "src/context-engine/host-compat.ts": {
+   "source": "// host-compat.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function assertContextEngineHostSupport(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "assertContextEngineHostSupport": {
+     "id": "assertContextEngineHostSupport",
+     "owner": "assertContextEngineHostSupport",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/context-engine/host-compat.ts",
+    "name": "host-compat.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "912bdb137d6bac01",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "1eb0d39154985d3d",
+      "name": "assertContextEngineHostSupport",
+      "qualifiedName": "assertContextEngineHostSupport",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function assertContextEngineHostSupport(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "assertContextEngineHostSupport"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "assertContextEngineHostSupport",
+      "owner": "assertContextEngineHostSupport",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 2
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "context-engine",
+     "name": "Context engine",
+     "color": "#a8467a"
+    }
+   }
+  },
+  "src/infra/diagnostic-content.ts": {
+   "source": "// diagnostic-content.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function truncateDiagnosticContent(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "truncateDiagnosticContent": {
+     "id": "truncateDiagnosticContent",
+     "owner": "truncateDiagnosticContent",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/infra/diagnostic-content.ts",
+    "name": "diagnostic-content.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "ae1c89015ae2e043",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "6ba73f8693588559",
+      "name": "truncateDiagnosticContent",
+      "qualifiedName": "truncateDiagnosticContent",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function truncateDiagnosticContent(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "truncateDiagnosticContent"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "truncateDiagnosticContent",
+      "owner": "truncateDiagnosticContent",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 3
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "infra-diagnostics",
+     "name": "Diagnostics",
+     "color": "#b5651d"
+    }
+   }
+  },
+  "src/infra/diagnostic-error-metadata.ts": {
+   "source": "// diagnostic-error-metadata.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function diagnosticErrorCategory(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport function diagnosticErrorMessage(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "diagnosticErrorCategory": {
+     "id": "diagnosticErrorCategory",
+     "owner": "diagnosticErrorCategory",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    },
+    "diagnosticErrorMessage": {
+     "id": "diagnosticErrorMessage",
+     "owner": "diagnosticErrorMessage",
+     "method": null,
+     "start": 7,
+     "end": 9,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 8,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/infra/diagnostic-error-metadata.ts",
+    "name": "diagnostic-error-metadata.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 9,
+    "contentHash": "d7ef9b825e005cf7",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "eb0def505649e301",
+      "name": "diagnosticErrorCategory",
+      "qualifiedName": "diagnosticErrorCategory",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function diagnosticErrorCategory(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "diagnosticErrorCategory"
+     },
+     {
+      "id": "84b146de4b0ec4aa",
+      "name": "diagnosticErrorMessage",
+      "qualifiedName": "diagnosticErrorMessage",
+      "kind": "function",
+      "start": 7,
+      "end": 9,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function diagnosticErrorMessage(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "diagnosticErrorMessage"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "diagnosticErrorCategory",
+      "owner": "diagnosticErrorCategory",
+      "method": null,
+      "start": 3,
+      "end": 5
+     },
+     {
+      "id": "diagnosticErrorMessage",
+      "owner": "diagnosticErrorMessage",
+      "method": null,
+      "start": 7,
+      "end": 9
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 4
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "infra-diagnostics",
+     "name": "Diagnostics",
+     "color": "#b5651d"
+    }
+   }
+  },
+  "src/infra/diagnostic-events.ts": {
+   "source": "// diagnostic-events.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function emitTrustedDiagnosticEvent(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport function emitTrustedDiagnosticEventWithPrivateData(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport type DiagnosticHarnessRunErrorEvent = {\n  id: string;\n  createdAt: number;\n};\n\nexport type DiagnosticHarnessRunOutcome = {\n  id: string;\n  createdAt: number;\n};\n",
+   "flows": {
+    "emitTrustedDiagnosticEvent": {
+     "id": "emitTrustedDiagnosticEvent",
+     "owner": "emitTrustedDiagnosticEvent",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    },
+    "emitTrustedDiagnosticEventWithPrivateData": {
+     "id": "emitTrustedDiagnosticEventWithPrivateData",
+     "owner": "emitTrustedDiagnosticEventWithPrivateData",
+     "method": null,
+     "start": 7,
+     "end": 9,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 8,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/infra/diagnostic-events.ts",
+    "name": "diagnostic-events.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 19,
+    "contentHash": "2e0a10ad5cae2766",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "8361691391bd269a",
+      "name": "emitTrustedDiagnosticEvent",
+      "qualifiedName": "emitTrustedDiagnosticEvent",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function emitTrustedDiagnosticEvent(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "emitTrustedDiagnosticEvent"
+     },
+     {
+      "id": "1d408b67e1418dd7",
+      "name": "emitTrustedDiagnosticEventWithPrivateData",
+      "qualifiedName": "emitTrustedDiagnosticEventWithPrivateData",
+      "kind": "function",
+      "start": 7,
+      "end": 9,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function emitTrustedDiagnosticEventWithPrivateData(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "emitTrustedDiagnosticEventWithPrivateData"
+     }
+    ],
+    "types": [
+     {
+      "id": "23f8cbc0fa0617e3",
+      "name": "DiagnosticHarnessRunErrorEvent",
+      "kind": "type",
+      "start": 11,
+      "end": 14,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     },
+     {
+      "id": "27a4cd568cc7435b",
+      "name": "DiagnosticHarnessRunOutcome",
+      "kind": "type",
+      "start": 16,
+      "end": 19,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     }
+    ],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "emitTrustedDiagnosticEvent",
+      "owner": "emitTrustedDiagnosticEvent",
+      "method": null,
+      "start": 3,
+      "end": 5
+     },
+     {
+      "id": "emitTrustedDiagnosticEventWithPrivateData",
+      "owner": "emitTrustedDiagnosticEventWithPrivateData",
+      "method": null,
+      "start": 7,
+      "end": 9
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 8
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "infra-diagnostics",
+     "name": "Diagnostics",
+     "color": "#b5651d"
+    }
+   }
+  },
+  "src/infra/diagnostic-llm-content.ts": {
+   "source": "// diagnostic-llm-content.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function resolveDiagnosticModelContentCapturePolicy(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "resolveDiagnosticModelContentCapturePolicy": {
+     "id": "resolveDiagnosticModelContentCapturePolicy",
+     "owner": "resolveDiagnosticModelContentCapturePolicy",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/infra/diagnostic-llm-content.ts",
+    "name": "diagnostic-llm-content.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "4f3ce23d31c3e7f2",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "dd332809a1efa69a",
+      "name": "resolveDiagnosticModelContentCapturePolicy",
+      "qualifiedName": "resolveDiagnosticModelContentCapturePolicy",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function resolveDiagnosticModelContentCapturePolicy(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "resolveDiagnosticModelContentCapturePolicy"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "resolveDiagnosticModelContentCapturePolicy",
+      "owner": "resolveDiagnosticModelContentCapturePolicy",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 14
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "infra-diagnostics",
+     "name": "Diagnostics",
+     "color": "#b5651d"
+    }
+   }
+  },
+  "src/infra/diagnostic-trace-context.ts": {
+   "source": "// diagnostic-trace-context.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function createChildDiagnosticTraceContext(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport function freezeDiagnosticTraceContext(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport function getActiveDiagnosticTraceContext(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport function runWithDiagnosticTraceContext(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport type DiagnosticTraceContext = {\n  id: string;\n  createdAt: number;\n};\n",
+   "flows": {
+    "createChildDiagnosticTraceContext": {
+     "id": "createChildDiagnosticTraceContext",
+     "owner": "createChildDiagnosticTraceContext",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    },
+    "freezeDiagnosticTraceContext": {
+     "id": "freezeDiagnosticTraceContext",
+     "owner": "freezeDiagnosticTraceContext",
+     "method": null,
+     "start": 7,
+     "end": 9,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 8,
+       "early": false
+      }
+     ]
+    },
+    "getActiveDiagnosticTraceContext": {
+     "id": "getActiveDiagnosticTraceContext",
+     "owner": "getActiveDiagnosticTraceContext",
+     "method": null,
+     "start": 11,
+     "end": 13,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 12,
+       "early": false
+      }
+     ]
+    },
+    "runWithDiagnosticTraceContext": {
+     "id": "runWithDiagnosticTraceContext",
+     "owner": "runWithDiagnosticTraceContext",
+     "method": null,
+     "start": 15,
+     "end": 17,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 16,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/infra/diagnostic-trace-context.ts",
+    "name": "diagnostic-trace-context.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 22,
+    "contentHash": "ce7b74b3451c77e4",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "9c749b3f3485298a",
+      "name": "createChildDiagnosticTraceContext",
+      "qualifiedName": "createChildDiagnosticTraceContext",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function createChildDiagnosticTraceContext(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "createChildDiagnosticTraceContext"
+     },
+     {
+      "id": "7782f7cb8e96f7ab",
+      "name": "freezeDiagnosticTraceContext",
+      "qualifiedName": "freezeDiagnosticTraceContext",
+      "kind": "function",
+      "start": 7,
+      "end": 9,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function freezeDiagnosticTraceContext(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "freezeDiagnosticTraceContext"
+     },
+     {
+      "id": "a29c791fd5a24306",
+      "name": "getActiveDiagnosticTraceContext",
+      "qualifiedName": "getActiveDiagnosticTraceContext",
+      "kind": "function",
+      "start": 11,
+      "end": 13,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function getActiveDiagnosticTraceContext(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "getActiveDiagnosticTraceContext"
+     },
+     {
+      "id": "fd534a367c5237c7",
+      "name": "runWithDiagnosticTraceContext",
+      "qualifiedName": "runWithDiagnosticTraceContext",
+      "kind": "function",
+      "start": 15,
+      "end": 17,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function runWithDiagnosticTraceContext(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "runWithDiagnosticTraceContext"
+     }
+    ],
+    "types": [
+     {
+      "id": "4e08c672b5b73e76",
+      "name": "DiagnosticTraceContext",
+      "kind": "type",
+      "start": 19,
+      "end": 22,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     }
+    ],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "createChildDiagnosticTraceContext",
+      "owner": "createChildDiagnosticTraceContext",
+      "method": null,
+      "start": 3,
+      "end": 5
+     },
+     {
+      "id": "freezeDiagnosticTraceContext",
+      "owner": "freezeDiagnosticTraceContext",
+      "method": null,
+      "start": 7,
+      "end": 9
+     },
+     {
+      "id": "getActiveDiagnosticTraceContext",
+      "owner": "getActiveDiagnosticTraceContext",
+      "method": null,
+      "start": 11,
+      "end": 13
+     },
+     {
+      "id": "runWithDiagnosticTraceContext",
+      "owner": "runWithDiagnosticTraceContext",
+      "method": null,
+      "start": 15,
+      "end": 17
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 15
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "infra-diagnostics",
+     "name": "Diagnostics",
+     "color": "#b5651d"
+    }
+   }
+  },
+  "src/agents/agent-run-terminal-outcome.ts": {
+   "source": "// agent-run-terminal-outcome.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function normalizeAgentRunAttemptTerminal(...args: unknown[]): unknown {\n  return args[0];\n}\n\nexport function projectAgentRunAttemptTerminal(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "normalizeAgentRunAttemptTerminal": {
+     "id": "normalizeAgentRunAttemptTerminal",
+     "owner": "normalizeAgentRunAttemptTerminal",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    },
+    "projectAgentRunAttemptTerminal": {
+     "id": "projectAgentRunAttemptTerminal",
+     "owner": "projectAgentRunAttemptTerminal",
+     "method": null,
+     "start": 7,
+     "end": 9,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 8,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/agents/agent-run-terminal-outcome.ts",
+    "name": "agent-run-terminal-outcome.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 9,
+    "contentHash": "18925054bd179dcd",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "22a0e6308e876379",
+      "name": "normalizeAgentRunAttemptTerminal",
+      "qualifiedName": "normalizeAgentRunAttemptTerminal",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function normalizeAgentRunAttemptTerminal(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "normalizeAgentRunAttemptTerminal"
+     },
+     {
+      "id": "3d4c3271e1b358c7",
+      "name": "projectAgentRunAttemptTerminal",
+      "qualifiedName": "projectAgentRunAttemptTerminal",
+      "kind": "function",
+      "start": 7,
+      "end": 9,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function projectAgentRunAttemptTerminal(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "projectAgentRunAttemptTerminal"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "normalizeAgentRunAttemptTerminal",
+      "owner": "normalizeAgentRunAttemptTerminal",
+      "method": null,
+      "start": 3,
+      "end": 5
+     },
+     {
+      "id": "projectAgentRunAttemptTerminal",
+      "owner": "projectAgentRunAttemptTerminal",
+      "method": null,
+      "start": 7,
+      "end": 9
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 22
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-core",
+     "name": "Agent core",
+     "color": "#3d8a7a"
+    }
+   }
+  },
+  "src/agents/embedded-agent-runner/run/helpers.ts": {
+   "source": "// helpers.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function resolveFinalMessageRawText(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "resolveFinalMessageRawText": {
+     "id": "resolveFinalMessageRawText",
+     "owner": "resolveFinalMessageRawText",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/agents/embedded-agent-runner/run/helpers.ts",
+    "name": "helpers.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "0a0fdbda7224c88b",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "b09045180ce2331b",
+      "name": "resolveFinalMessageRawText",
+      "qualifiedName": "resolveFinalMessageRawText",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function resolveFinalMessageRawText(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "resolveFinalMessageRawText"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "resolveFinalMessageRawText",
+      "owner": "resolveFinalMessageRawText",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 26
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-runner",
+     "name": "Embedded runner",
+     "color": "#7a5bb5"
+    }
+   }
+  },
+  "src/agents/embedded-agent-runner/run/types.ts": {
+   "source": "// types.ts: mock stub generated from what lifecycle.ts imports.\n\nexport type EmbeddedRunAttemptResult = {\n  id: string;\n  createdAt: number;\n};\n",
+   "flows": {},
+   "view": {
+    "path": "src/agents/embedded-agent-runner/run/types.ts",
+    "name": "types.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 6,
+    "contentHash": "25f8bee3d7cf582e",
+    "layers": 0,
+    "functions": [],
+    "types": [
+     {
+      "id": "d0cb5927a2c9eff0",
+      "name": "EmbeddedRunAttemptResult",
+      "kind": "type",
+      "start": 3,
+      "end": 6,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     }
+    ],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 27
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-runner",
+     "name": "Embedded runner",
+     "color": "#7a5bb5"
+    }
+   }
+  },
+  "src/agents/tools/tts-tool-result-provenance.ts": {
+   "source": "// tts-tool-result-provenance.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function copyCoreTtsAttemptResultProvenance(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "copyCoreTtsAttemptResultProvenance": {
+     "id": "copyCoreTtsAttemptResultProvenance",
+     "owner": "copyCoreTtsAttemptResultProvenance",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/agents/tools/tts-tool-result-provenance.ts",
+    "name": "tts-tool-result-provenance.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "914851d34640246e",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "c957e4603a5ec38a",
+      "name": "copyCoreTtsAttemptResultProvenance",
+      "qualifiedName": "copyCoreTtsAttemptResultProvenance",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function copyCoreTtsAttemptResultProvenance(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "copyCoreTtsAttemptResultProvenance"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "copyCoreTtsAttemptResultProvenance",
+      "owner": "copyCoreTtsAttemptResultProvenance",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 28
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-core",
+     "name": "Agent core",
+     "color": "#3d8a7a"
+    }
+   }
+  },
+  "src/agents/harness/commentary-diagnostics.ts": {
+   "source": "// commentary-diagnostics.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function subscribeAgentCommentaryDiagnostics(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "subscribeAgentCommentaryDiagnostics": {
+     "id": "subscribeAgentCommentaryDiagnostics",
+     "owner": "subscribeAgentCommentaryDiagnostics",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/agents/harness/commentary-diagnostics.ts",
+    "name": "commentary-diagnostics.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "10ffdb795c09d4e4",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "e2b18d29e6ced461",
+      "name": "subscribeAgentCommentaryDiagnostics",
+      "qualifiedName": "subscribeAgentCommentaryDiagnostics",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function subscribeAgentCommentaryDiagnostics(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "subscribeAgentCommentaryDiagnostics"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "subscribeAgentCommentaryDiagnostics",
+      "owner": "subscribeAgentCommentaryDiagnostics",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 29
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-harness",
+     "name": "Agent harness",
+     "color": "#2f6fb0"
+    }
+   }
+  },
+  "src/agents/harness/errors.ts": {
+   "source": "// errors.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function recordAgentHarnessPreflightOwner(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "recordAgentHarnessPreflightOwner": {
+     "id": "recordAgentHarnessPreflightOwner",
+     "owner": "recordAgentHarnessPreflightOwner",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/agents/harness/errors.ts",
+    "name": "errors.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "c90f9d1409af4647",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "55f4d33fd1eb7a0e",
+      "name": "recordAgentHarnessPreflightOwner",
+      "qualifiedName": "recordAgentHarnessPreflightOwner",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function recordAgentHarnessPreflightOwner(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "recordAgentHarnessPreflightOwner"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "recordAgentHarnessPreflightOwner",
+      "owner": "recordAgentHarnessPreflightOwner",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 30
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-harness",
+     "name": "Agent harness",
+     "color": "#2f6fb0"
+    }
+   }
+  },
+  "src/agents/harness/settled-turn-finalization-outcome.ts": {
+   "source": "// settled-turn-finalization-outcome.ts: mock stub generated from what lifecycle.ts imports.\n\nexport class EmptySettledTurnFinalizationError extends Error {\n  constructor(readonly result: unknown) {\n    super(\"EmptySettledTurnFinalizationError\");\n  }\n}\n\nexport type PreparedSettledTurnFinalizationResult = {\n  id: string;\n  createdAt: number;\n};\n",
+   "flows": {},
+   "view": {
+    "path": "src/agents/harness/settled-turn-finalization-outcome.ts",
+    "name": "settled-turn-finalization-outcome.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 12,
+    "contentHash": "018b431838fe966d",
+    "layers": 0,
+    "functions": [],
+    "types": [
+     {
+      "id": "cb970eb59b8d557b",
+      "name": "EmptySettledTurnFinalizationError",
+      "kind": "class",
+      "start": 3,
+      "end": 7,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     },
+     {
+      "id": "aa1d3598e11d3726",
+      "name": "PreparedSettledTurnFinalizationResult",
+      "kind": "type",
+      "start": 9,
+      "end": 12,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     }
+    ],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 31
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-harness",
+     "name": "Agent harness",
+     "color": "#2f6fb0"
+    }
+   }
+  },
+  "src/agents/harness/settled-turn-finalization-result.ts": {
+   "source": "// settled-turn-finalization-result.ts: mock stub generated from what lifecycle.ts imports.\n\nexport function assertSettledTurnFinalizationResult(...args: unknown[]): unknown {\n  return args[0];\n}\n",
+   "flows": {
+    "assertSettledTurnFinalizationResult": {
+     "id": "assertSettledTurnFinalizationResult",
+     "owner": "assertSettledTurnFinalizationResult",
+     "method": null,
+     "start": 3,
+     "end": 5,
+     "async": false,
+     "params": [
+      "...args"
+     ],
+     "tree": [
+      {
+       "t": "exit",
+       "kind": "return",
+       "label": "args[0]",
+       "line": 4,
+       "early": false
+      }
+     ]
+    }
+   },
+   "view": {
+    "path": "src/agents/harness/settled-turn-finalization-result.ts",
+    "name": "settled-turn-finalization-result.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 5,
+    "contentHash": "2ab1af383cd6b039",
+    "layers": 1,
+    "functions": [
+     {
+      "id": "5705aa29c173205e",
+      "name": "assertSettledTurnFinalizationResult",
+      "qualifiedName": "assertSettledTurnFinalizationResult",
+      "kind": "function",
+      "start": 3,
+      "end": 5,
+      "exported": true,
+      "isAsync": false,
+      "signature": "export function assertSettledTurnFinalizationResult(...args: unknown[]): unknown",
+      "doc": null,
+      "level": 0,
+      "calls": [],
+      "calledBy": [],
+      "uses": [],
+      "typeUses": [],
+      "externalCallers": 1,
+      "summary": null,
+      "unit": "assertSettledTurnFinalizationResult"
+     }
+    ],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [
+     {
+      "id": "assertSettledTurnFinalizationResult",
+      "owner": "assertSettledTurnFinalizationResult",
+      "method": null,
+      "start": 3,
+      "end": 5
+     }
+    ],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 35
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-harness",
+     "name": "Agent harness",
+     "color": "#2f6fb0"
+    }
+   }
+  },
+  "src/agents/harness/types.ts": {
+   "source": "// types.ts: mock stub generated from what lifecycle.ts imports.\n\nexport type AgentHarness = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessAttemptParams = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessAttemptParamsV2 = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessAttemptResult = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessSettledTurnFinalizationAttemptParams = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessSettledTurnFinalizationResult = {\n  id: string;\n  createdAt: number;\n};\n",
+   "flows": {},
+   "view": {
+    "path": "src/agents/harness/types.ts",
+    "name": "types.ts",
+    "lang": "typescript",
+    "langLabel": "TypeScript",
+    "monacoLang": "typescript",
+    "tier": "full",
+    "lines": 31,
+    "contentHash": "47c408665d19aab5",
+    "layers": 0,
+    "functions": [],
+    "types": [
+     {
+      "id": "9de6dd896d7cb1d5",
+      "name": "AgentHarness",
+      "kind": "type",
+      "start": 3,
+      "end": 6,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     },
+     {
+      "id": "f3dafd989dcc4b5e",
+      "name": "AgentHarnessAttemptParams",
+      "kind": "type",
+      "start": 8,
+      "end": 11,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     },
+     {
+      "id": "fd26d8784da559c6",
+      "name": "AgentHarnessAttemptParamsV2",
+      "kind": "type",
+      "start": 13,
+      "end": 16,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     },
+     {
+      "id": "08c21decf448b7a7",
+      "name": "AgentHarnessAttemptResult",
+      "kind": "type",
+      "start": 18,
+      "end": 21,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     },
+     {
+      "id": "6e666c51c52edd86",
+      "name": "AgentHarnessSettledTurnFinalizationAttemptParams",
+      "kind": "type",
+      "start": 23,
+      "end": 26,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     },
+     {
+      "id": "647921bac2b922ba",
+      "name": "AgentHarnessSettledTurnFinalizationResult",
+      "kind": "type",
+      "start": 28,
+      "end": 31,
+      "exported": true,
+      "doc": null,
+      "summary": null
+     }
+    ],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [],
+    "importers": [
+     {
+      "path": "src/agents/harness/lifecycle.ts",
+      "line": 36
+     }
+    ],
+    "overview": null,
+    "hasErrors": false,
+    "module": {
+     "id": "agents-harness",
+     "name": "Agent harness",
+     "color": "#2f6fb0"
+    }
+   }
+  },
+  "tools/relay/main.go": {
+   "source": "// Package main runs the event relay: it reads diagnostic events from stdin\n// and forwards them to an HTTP collector in batches.\npackage main\n\nimport (\n\t\"bufio\"\n\t\"encoding/json\"\n\t\"log\"\n\t\"net/http\"\n\t\"os\"\n\t\"time\"\n)\n\n// Event is one diagnostic event as written by the harness.\ntype Event struct {\n\tType      string          `json:\"type\"`\n\tRunID     string          `json:\"runId\"`\n\tTimestamp int64           `json:\"ts\"`\n\tPayload   json.RawMessage `json:\"payload\"`\n}\n\n// Batch collects events until it is full or old enough to flush.\ntype Batch struct {\n\tevents  []Event\n\tstarted time.Time\n\tlimit   int\n}\n\n// NewBatch returns an empty batch that flushes at limit events.\nfunc NewBatch(limit int) *Batch {\n\treturn &Batch{limit: limit, started: time.Now()}\n}\n\n// Add appends an event and reports whether the batch is now full.\nfunc (b *Batch) Add(e Event) bool {\n\tb.events = append(b.events, e)\n\treturn len(b.events) >= b.limit\n}\n\n// Due reports whether the batch has waited longer than max.\nfunc (b *Batch) Due(max time.Duration) bool {\n\treturn len(b.events) > 0 && time.Since(b.started) > max\n}\n\nfunc post(client *http.Client, url string, events []Event) error {\n\tbody, err := json.Marshal(events)\n\tif err != nil {\n\t\treturn err\n\t}\n\tresp, err := client.Post(url, \"application/json\", bytesReader(body))\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn resp.Body.Close()\n}\n\nfunc main() {\n\turl := os.Getenv(\"RELAY_URL\")\n\tclient := &http.Client{Timeout: 5 * time.Second}\n\tbatch := NewBatch(100)\n\tscanner := bufio.NewScanner(os.Stdin)\n\tfor scanner.Scan() {\n\t\tvar e Event\n\t\tif err := json.Unmarshal(scanner.Bytes(), &e); err != nil {\n\t\t\tlog.Printf(\"skip: %v\", err)\n\t\t\tcontinue\n\t\t}\n\t\tif batch.Add(e) || batch.Due(2*time.Second) {\n\t\t\tif err := post(client, url, batch.events); err != nil {\n\t\t\t\tlog.Printf(\"post: %v\", err)\n\t\t\t}\n\t\t\tbatch = NewBatch(100)\n\t\t}\n\t}\n}\n",
+   "flows": {},
+   "view": {
+    "path": "tools/relay/main.go",
+    "name": "main.go",
+    "lang": "go",
+    "langLabel": "Go",
+    "monacoLang": "go",
+    "tier": "outline",
+    "lines": 75,
+    "contentHash": "f479ee650a067d3a",
+    "layers": 0,
+    "functions": [],
+    "types": [],
+    "modules": [
+     {
+      "id": "bufio",
+      "kind": "static",
+      "resolved": null,
+      "external": true,
+      "symbols": [],
+      "line": 6
+     },
+     {
+      "id": "encoding/json",
+      "kind": "static",
+      "resolved": null,
+      "external": true,
+      "symbols": [],
+      "line": 7
+     },
+     {
+      "id": "log",
+      "kind": "static",
+      "resolved": null,
+      "external": true,
+      "symbols": [],
+      "line": 8
+     },
+     {
+      "id": "net/http",
+      "kind": "static",
+      "resolved": null,
+      "external": true,
+      "symbols": [],
+      "line": 9
+     },
+     {
+      "id": "os",
+      "kind": "static",
+      "resolved": null,
+      "external": true,
+      "symbols": [],
+      "line": 10
+     },
+     {
+      "id": "time",
+      "kind": "static",
+      "resolved": null,
+      "external": true,
+      "symbols": [],
+      "line": 11
+     }
+    ],
+    "importsRange": {
+     "start": 5,
+     "end": 12
+    },
+    "outline": [
+     {
+      "name": "Event",
+      "kind": "struct",
+      "start": 15,
+      "end": 20,
+      "depth": 0
+     },
+     {
+      "name": "Batch",
+      "kind": "struct",
+      "start": 23,
+      "end": 27,
+      "depth": 0
+     },
+     {
+      "name": "NewBatch",
+      "kind": "function",
+      "start": 30,
+      "end": 32,
+      "depth": 0
+     },
+     {
+      "name": "Batch.Add",
+      "kind": "method",
+      "start": 35,
+      "end": 38,
+      "depth": 1
+     },
+     {
+      "name": "Batch.Due",
+      "kind": "method",
+      "start": 41,
+      "end": 43,
+      "depth": 1
+     },
+     {
+      "name": "post",
+      "kind": "function",
+      "start": 45,
+      "end": 55,
+      "depth": 0
+     },
+     {
+      "name": "main",
+      "kind": "function",
+      "start": 57,
+      "end": 75,
+      "depth": 0
+     }
+    ],
+    "flowUnits": [],
+    "importers": [],
+    "overview": {
+     "text": "Reads diagnostic events from stdin and forwards them to an HTTP collector in batches of up to 100, or every 2 seconds.",
+     "model": "mock"
+    },
+    "hasErrors": false,
+    "module": {
+     "id": "relay",
+     "name": "Relay (Go)",
+     "color": "#46708f"
+    }
+   }
+  },
+  "README.md": {
+   "source": "# openclaw\n\nAn agent runtime with pluggable harnesses, chat channels and a diagnostics pipeline.\n\n## Layout\n\n- `src/agents`: harnesses, the embedded runner and agent tools.\n- `src/infra`: diagnostic events, trace contexts and content policy.\n- `src/gateway`: the HTTP and WebSocket entry points.\n- `src/channels`: adapters for Slack, Discord and the terminal.\n- `tools/relay`: a small Go service that forwards diagnostic events.\n\n## Diagnostics\n\nEvery harness run is wrapped by `runAgentHarnessLifecycleAttempt`, which emits\n`harness.run.started`, `run.started`, `run.completed` and `harness.run.completed`.\nPrompt and answer text are only attached when the content-capture policy allows it.\n\n## Development\n\n```sh\npnpm install\npnpm test\n```\n",
+   "flows": {},
+   "view": {
+    "path": "README.md",
+    "name": "README.md",
+    "lang": "markdown",
+    "langLabel": "Markdown",
+    "monacoLang": "markdown",
+    "tier": "text",
+    "lines": 24,
+    "contentHash": "60b8481d865ed7f6",
+    "layers": 0,
+    "functions": [],
+    "types": [],
+    "modules": [],
+    "importsRange": null,
+    "outline": [],
+    "flowUnits": [],
+    "importers": [],
+    "overview": null,
+    "hasErrors": false,
+    "module": null
+   }
+  }
+ }
+}

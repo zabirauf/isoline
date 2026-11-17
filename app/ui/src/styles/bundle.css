@@ -1,0 +1,113 @@
+/* Isoline component styles. Every color, font and radius comes from tokens.css. */
+.iso-root { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); }
+.iso-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.iso-stack { display: flex; flex-direction: column; gap: 10px; }
+.iso-root :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.iso-root code, .iso-mono { font-family: var(--font-mono); }
+
+.iso-btn { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 7px; padding: 6px 10px; font: 12.5px var(--font-body); cursor: pointer; }
+.iso-btn:hover { border-color: var(--accent); color: var(--accent); }
+.iso-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.iso-btn-drill { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 3px 8px; font: 12px var(--font-body); color: var(--accent); cursor: pointer; white-space: nowrap; }
+.iso-btn-drill:hover { border-color: var(--accent); }
+.iso-btn-reveal { border: 1px dashed var(--line); background: none; padding: 4px 10px; border-radius: 6px; font: 12.5px var(--font-body); color: var(--accent); cursor: pointer; }
+.iso-btn-reveal:hover { border-style: solid; border-color: var(--accent); }
+
+.iso-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--surface); }
+.iso-seg button { border: 0; background: none; padding: 6px 10px; font: 12.5px var(--font-body); cursor: pointer; color: var(--muted); }
+.iso-seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+.iso-search { width: 280px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: 14px var(--font-body); }
+.iso-search::placeholder { color: var(--muted); }
+
+.iso-stat { font: 12px var(--font-body); padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.iso-stat b { color: var(--ink); font-weight: 600; }
+
+.iso-chip { font: 11.5px var(--font-mono); padding: 1px 7px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.iso-chip:hover { border-color: var(--accent); color: var(--accent); }
+.iso-chip-ext { color: var(--ext); background: var(--ext-soft); border-color: transparent; }
+.iso-chip-ext:hover { border-color: var(--ext); color: var(--ext); }
+.iso-chip-type { font-style: italic; }
+.iso-event { font: 11.5px var(--font-mono); background: var(--accent-soft); color: var(--accent); padding: 1px 7px; border-radius: 4px; }
+.iso-event-err { background: var(--warn-soft); color: var(--warn); }
+.iso-phase { font: 11px var(--font-body); border: 1px dashed var(--muted); color: var(--muted); padding: 0 6px; border-radius: 999px; }
+.iso-pill { font: 600 10.5px var(--font-body); letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+.iso-lvl { font: 600 11px/1 var(--font-mono); padding: 3px 5px; border-radius: 4px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+
+.iso-card { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 9px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+.iso-card-exported { border-left-color: var(--accent); }
+.iso-card-sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.iso-card-dep { border-left-color: var(--accent); background: linear-gradient(90deg, var(--accent-soft), var(--surface) 30%); }
+.iso-card-user { border-left-color: var(--user); background: linear-gradient(90deg, var(--user-soft), var(--surface) 30%); }
+.iso-card-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.iso-fname { font: 600 13.5px var(--font-mono); word-break: break-all; }
+.iso-lines { margin-left: auto; color: var(--muted); font: 12px var(--font-mono); font-variant-numeric: tabular-nums; }
+.iso-desc { margin: 0; max-width: 72ch; }
+.iso-algo { margin: 0; padding-left: 22px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.iso-algo li::marker { color: var(--muted); font: 12px var(--font-mono); }
+.iso-deps { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; font-size: 12px; align-items: baseline; }
+.iso-deps dt { color: var(--muted); }
+.iso-deps dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+
+.iso-note { display: flex; gap: 8px; align-items: flex-start; padding: 5px 8px; border-radius: 6px; background: var(--bg); color: var(--muted); font-size: 12.5px; max-width: 640px; }
+.iso-note-ic { flex: none; width: 16px; height: 16px; border-radius: 50%; font: 700 10.5px/16px var(--font-mono); text-align: center; background: var(--line); color: var(--ink); margin-top: 1px; }
+.iso-note-warn { background: var(--warn-soft); color: var(--ink); }
+.iso-note-warn .iso-note-ic { background: var(--warn); color: var(--surface); border-radius: 3px; }
+
+.iso-code { overflow-x: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 7px; max-width: 640px; }
+.iso-code pre { margin: 0; padding: 8px 0; font: 12px/1.6 var(--font-mono); min-width: max-content; }
+.iso-line { display: flex; padding-right: 14px; }
+.iso-line-n { flex: none; width: 46px; padding-right: 12px; text-align: right; color: var(--tok-com); user-select: none; font-variant-numeric: tabular-nums; }
+.iso-line-hl { background: var(--user-soft); box-shadow: inset 3px 0 0 var(--user); }
+.tk-kw { color: var(--tok-kw); } .tk-str { color: var(--tok-str); } .tk-num { color: var(--tok-num); }
+.tk-com { color: var(--tok-com); font-style: italic; } .tk-type { color: var(--tok-type); } .tk-def { font-weight: 600; }
+.tk-fn { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.tk-x { color: var(--ext); text-decoration: underline dotted; text-underline-offset: 2px; cursor: pointer; }
+
+.iso-flow { max-width: 640px; }
+.iso-step { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center; margin: 5px 0; padding: 6px 10px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--kc); border-radius: 8px; cursor: pointer; }
+.iso-step:hover { box-shadow: 0 0 0 1px var(--kc); }
+.iso-step-cur { box-shadow: 0 0 0 2px var(--kc); }
+.iso-step-num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 600 11px var(--font-mono); background: var(--kc); color: var(--surface); }
+.iso-step-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.iso-step-body code { font-weight: 600; font-size: 12.5px; word-break: break-all; }
+.iso-step-meta { flex-basis: 100%; color: var(--muted); font-size: 11.5px; }
+.iso-await { font: 600 10px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--tok-kw); border: 1px solid var(--tok-kw); border-radius: 4px; padding: 0 4px; }
+.iso-k-fn { --kc: var(--accent); } .iso-k-ext { --kc: var(--ext); } .iso-k-method { --kc: var(--method); } .iso-k-param { --kc: var(--muted); }
+.iso-inner { margin-left: 34px; }
+
+.iso-blk { margin: 8px 0; padding: 4px 10px 6px; border: 1px solid var(--bc); border-radius: 10px; background: var(--bs); }
+.iso-blk-h { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 2px 0; font-size: 12px; }
+.iso-kw { font: 600 10.5px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; background: var(--bc); color: var(--surface); }
+.iso-blk-h code { color: var(--muted); font-size: 11.5px; }
+.iso-b-cond { --bc: var(--cond); --bs: var(--cond-soft); }
+.iso-b-try { --bc: var(--try); --bs: var(--try-soft); }
+.iso-b-catch { --bc: var(--warn); --bs: var(--warn-soft); }
+.iso-b-loop { --bc: var(--loop); --bs: var(--loop-soft); }
+.iso-b-finally { --bc: var(--try); --bs: var(--bg); border-style: dashed; }
+.iso-b-callback { --bc: var(--accent); --bs: var(--bg); border-style: dashed; }
+.iso-b-deferred { --bc: var(--muted); --bs: var(--bg); border-style: dotted; }
+.iso-nocall { color: var(--muted); font-style: italic; font-size: 12px; padding: 3px 2px; }
+.iso-exit { display: flex; gap: 8px; align-items: baseline; margin: 5px 0; font-size: 12px; }
+.iso-exit .iso-kw { background: var(--surface); border: 1px solid var(--muted); color: var(--muted); }
+.iso-exit code { color: var(--muted); font-size: 11.5px; }
+.iso-exit-early .iso-kw { border-color: var(--cond); color: var(--cond); }
+.iso-exit-throw .iso-kw { border-color: var(--warn); color: var(--warn); background: var(--warn-soft); }
+
+.iso-graph text { font-family: var(--font-mono); }
+.iso-node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.iso-node .stripe { fill: var(--accent); stroke: none; }
+.iso-node .nm { font: 600 12px var(--font-mono); fill: var(--ink); }
+.iso-node .cap { font: 10.5px var(--font-body); fill: var(--muted); }
+.iso-node-sel rect.box { stroke: var(--ink); stroke-width: 2; }
+.iso-node-dep rect.box { stroke: var(--accent); stroke-width: 1.6; fill: var(--accent-soft); }
+.iso-node-user rect.box { stroke: var(--user); stroke-width: 1.6; fill: var(--user-soft); }
+.iso-mod .hd { fill: var(--ext-soft); stroke: none; }
+.iso-mod .mp { font: 500 10.5px var(--font-mono); fill: var(--ext); }
+.iso-mod .sym { font: 11px var(--font-mono); fill: var(--ink); }
+.iso-mod circle { fill: var(--ext); }
+.iso-edge { fill: none; stroke: var(--muted); stroke-opacity: .45; stroke-width: 1.2; }
+.iso-edge-dep { stroke: var(--accent); stroke-opacity: 1; stroke-width: 1.8; }
+.iso-edge-user { stroke: var(--user); stroke-opacity: 1; stroke-width: 1.8; }
+.iso-edge-ext { stroke: var(--ext); stroke-opacity: .5; }
+.iso-colhead { font: 600 11px var(--font-display); letter-spacing: .08em; text-transform: uppercase; fill: var(--muted); }

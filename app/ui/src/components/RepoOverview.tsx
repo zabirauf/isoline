@@ -40,14 +40,55 @@ export function RepoOverview({ repo, moduleMap, onModuleRenamed }: { repo: RepoS
           {moduleMap && moduleMap.cycles.length > 0 && <StatPill n={moduleMap.cycles.length} noun="module cycle" />}
         </div>
       </header>
-      <div className="repo-grid">
-        <div className="repo-col">
+      <div className="repo-scroll">
+        <section className="panel map-panel" aria-label="Module map">
+          <div className="rbar">
+            <div className="display-heading">Module map</div>
+            <span className="caption">{moduleMap ? `${plural(moduleMap.modules.length, "module")} · ${plural(moduleMap.edges.length, "dependency", "dependencies")}` : "Loading…"}</span>
+            <div className="gctl">
+              <button type="button" className="iso-btn" aria-label="Zoom out" onClick={() => mapRef.current?.zoomBy(0.8)}>
+                −
+              </button>
+              <button type="button" className="iso-btn" aria-label="Zoom in" onClick={() => mapRef.current?.zoomBy(1.25)}>
+                +
+              </button>
+              <button type="button" className="iso-btn" onClick={() => mapRef.current?.fit()}>
+                Fit
+              </button>
+            </div>
+          </div>
+          <div className="stage">
+            {moduleMap && <ModuleMapCanvas ref={mapRef} map={moduleMap} selected={sel} onSelect={setSel} />}
+            <div className="legend">
+              {selected ? (
+                <div>
+                  <b className="mono">{selected.name}</b> · {selected.role ?? selected.dir} · depends on {plural(deps, "module")}, used by {plural(users, "module")}
+                </div>
+              ) : (
+                <div className="row">
+                  <span>
+                    <i style={{ background: "var(--accent)" }} />
+                    depends on
+                  </span>
+                  <span>
+                    <i style={{ background: "var(--user)" }} />
+                    used by
+                  </span>
+                </div>
+              )}
+              <div>Entry points first; arrows run from a module to what it imports. Scroll to zoom, drag to pan.</div>
+            </div>
+          </div>
+        </section>
+        <div className="repo-panels">
           <section className="panel">
             <div className="eyebrow">Languages</div>
             <table className="langs">
               <thead>
                 <tr>
-                  <th scope="col">Language</th>
+                  <th scope="col">
+                    <span className="sr-only">Language</span>
+                  </th>
                   <th scope="col">Files</th>
                   <th scope="col">Lines</th>
                   <th scope="col">
@@ -85,7 +126,7 @@ export function RepoOverview({ repo, moduleMap, onModuleRenamed }: { repo: RepoS
           {moduleMap && (
             <section className="panel">
               <div className="eyebrow">Modules</div>
-              <ul className="modlist">
+              <ul className={`modlist${mods.length > 8 ? " scrolls" : ""}`}>
                 {mods.slice(0, LIST_LIMIT).map((m) => (
                   <li key={m.id} className={m.id === sel ? "on" : ""}>
                     <ModuleDot color={m.color} />
@@ -126,45 +167,6 @@ export function RepoOverview({ repo, moduleMap, onModuleRenamed }: { repo: RepoS
             </section>
           )}
         </div>
-        <section className="panel map-panel" aria-label="Module map">
-          <div className="rbar">
-            <div className="display-heading">Module map</div>
-            <span className="caption">{moduleMap ? `${plural(moduleMap.modules.length, "module")} · ${plural(moduleMap.edges.length, "dependency", "dependencies")}` : "Loading…"}</span>
-            <div className="gctl">
-              <button type="button" className="iso-btn" aria-label="Zoom out" onClick={() => mapRef.current?.zoomBy(0.8)}>
-                −
-              </button>
-              <button type="button" className="iso-btn" aria-label="Zoom in" onClick={() => mapRef.current?.zoomBy(1.25)}>
-                +
-              </button>
-              <button type="button" className="iso-btn" onClick={() => mapRef.current?.fit()}>
-                Fit
-              </button>
-            </div>
-          </div>
-          <div className="stage">
-            {moduleMap && <ModuleMapCanvas ref={mapRef} map={moduleMap} selected={sel} onSelect={setSel} />}
-            <div className="legend">
-              {selected ? (
-                <div>
-                  <b className="mono">{selected.name}</b> · {selected.role ?? selected.dir} · depends on {plural(deps, "module")}, used by {plural(users, "module")}
-                </div>
-              ) : (
-                <div className="row">
-                  <span>
-                    <i style={{ background: "var(--accent)" }} />
-                    depends on
-                  </span>
-                  <span>
-                    <i style={{ background: "var(--user)" }} />
-                    used by
-                  </span>
-                </div>
-              )}
-              <div>Entry points first; arrows run from a module to what it imports. Scroll to zoom, drag to pan.</div>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

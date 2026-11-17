@@ -194,7 +194,8 @@ export class EditorHost {
     this.firstLine = opts.firstLine;
     this.context = opts.context;
     const uri = monaco.Uri.from({ scheme: "isoline", path: "/" + opts.context.path, query: `n=${++modelSeq}` });
-    this.model = monaco.editor.createModel(opts.text, opts.language, uri);
+    // A trailing newline ends the last line; it does not start another (the backend counts lines that way).
+    this.model = monaco.editor.createModel(opts.text.endsWith("\n") ? opts.text.slice(0, -1) : opts.text, opts.language, uri);
     hosts.set(uri.toString(), this);
     this.editor = monaco.editor.create(opts.container, {
       model: this.model,
@@ -221,7 +222,9 @@ export class EditorHost {
       occurrencesHighlight: "off",
       selectionHighlight: false,
       matchBrackets: "never",
-      guides: { indentation: false },
+      // Brackets stay in ink, as in the prototype; color is reserved for meaning.
+      bracketPairColorization: { enabled: false },
+      guides: { indentation: false, bracketPairs: false, bracketPairsHorizontal: false, highlightActiveBracketPair: false },
       stickyScroll: { enabled: false },
       contextmenu: false,
       links: false,

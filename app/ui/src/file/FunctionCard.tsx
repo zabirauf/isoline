@@ -87,9 +87,13 @@ function FunctionCardImpl(p: FunctionCardProps) {
         <p className="iso-desc">{card.doc}</p>
       ) : (
         <p className="iso-desc no-summary">
-          <code className="sig">{card.signature}</code>
-          <span className="caption">No summary yet.</span>
+          <span className="muted">No summary yet.</span>
         </p>
+      )}
+      {!s && (
+        <code className="card-sig" title={card.signature}>
+          {card.signature}
+        </code>
       )}
       {!brief && s && s.algo.length > 0 && (
         <ol className="iso-algo">

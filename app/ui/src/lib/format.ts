@@ -53,3 +53,36 @@ export function fmtMs(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)} ms`;
   return `${(ms / 1000).toFixed(1)} s`;
 }
+
+/**
+ * Shortens a name in the middle so its distinguishing tail survives:
+ * "native-hook-relay-server.ts" -> "native-ho…y-server.ts". The extension and the last part are
+ * kept whole when they fit.
+ */
+export function middleEllipsis(s: string, max: number): string {
+  if (s.length <= max) return s;
+  if (max <= 1) return "…";
+  const dot = s.lastIndexOf(".");
+  const ext = dot > 0 && s.length - dot <= 6 ? s.slice(dot) : "";
+  const tail = Math.max(ext.length, Math.ceil((max - 1) * 0.55));
+  const head = max - 1 - tail;
+  if (head < 1) return "…" + s.slice(s.length - (max - 1));
+  return s.slice(0, head) + "…" + s.slice(s.length - tail);
+}
+
+/** Longest middle-ellipsized form of `s` whose measured width fits `px`. */
+export function fitMiddle(s: string, px: number, measure: (t: string) => number): string {
+  if (measure(s) <= px) return s;
+  let lo = 1;
+  let hi = s.length - 1;
+  let best = "…";
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const t = middleEllipsis(s, mid);
+    if (measure(t) <= px) {
+      best = t;
+      lo = mid + 1;
+    } else hi = mid - 1;
+  }
+  return best;
+}

@@ -156,17 +156,22 @@ export function App() {
   return (
     <div className="app">
       <header className="appbar">
-        <button type="button" className="wordmark" onClick={() => setFile(null)} title={repo ? "Repo overview" : undefined} disabled={!repo}>
-          Isoline
-        </button>
+        {/* The native window's title bar already says "Isoline"; the wordmark is for the browser. */}
+        {mode !== "tauri" && (
+          <button type="button" className="wordmark" onClick={() => setFile(null)} title={repo ? "Repo overview" : undefined} disabled={!repo}>
+            Isoline
+          </button>
+        )}
         {repo && (
           <button type="button" className="reponame" onClick={() => setFile(null)} title={`${repo.root}: show the repo overview`}>
             {repo.name}
           </button>
         )}
-        <button type="button" className="iso-btn" onClick={() => void pickRepo()} disabled={busy}>
-          Open repo
-        </button>
+        {repo && (
+          <button type="button" className="iso-btn" onClick={() => void pickRepo()} disabled={busy}>
+            Open repo…
+          </button>
+        )}
         {repo && (
           <button type="button" className="iso-btn" aria-pressed={sidebar} onClick={() => setSidebar(!sidebar)}>
             Files
@@ -179,6 +184,11 @@ export function App() {
         )}
         <SearchBox enabled={!!repo} onPick={onSearchPick} />
         <div className="status" aria-live="polite">
+          {mode === "mock" && (
+            <span className="mock-tag" title="Running in a browser against the mock backend: the data is the prototype's sample repo.">
+              mock data
+            </span>
+          )}
           {progress && (
             <span className="indexing" title={progress.current ?? undefined}>
               {indexing ? (
@@ -231,7 +241,6 @@ export function App() {
           {showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} />}
         </main>
       </div>
-      {mode === "mock" && <div className="mock-badge" title="Running in a browser against the mock backend">Mock data</div>}
     </div>
   );
 }

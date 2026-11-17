@@ -87,14 +87,26 @@ export function generateModuleMap(n: number): RawModuleMap {
       lines: 100 + Math.floor(r() * 8000),
     };
   });
+  // Layered like a real codebase: a dozen or so depths, each module importing one to three
+  // modules one to three layers further down, plus a few edges back that make two-module cycles.
+  const layers = Math.max(3, Math.round(Math.log2(Math.max(2, n)) * 1.2));
+  const layerOf = (i: number) => Math.floor((i * layers) / n);
+  const firstOf = (l: number) => Math.ceil((l * n) / layers);
   const edges: { from: string; to: string; weight: number }[] = [];
   for (let i = 0; i < n; i++) {
-    const k = 1 + Math.floor(r() * 2.4);
+    const l = layerOf(i);
+    if (l === layers - 1) continue;
+    const k = 1 + Math.floor(r() * 3);
     for (let j = 0; j < k; j++) {
-      // Mostly forward edges (a DAG with depth), a few back edges make cycles.
-      const span = Math.max(1, Math.floor(n / 6));
-      const t = r() < 0.03 ? Math.floor(r() * n) : Math.min(n - 1, i + 1 + Math.floor(r() * span));
-      if (t !== i) edges.push({ from: `m${i}`, to: `m${t}`, weight: 1 + Math.floor(r() * 6) });
+      const tl = Math.min(layers - 1, l + 1 + Math.floor(r() * r() * 3));
+      const a = firstOf(tl);
+      const b = Math.min(n, firstOf(tl + 1));
+      const t = a + Math.floor(r() * Math.max(1, b - a));
+      if (t !== i && t < n) {
+        edges.push({ from: `m${i}`, to: `m${t}`, weight: 1 + Math.floor(r() * 6) });
+        // Now and then the dependency points back too: a two-module cycle.
+        if (r() < 0.01) edges.push({ from: `m${t}`, to: `m${i}`, weight: 1 });
+      }
     }
   }
   return { modules, edges, cycles: [] };

@@ -2,7 +2,7 @@
 // with the prototype's spine, staggered landing and fly-in from the map.
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import type { FlowUnit } from "../ipc/bindings/FlowUnit";
-import { drillOf, exitKeyword, flowStats, keyOf, KIND_CLASS, metaFor, numberFlow, STAT_LABELS, staggerMs, unitTitle, type FlowNode } from "../lib/flow";
+import { drillOf, exitKeyword, flowStats, keyOf, KIND_CLASS, metaParts, numberFlow, spinePath, STAT_LABELS, staggerMs, unitTitle, type CallItem, type FlowNode } from "../lib/flow";
 import { lineRange } from "../lib/format";
 import { prefersReducedMotion } from "../lib/theme";
 import { StatPill } from "../components/ui";
@@ -67,12 +67,16 @@ export function CallFlow(p: CallFlowProps) {
       return { x: r.left - br.left + r.width / 2, y1: r.top - br.top, y2: r.bottom - br.top };
     });
     const on = new Set([...sp.querySelectorAll(".sp-seg.on")].map((s) => s.getAttribute("data-i")));
+    // Frames with no steps in them: the spine goes around them, never through their header or "no calls".
+    const empty = [...body.querySelectorAll<HTMLElement>(".ftree .iso-blk")]
+      .filter((b) => !b.querySelector(".iso-step"))
+      .map((b) => {
+        const r = b.getBoundingClientRect();
+        return { left: r.left - br.left, right: r.right - br.left, top: r.top - br.top, bottom: r.bottom - br.top };
+      });
     let h = "";
     for (let i = 1; i < pts.length; i++) {
-      const a = pts[i - 1];
-      const b = pts[i];
-      const ym = b.y1 - 7;
-      h += `<path class="sp-seg${on.has(String(i)) ? " on" : ""}" data-i="${i}" pathLength="1" d="M${a.x},${a.y2} L${a.x},${ym} L${b.x},${ym} L${b.x},${b.y1}"/>`;
+      h += `<path class="sp-seg${on.has(String(i)) ? " on" : ""}" data-i="${i}" pathLength="1" d="${spinePath(pts[i - 1], pts[i], empty)}"/>`;
     }
     sp.innerHTML = h;
   };
@@ -213,13 +217,15 @@ export function CallFlow(p: CallFlowProps) {
         <div className="fbody" ref={bodyRef} onClick={onClick} onKeyDown={onKeyDown}>
           <header className="fentry">
             <div className="sig">
-              <span className="kw">
-                {unit.async ? "async " : ""}
-                {unit.method ? "method" : "function"}
+              <span className="sigtext">
+                <span className="kw">
+                  {unit.async ? "async " : ""}
+                  {unit.method ? "method" : "function"}
+                </span>{" "}
+                <code>
+                  {unit.method ?? unit.id}({unit.params.join(", ")})
+                </code>
               </span>
-              <code>
-                {unit.method ?? unit.id}({unit.params.join(", ")})
-              </code>
               <span className="iso-lines">{lineRange(unit.start, unit.end)}</span>
             </div>
             {unit.method && (
@@ -263,7 +269,7 @@ function renderNodes(nodes: FlowNode[], units: ReadonlySet<string>, cur: number)
             <span className="iso-step-body">
               <code>{it.label}()</code>
               {it.await && <span className="iso-await">await</span>}
-              <span className="iso-step-meta">{metaFor(it)}</span>
+              <StepMeta it={it} />
             </span>
             {d ? (
               <button type="button" className="iso-btn-drill" data-unit={d} title={`Show the calls inside ${it.label}()`}>
@@ -313,6 +319,19 @@ function renderNodes(nodes: FlowNode[], units: ReadonlySet<string>, cur: number)
       </div>
     );
   });
+}
+
+function StepMeta({ it }: { it: CallItem }) {
+  return (
+    <span className="iso-step-meta">
+      {metaParts(it).map((bit, i) => (
+        <Fragment key={i}>
+          {i > 0 && " · "}
+          {bit.map((p, j) => (p.mono ? <code key={j}>{p.text}</code> : <Fragment key={j}>{p.text}</Fragment>))}
+        </Fragment>
+      ))}
+    </span>
+  );
 }
 
 function Sw({ c, s, dashed }: { c: string; s?: string; dashed?: boolean }) {

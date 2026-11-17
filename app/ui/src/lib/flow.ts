@@ -95,20 +95,42 @@ export const KIND_CLASS: Record<FlowTarget["kind"], string> = {
   other: "iso-k-param",
 };
 
-/** The meta line under a step: origin in words, then argument context, then the line. */
-export function metaFor(it: CallItem): string {
+/** One run of a meta line: prose in the body face, paths, identifiers and lines in mono. */
+export interface MetaPart {
+  text: string;
+  mono: boolean;
+}
+
+/** The meta line under a step, as parts: origin, then argument context, then the line. */
+export function metaParts(it: CallItem): MetaPart[][] {
   const t = it.target;
-  const bits: string[] = [];
-  if (t.kind === "fn") bits.push("this file");
-  else if (t.kind === "ext") bits.push(t.module ? shortPath(t.module) : "external import");
-  else if (t.kind === "method") bits.push(t.unit ? "controller method" : (t.note ?? "method"));
-  else if (t.kind === "local") bits.push("local helper");
-  else if (t.kind === "param") bits.push("parameter");
-  else if (t.kind === "builtin") bits.push("built-in");
-  if (it.argOf) bits.push(it.argOf === "(condition)" ? "evaluated in the condition" : `argument to ${it.argOf}()`);
-  if (it.optional) bits.push("optional call");
-  bits.push("L" + it.line);
-  return bits.join(" · ");
+  const prose = (text: string): MetaPart[] => [{ text, mono: false }];
+  const bits: MetaPart[][] = [];
+  if (t.kind === "fn") bits.push(prose("this file"));
+  else if (t.kind === "ext") bits.push(t.module ? [{ text: shortPath(t.module), mono: true }] : prose("external import"));
+  else if (t.kind === "method") bits.push(prose(t.unit ? "controller method" : (t.note ?? "method")));
+  else if (t.kind === "local") bits.push(prose("local helper"));
+  else if (t.kind === "param") bits.push(prose("parameter"));
+  else if (t.kind === "builtin") bits.push(prose("built-in"));
+  if (it.argOf)
+    bits.push(
+      it.argOf === "(condition)"
+        ? prose("evaluated in the condition")
+        : [
+            { text: "argument to ", mono: false },
+            { text: `${it.argOf}()`, mono: true },
+          ],
+    );
+  if (it.optional) bits.push(prose("optional call"));
+  bits.push([{ text: "L" + it.line, mono: true }]);
+  return bits;
+}
+
+/** The meta line as plain text. */
+export function metaFor(it: CallItem): string {
+  return metaParts(it)
+    .map((b) => b.map((p) => p.text).join(""))
+    .join(" · ");
 }
 
 /** Unit id to drill into from a step, when the callee's own flow can be shown. */
@@ -138,4 +160,30 @@ export function unitTitle(u: Pick<FlowUnit, "id" | "method">): string {
 /** Stagger between steps so a whole flow lands in about one second. */
 export function staggerMs(stepCount: number): number {
   return Math.max(12, Math.min(40, 480 / Math.max(1, stepCount)));
+}
+
+export interface SpinePoint {
+  x: number;
+  y1: number;
+  y2: number;
+}
+export interface Box {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+/**
+ * Path of one spine segment from the bottom of step a's number to the top of step b's.
+ * It drops from a, runs across just above b, then down into b. When an empty frame sits in the
+ * way of the drop, the segment steps left of that frame and comes down beside it instead.
+ */
+export function spinePath(a: SpinePoint, b: SpinePoint, empty: Box[]): string {
+  const ym = b.y1 - 7;
+  const blockers = empty.filter((e) => e.top >= a.y2 - 1 && e.bottom <= ym + 1 && e.left <= a.x && a.x <= e.right);
+  if (!blockers.length) return `M${a.x},${a.y2} L${a.x},${ym} L${b.x},${ym} L${b.x},${b.y1}`;
+  const top = Math.min(...blockers.map((e) => e.top)) - 4;
+  const dx = Math.max(1, Math.min(...blockers.map((e) => e.left)) - 5);
+  return `M${a.x},${a.y2} L${a.x},${top} L${dx},${top} L${dx},${ym} L${b.x},${ym} L${b.x},${b.y1}`;
 }

@@ -1,0 +1,32 @@
+{
+  "Program.cs": {
+    "symbols": [
+      {"name": "Demo.App", "qualified_name": "Demo.App", "kind": "module", "start_line": 5, "end_line": 28,
+       "signature": "namespace Demo.App", "exported": false},
+      {"name": "Program", "qualified_name": "Demo.App.Program", "kind": "class", "start_line": 8, "end_line": 17,
+       "signature": "public class Program", "doc": "<summary>Entry point.</summary>", "exported": true,
+       "parent": "Demo.App"},
+      {"name": "Name", "qualified_name": "Demo.App.Program.Name", "kind": "field", "start_line": 10, "end_line": 10,
+       "signature": "public string Name { get; set; }", "exported": true, "parent": "Demo.App.Program"},
+      {"name": "Main", "qualified_name": "Demo.App.Program.Main", "kind": "method", "start_line": 12, "end_line": 16,
+       "signature": "public static void Main(string[] args)", "exported": true, "parent": "Demo.App.Program"},
+      {"name": "Point", "qualified_name": "Demo.App.Point", "kind": "struct", "start_line": 19, "end_line": 22,
+       "signature": "internal struct Point", "exported": false, "parent": "Demo.App"},
+      {"name": "IShape", "qualified_name": "Demo.App.IShape", "kind": "interface", "start_line": 24, "end_line": 27,
+       "signature": "public interface IShape", "exported": true, "parent": "Demo.App"},
+      {"name": "Area", "qualified_name": "Demo.App.IShape.Area", "kind": "method", "start_line": 26, "end_line": 26,
+       "signature": "double Area()", "exported": false, "parent": "Demo.App.IShape"}
+    ],
+    "imports": [
+      {"specifier": "System", "kind": "static", "names": [{"name": "*"}], "line": 1},
+      {"specifier": "System.Collections.Generic", "kind": "static", "names": [{"name": "*"}], "line": 2},
+      {"specifier": "System.Text.Json.JsonSerializer", "kind": "static",
+       "names": [{"name": "JsonSerializer", "alias": "Json"}], "line": 3}
+    ],
+    "calls": [
+      {"caller": "Demo.App.Program.Main", "callee": "new List<int>", "name": "List", "line": 14},
+      {"caller": "Demo.App.Program.Main", "callee": "Console.WriteLine", "name": "WriteLine", "receiver": "Console", "line": 15},
+      {"caller": "Demo.App.Program.Main", "callee": "Json.Serialize", "name": "Serialize", "receiver": "Json", "line": 15}
+    ]
+  }
+}

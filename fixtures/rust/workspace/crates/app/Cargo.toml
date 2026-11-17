@@ -1,0 +1,9 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+core-lib = { path = "../core-lib" }
+shapes = { package = "core-lib", path = "../core-lib" }
+serde = "1"

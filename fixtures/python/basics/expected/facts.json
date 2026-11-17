@@ -1,0 +1,51 @@
+{
+  "shapes.py": {
+    "symbols": [
+      {"name": "MAX_RADIUS", "qualified_name": "MAX_RADIUS", "kind": "constant", "start_line": 15, "end_line": 15,
+       "signature": "MAX_RADIUS = 100", "exported": true},
+      {"name": "_DEFAULT", "qualified_name": "_DEFAULT", "kind": "constant", "start_line": 16, "end_line": 16,
+       "signature": "_DEFAULT = 1.0", "exported": false},
+      {"name": "area", "qualified_name": "area", "kind": "function", "start_line": 19, "end_line": 21,
+       "signature": "def area(r: float) -> float", "doc": "Area of a circle.", "exported": true,
+       "params": ["r"]},
+      {"name": "Circle", "qualified_name": "Circle", "kind": "class", "start_line": 24, "end_line": 43,
+       "signature": "@dataclass class Circle(Base)", "doc": "A circle.\n\nHas a radius.", "exported": true},
+      {"name": "grow", "qualified_name": "Circle.grow", "kind": "method", "start_line": 33, "end_line": 38,
+       "signature": "def grow(self, by=1, *args, **kw) -> Circle", "exported": false,
+       "params": ["self", "by = …", "*args", "**kw"], "parent": "Circle"},
+      {"name": "bump", "qualified_name": "Circle.grow.bump", "kind": "function", "start_line": 34, "end_line": 35,
+       "signature": "def bump(x)", "exported": false, "params": ["x"], "parent": "Circle.grow"},
+      {"name": "load", "qualified_name": "Circle.load", "kind": "method", "start_line": 40, "end_line": 43,
+       "signature": "@property async def load(self, model: Optional[Model] = None)", "exported": false,
+       "is_async": true, "params": ["self", "model = …"], "parent": "Circle"},
+      {"name": "helper", "qualified_name": "helper", "kind": "function", "start_line": 46, "end_line": 47,
+       "signature": "def helper()", "exported": false}
+    ],
+    "imports": [
+      {"specifier": "__future__", "kind": "static", "names": [{"name": "annotations"}], "line": 2},
+      {"specifier": "math", "kind": "static", "names": [{"name": "math"}], "line": 4},
+      {"specifier": "os.path", "kind": "static", "names": [{"name": "os.path"}], "line": 5},
+      {"specifier": "numpy", "kind": "static", "names": [{"name": "numpy", "alias": "np"}], "line": 6},
+      {"specifier": "typing", "kind": "static", "names": [{"name": "TYPE_CHECKING"}, {"name": "Optional"}], "line": 7},
+      {"specifier": ".util", "kind": "static", "names": [{"name": "clamp", "alias": "_clamp"}, {"name": "scale"}], "line": 8},
+      {"specifier": ".models", "kind": "static", "names": [{"name": "Model"}], "type_only": true, "line": 11}
+    ],
+    "calls": [
+      {"caller": "area", "callee": "_clamp", "name": "_clamp", "line": 21},
+      {"caller": "Circle.grow.bump", "callee": "scale", "name": "scale", "line": 35},
+      {"caller": "Circle.grow", "callee": "bump", "name": "bump", "line": 37},
+      {"caller": "Circle.load", "callee": "np.load", "name": "load", "receiver": "np", "line": 42},
+      {"caller": "Circle.load", "callee": "os.path.join", "name": "join", "receiver": "os.path", "line": 42}
+    ],
+    "refs": [
+      {"from": null, "name": "TYPE_CHECKING", "type_position": false, "line": 10},
+      {"from": "area", "name": "math", "type_position": false, "line": 21},
+      {"from": "area", "name": "MAX_RADIUS", "type_position": false, "line": 21},
+      {"from": "Circle", "name": "_DEFAULT", "type_position": false, "line": 31},
+      {"from": "Circle.grow", "name": "Circle", "type_position": true, "line": 33},
+      {"from": "Circle.load", "name": "Optional", "type_position": true, "line": 41},
+      {"from": "Circle.load", "name": "Model", "type_position": true, "line": 41},
+      {"from": "helper", "name": "area", "type_position": false, "line": 47}
+    ]
+  }
+}

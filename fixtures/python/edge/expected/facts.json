@@ -1,0 +1,45 @@
+{
+  "edge.py": {
+    "symbols": [
+      {"name": "Alias", "qualified_name": "Alias", "kind": "type", "start_line": 6, "end_line": 6,
+       "signature": "type Alias = list[Widget]", "exported": true},
+      {"name": "VERSION", "qualified_name": "VERSION", "kind": "constant", "start_line": 7, "end_line": 7,
+       "signature": "VERSION: str = \"1.0\"", "exported": true},
+      {"name": "Widget", "qualified_name": "Widget", "kind": "class", "start_line": 10, "end_line": 20,
+       "signature": "class Widget", "exported": true},
+      {"name": "__init__", "qualified_name": "Widget.__init__", "kind": "method", "start_line": 11, "end_line": 12,
+       "signature": "def __init__(self, a)", "exported": false, "params": ["self", "a"], "parent": "Widget"},
+      {"name": "size", "qualified_name": "Widget.size", "kind": "method", "start_line": 14, "end_line": 16,
+       "signature": "@property def size(self)", "exported": false, "params": ["self"], "parent": "Widget"},
+      {"name": "size", "qualified_name": "Widget.size#2", "kind": "method", "start_line": 18, "end_line": 20,
+       "signature": "@size.setter def size(self, value)", "exported": false, "params": ["self", "value"],
+       "parent": "Widget"},
+      {"name": "index", "qualified_name": "index", "kind": "function", "start_line": 23, "end_line": 25,
+       "signature": "@app.route(\"/\") def index(sibling)", "exported": true, "params": ["sibling"]},
+      {"name": "_private", "qualified_name": "_private", "kind": "function", "start_line": 28, "end_line": 31,
+       "signature": "def _private()", "exported": false},
+      {"name": "Inner", "qualified_name": "_private.Inner", "kind": "class", "start_line": 29, "end_line": 30,
+       "signature": "class Inner(Widget)", "exported": false, "parent": "_private"}
+    ],
+    "imports": [
+      {"specifier": "a", "kind": "static", "names": [{"name": "a"}], "line": 1},
+      {"specifier": "b.c", "kind": "static", "names": [{"name": "b.c", "alias": "bc"}], "line": 1},
+      {"specifier": ".", "kind": "static", "names": [{"name": "sibling"}], "line": 2},
+      {"specifier": "..pkg.mod", "kind": "static", "names": [{"name": "y", "alias": "z"}], "line": 3},
+      {"specifier": "x", "kind": "static", "names": [{"name": "*"}], "line": 4}
+    ],
+    "calls": [
+      {"caller": "index", "callee": "app.route", "name": "route", "receiver": "app", "line": 23},
+      {"caller": "index", "callee": "sibling.render", "name": "render", "receiver": "sibling", "line": 25},
+      {"caller": "index", "callee": "z", "name": "z", "line": 25},
+      {"caller": "index", "callee": "Widget", "name": "Widget", "line": 25},
+      {"caller": null, "callee": "index", "name": "index", "line": 34},
+      {"caller": null, "callee": "index", "name": "index", "line": 35}
+    ],
+    "refs": [
+      {"from": "Alias", "name": "Widget", "type_position": true, "line": 6},
+      {"from": "_private.Inner", "name": "Widget", "type_position": false, "line": 29},
+      {"from": null, "name": "VERSION", "type_position": false, "line": 35}
+    ]
+  }
+}

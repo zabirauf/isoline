@@ -26,12 +26,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Both macOS builds run on the Intel pool: hosted Apple-silicon runners are often at
+          # capacity and drop queued jobs after 15 minutes. arm64 is cross-compiled.
           - name: macos-arm64
-            os: macos-latest
+            os: macos-15-intel
             target: aarch64-apple-darwin
             bundles: app
           - name: macos-x64
-            os: macos-latest
+            os: macos-15-intel
             target: x86_64-apple-darwin
             bundles: app
           - name: windows-x64

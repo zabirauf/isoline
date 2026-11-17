@@ -286,6 +286,10 @@ impl Engine {
                 Ok(())
             })?;
         }
+        // The tree can paint now: every file is listed, pending until parsed.
+        if full && !added_paths.is_empty() {
+            self.emit(Event::TreeChanged);
+        }
 
         // ---- 2. parse through the priority queue
         let t_parse = Instant::now();
@@ -450,6 +454,9 @@ impl Engine {
                 }
                 Ok(())
             })?;
+        }
+        if !added_paths.is_empty() || !deleted.is_empty() {
+            self.emit(Event::TreeChanged);
         }
         rep.ms_parse = t_parse.elapsed().as_millis() as u64;
         rep.facts_changed = facts_changed.len() as u32;
@@ -914,7 +921,12 @@ impl Engine {
     /// Resolvers are built once per engine. Adding or removing ordinary files updates them in
     /// place; only manifest changes (package.json, tsconfig, pyproject, Cargo.toml,
     /// __init__.py) or very large changes rebuild them.
-    fn resolvers(&self, files: &[FileRow], added: &[String], removed: &[String]) -> Arc<Resolvers> {
+    pub(crate) fn resolvers(
+        &self,
+        files: &[FileRow],
+        added: &[String],
+        removed: &[String],
+    ) -> Arc<Resolvers> {
         let mut st = self.state.lock();
         if let Some((_, r)) = &st.resolvers {
             if added.is_empty() && removed.is_empty() {

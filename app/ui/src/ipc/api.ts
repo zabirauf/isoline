@@ -18,6 +18,11 @@ import type { RepoSummary } from "./bindings/RepoSummary";
 import type { SearchHit } from "./bindings/SearchHit";
 import type { SourceSlice } from "./bindings/SourceSlice";
 import type { TreeNode } from "./bindings/TreeNode";
+import type { Comparison } from "./bindings/Comparison";
+import type { FileDiffText } from "./bindings/FileDiffText";
+import type { GitRefs } from "./bindings/GitRefs";
+import type { GitStatus } from "./bindings/GitStatus";
+import type { PullRequests } from "./bindings/PullRequests";
 
 /** Payloads of the events the backend emits. */
 export interface BackendEvents {
@@ -28,6 +33,10 @@ export interface BackendEvents {
   job_progress: JobsState;
   /** Repo-relative paths whose facts changed after a save (watcher). */
   files_changed: string[];
+  /** The file set changed: right after the first walk lists the files, and on adds and removes. */
+  tree_changed: null;
+  /** HEAD or the branch changed (switch, fetch, or outside the app). */
+  git_changed: GitStatus;
 }
 export type EventName = keyof BackendEvents;
 export type Unlisten = () => void;
@@ -62,6 +71,15 @@ export interface Backend {
   recentRepos(): Promise<string[]>;
   /** Repo and file to open at launch: command-line arguments in Tauri, `?repo=`/`?open=` elsewhere. */
   launchArgs(): Promise<LaunchArgs>;
+  gitStatus(): Promise<GitStatus>;
+  gitRefs(): Promise<GitRefs>;
+  /** Switch to a branch; `origin/foo` makes or reuses a local tracking branch `foo`. */
+  gitSwitch(name: string, create: boolean): Promise<GitStatus>;
+  gitFetch(): Promise<GitStatus>;
+  gitPrs(): Promise<PullRequests>;
+  /** `head` may be "worktree"; with `pr`, base and head are ignored. */
+  compare(base: string, head: string, threeDot: boolean, pr?: number): Promise<Comparison>;
+  compareFile(base: string, head: string, path: string, oldPath?: string): Promise<FileDiffText>;
   /** Folder picker: the dialog plugin in Tauri, a fixed answer in the mock. */
   pickFolder(): Promise<string | null>;
   listen<E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void): Promise<Unlisten>;
@@ -95,6 +113,13 @@ async function createTauriBackend(): Promise<Backend> {
     getJobs: () => call("get_jobs"),
     renameModule: (id, name, color) => call("rename_module", { id, name: name ?? null, color: color ?? null }),
     recentRepos: () => call("recent_repos"),
+    gitStatus: () => call("git_status"),
+    gitRefs: () => call("git_refs"),
+    gitSwitch: (name, create) => call("git_switch", { name, create }),
+    gitFetch: () => call("git_fetch"),
+    gitPrs: () => call("git_prs"),
+    compare: (base, head, threeDot, pr) => call("compare", { base, head, threeDot, pr: pr ?? null }),
+    compareFile: (base, head, path, oldPath) => call("compare_file", { base, head, path, oldPath: oldPath ?? null }),
     launchArgs: () => call("launch_args"),
     pickFolder: async () => {
       const { open } = await import("@tauri-apps/plugin-dialog");
@@ -146,6 +171,13 @@ function createHttpBackend(): Backend {
     getJobs: () => call("get_jobs"),
     renameModule: (id, name, color) => call("rename_module", { id, name: name ?? null, color: color ?? null }),
     recentRepos: () => call("recent_repos"),
+    gitStatus: () => call("git_status"),
+    gitRefs: () => call("git_refs"),
+    gitSwitch: (name, create) => call("git_switch", { name, create }),
+    gitFetch: () => call("git_fetch"),
+    gitPrs: () => call("git_prs"),
+    compare: (base, head, threeDot, pr) => call("compare", { base, head, threeDot, pr: pr ?? null }),
+    compareFile: (base, head, path, oldPath) => call("compare_file", { base, head, path, oldPath: oldPath ?? null }),
     launchArgs: async () => urlLaunchArgs(),
     pickFolder: async () => window.prompt("Repo folder") || null,
     listen: async (event, cb) => {
@@ -195,6 +227,13 @@ export const api = {
   renameModule: async (id: string, name?: string, color?: string) => (await backend()).renameModule(id, name, color),
   recentRepos: async () => (await backend()).recentRepos(),
   pickFolder: async () => (await backend()).pickFolder(),
+  gitStatus: async () => (await backend()).gitStatus(),
+  gitRefs: async () => (await backend()).gitRefs(),
+  gitSwitch: async (name: string, create: boolean) => (await backend()).gitSwitch(name, create),
+  gitFetch: async () => (await backend()).gitFetch(),
+  gitPrs: async () => (await backend()).gitPrs(),
+  compare: async (base: string, head: string, threeDot: boolean, pr?: number) => (await backend()).compare(base, head, threeDot, pr),
+  compareFile: async (base: string, head: string, path: string, oldPath?: string) => (await backend()).compareFile(base, head, path, oldPath),
   launchArgs: async () => (await backend()).launchArgs(),
   listen: async <E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void) => (await backend()).listen(event, cb),
 };

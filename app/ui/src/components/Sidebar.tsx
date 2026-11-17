@@ -49,8 +49,58 @@ function filtered(root: TreeNode, q: string): Row[] {
   return out;
 }
 
-function countFiles(n: TreeNode): number {
-  return n.isDir ? n.children.reduce((s, c) => s + countFiles(c), 0) : 1;
+/** Files under every folder, by path ("" is the root). */
+function folderCounts(root: TreeNode): Map<string, number> {
+  const m = new Map<string, number>();
+  const walk = (n: TreeNode): number => {
+    if (!n.isDir) return 1;
+    let s = 0;
+    for (const c of n.children) s += walk(c);
+    m.set(n.path, s);
+    return s;
+  };
+  walk(root);
+  return m;
+}
+
+/**
+ * Folders open at first sight: none, except a chain of lone folders at the top (a repo whose
+ * only folder is `src/` opens it, and `src/main/` below it when that is alone too).
+ */
+export function defaultExpanded(root: TreeNode): Set<string> {
+  const out = new Set<string>();
+  let n: TreeNode | undefined = root;
+  for (let depth = 0; n && depth < 6; depth++) {
+    const dirs: TreeNode[] = n.children.filter((c) => c.isDir);
+    if (dirs.length !== 1) break;
+    // Below the root, keep going only while the folder holds nothing but that one folder.
+    if (depth > 0 && n.children.length !== 1) break;
+    out.add(dirs[0].path);
+    n = dirs[0];
+  }
+  return out;
+}
+
+const STORE = "isoline.tree.v1:";
+const MAX_STORED = 2000;
+
+function loadExpanded(repo: string): Set<string> | null {
+  try {
+    const v = localStorage.getItem(STORE + repo);
+    if (!v) return null;
+    const a = JSON.parse(v);
+    return Array.isArray(a) ? new Set(a.filter((x) => typeof x === "string")) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveExpanded(repo: string, s: Set<string>) {
+  try {
+    localStorage.setItem(STORE + repo, JSON.stringify([...s].slice(0, MAX_STORED)));
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 export const STATUS_WORD = { indexed: "Indexed", pending: "Pending", failed: "Failed", skipped: "Skipped" } as const;
@@ -75,20 +125,41 @@ function monoCharWidth(): number {
 }
 
 export interface SidebarProps {
+  /** Repo root: expanded folders are remembered per repo. */
+  repo: string;
   tree: TreeNode;
   openPath: string | null;
   onOpen(path: string): void;
+  /** Shown while the tree is empty: "Listing files…" until the walk is known to be done. */
+  emptyText?: string;
 }
 
-export const Sidebar = memo(function Sidebar({ tree, openPath, onOpen }: SidebarProps) {
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(tree.children.filter((c) => c.isDir).map((c) => c.path)));
+export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emptyText = "Listing files…" }: SidebarProps) {
+  const [expanded, setExpanded] = useState<Set<string>>(() => loadExpanded(repo) ?? defaultExpanded(tree));
+  // The tree usually arrives empty (the walk has not listed the files yet): the default
+  // expansion is applied when the first files show up, unless the reader had their own.
+  const seeded = useRef(tree.children.length > 0 || loadExpanded(repo) !== null);
+  useEffect(() => {
+    if (seeded.current || tree.children.length === 0) return;
+    seeded.current = true;
+    setExpanded((s) => new Set([...s, ...defaultExpanded(tree)]));
+  }, [tree]);
+  const firstSave = useRef(true);
+  useEffect(() => {
+    if (firstSave.current) {
+      firstSave.current = false;
+      return;
+    }
+    saveExpanded(repo, expanded);
+  }, [repo, expanded]);
   const [q, setQ] = useState("");
   const [scroll, setScroll] = useState(0);
   const [height, setHeight] = useState(600);
   const [width, setWidth] = useState(250);
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
-  const total = useMemo(() => countFiles(tree), [tree]);
+  const counts = useMemo(() => folderCounts(tree), [tree]);
+  const total = counts.get("") ?? 0;
 
   // Reveal the open file: expand its folders.
   useEffect(() => {
@@ -183,9 +254,10 @@ export const Sidebar = memo(function Sidebar({ tree, openPath, onOpen }: Sidebar
             const n = r.node;
             const indent = 10 + r.depth * 14;
             const badge = !n.isDir && !!n.tier && n.tier !== "full";
-            // Room for the name: row minus indent, dot or twisty, badge, status dot and gaps.
-            const room = width - indent - 14 - (badge ? 58 : 0) - (n.isDir ? 14 : 20) - (r.dir !== undefined ? 60 : 0);
-            const shown = n.isDir ? n.name : middleEllipsis(n.name, Math.max(4, Math.floor(room / monoCharWidth())));
+            const count = n.isDir ? (counts.get(n.path) ?? 0) : 0;
+            // Room for the name: row minus indent, dot or twisty, badge, count, status dot and gaps.
+            const room = width - indent - 14 - (badge ? 58 : 0) - (n.isDir ? 14 + 12 + String(count).length * 7 : 20) - (r.dir !== undefined ? 60 : 0);
+            const shown = middleEllipsis(n.name, Math.max(4, Math.floor(room / (n.isDir ? monoCharWidth() * 1.05 : monoCharWidth()))));
             const title = n.path;
             return (
               <div
@@ -209,12 +281,13 @@ export const Sidebar = memo(function Sidebar({ tree, openPath, onOpen }: Sidebar
                 {r.dir !== undefined && <span className="dirhint">{r.dir}</span>}
                 {badge && <span className={`tier-mini tier-${n.tier}`}>{n.tier}</span>}
                 {!n.isDir && n.status !== "indexed" && <StatusDot status={n.status} text={STATUS_TEXT[n.status]} />}
+                {n.isDir && <span className="dcount" aria-label={`${count} files`}>{fmtInt(count)}</span>}
                 {n.isDir && n.status === "pending" && <StatusDot status="pending" text="Pending: some files in this folder are waiting to be indexed" />}
               </div>
             );
           })}
         </div>
-        {rows.length === 0 && <p className="muted side-empty">{query ? `No file matches “${q}”.` : "No files yet. They appear here as indexing finds them."}</p>}
+        {rows.length === 0 && <p className="muted side-empty">{query ? `No file matches “${q}”.` : emptyText}</p>}
       </div>
     </nav>
   );

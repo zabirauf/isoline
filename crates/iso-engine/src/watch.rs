@@ -20,6 +20,8 @@ impl Engine {
             .spawn(move || {
                 while let Ok(batch) = rx.recv() {
                     let Some(eng) = weak.upgrade() else { return };
+                    eng.fs_epoch
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     // index_paths waits for a running full index, so no batch is lost.
                     if let Ok(rep) = eng.index_paths(&batch)
                         && (rep.facts_changed > 0 || rep.deleted > 0 || rep.added > 0)

@@ -10,6 +10,7 @@ import type { ModuleMap } from "./ipc/bindings/ModuleMap";
 import type { RepoSummary } from "./ipc/bindings/RepoSummary";
 import type { SearchHit } from "./ipc/bindings/SearchHit";
 import type { TreeNode } from "./ipc/bindings/TreeNode";
+import type { GitStatus } from "./ipc/bindings/GitStatus";
 import { api, backend, invalidate } from "./ipc/api";
 import { fmtInt, fmtMs, num, plural } from "./lib/format";
 import { applyThemeChoice, loadThemeChoice, type ThemeChoice } from "./lib/theme";
@@ -20,6 +21,8 @@ import { RepoOverview } from "./components/RepoOverview";
 import { StartScreen } from "./components/StartScreen";
 import { Seg } from "./components/ui";
 import { Menu } from "./components/Menu";
+import { BranchMenu } from "./components/BranchMenu";
+import { CompareView, type CompareRequest } from "./compare/CompareView";
 import { PeekProvider, usePeek } from "./components/Peek";
 import { Workbench, type WorkbenchLocation } from "./file/Workbench";
 import { PlainFile } from "./file/PlainFile";
@@ -80,6 +83,16 @@ function useCmdHold() {
   }, []);
 }
 
+/** Whether a file path is in the tree. */
+function treeHas(tree: TreeNode, path: string): boolean {
+  let n: TreeNode | undefined = tree;
+  for (const part of path.split("/")) {
+    n = n.children.find((c) => c.name === part);
+    if (!n) return false;
+  }
+  return !n.isDir;
+}
+
 const PHASE_TEXT = { walk: "walking", parse: "parsing", resolve: "resolving imports", graph: "building the graph", done: "done" } as const;
 
 function Shell() {
@@ -106,20 +119,60 @@ function Shell() {
   const [busy, setBusy] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
   const [mode, setMode] = useState<"tauri" | "mock" | "http" | null>(null);
+  const [git, setGit] = useState<GitStatus | null>(null);
+  const [compareReq, setCompareReq] = useState<CompareRequest | null>(null);
+  const [compareOn, setCompareOn] = useState(false);
   const fileRef = useRef<OpenFile | null>(null);
   fileRef.current = file;
+  const repoRef = useRef<RepoSummary | null>(null);
+  repoRef.current = repo;
+  /** The first parse progress after opening a repo also refetches the tree (in case tree_changed was missed). */
+  const treeWanted = useRef(false);
 
   useEffect(() => applyThemeChoice(theme), [theme]);
 
+  const refreshTree = useCallback(() => {
+    void api.getTree().then((t) => {
+      setTree(t);
+      // A branch switch (or a delete) took the open file away: back to the overview.
+      const open = fileRef.current?.path;
+      if (open && t.children.length > 0 && !treeHas(t, open)) {
+        setFile(null);
+        setView(null);
+      }
+    });
+  }, []);
   const refreshRepoData = useCallback(() => {
-    void api.getTree().then(setTree);
+    refreshTree();
     void api.getModuleMap().then(setModuleMap);
+  }, [refreshTree]);
+  const refreshGit = useCallback(() => {
+    if (!repoRef.current) return;
+    void api
+      .gitStatus()
+      .then(setGit)
+      .catch(() => setGit(null));
   }, []);
 
   // Backend events.
   useEffect(() => {
+    let treeTimer: ReturnType<typeof setTimeout> | undefined;
+    let gitTimer: ReturnType<typeof setTimeout> | undefined;
     const offs: Promise<() => void>[] = [
-      api.listen("index_progress", setProgress),
+      api.listen("index_progress", (p) => {
+        setProgress(p);
+        if (p.phase === "parse" && treeWanted.current) {
+          treeWanted.current = false;
+          refreshTree();
+        }
+      }),
+      // The walk listed the files (long before indexing ends), or files came and went.
+      api.listen("tree_changed", () => {
+        treeWanted.current = false;
+        clearTimeout(treeTimer);
+        treeTimer = setTimeout(refreshTree, 150);
+      }),
+      api.listen("git_changed", setGit),
       api.listen("index_done", (r) => {
         setRepo(r);
         refreshRepoData();
@@ -134,6 +187,8 @@ function Shell() {
       api.listen("job_progress", setJobs),
       // Files saved in an editor: refresh the open file when it is among them.
       api.listen("files_changed", (paths) => {
+        clearTimeout(gitTimer);
+        gitTimer = setTimeout(refreshGit, 800);
         const open = fileRef.current?.path;
         if (open && paths.includes(open)) {
           invalidate(open);
@@ -149,14 +204,62 @@ function Shell() {
     void backend().then((b) => setMode(b.kind));
     void api.recentRepos().then(setRecent);
     void api.aiStatus().then(setAi);
-    return () => offs.forEach((p) => void p.then((off) => off()));
-  }, [refreshRepoData]);
+    return () => {
+      clearTimeout(treeTimer);
+      clearTimeout(gitTimer);
+      offs.forEach((p) => void p.then((off) => off()));
+    };
+  }, [refreshRepoData, refreshTree, refreshGit]);
+
+  // Git status: on focus, and every 10 s while the window is visible.
+  useEffect(() => {
+    if (!repo) return;
+    refreshGit();
+    const onFocus = () => refreshGit();
+    const t = setInterval(() => document.visibilityState === "visible" && refreshGit(), 10_000);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [repo?.root, refreshGit]);
+
+  /** After a branch switch: new tree, module map and status; the open file reloads or closes. */
+  const onSwitched = useCallback(
+    (s: GitStatus) => {
+      setGit(s);
+      refreshRepoData();
+      const open = fileRef.current?.path;
+      if (open) {
+        invalidate(open);
+        void api
+          .getFileView(open)
+          .then(setView)
+          .catch(() => {
+            setFile(null);
+            setView(null);
+          });
+      }
+    },
+    [refreshRepoData],
+  );
+
+  const openCompare = useCallback((base: string | null, head: string | null) => {
+    peek.close();
+    setCompareReq((r) => ({ base, head, nonce: (r?.nonce ?? 0) + 1 }));
+    setCompareOn(true);
+  }, [peek]);
 
   const openRepo = useCallback(
     async (path: string) => {
       setBusy(true);
       setOpenError(null);
       try {
+        treeWanted.current = true;
+        setTree(null);
+        setGit(null);
+        setCompareReq(null);
+        setCompareOn(false);
         const r = await api.openRepo(path);
         setRepo(r);
         setFile(null);
@@ -198,6 +301,7 @@ function Shell() {
     (path: string, opts?: { line?: number | null; symbol?: string | null }) => {
       pushHere();
       peek.close();
+      setCompareOn(false);
       setFile((cur) => ({ path, symbol: opts?.symbol ?? null, line: opts?.line ?? null, nonce: (cur?.nonce ?? 0) + 1 }));
     },
     [pushHere, peek],
@@ -211,6 +315,7 @@ function Shell() {
       if (!r) return;
       setHistory(r.history);
       peek.close();
+      setCompareOn(false);
       setFile((f) => ({ path: r.to.path, symbol: null, line: null, nonce: (f?.nonce ?? 0) + 1, restore: { selection: r.to.selection, scroll: r.to.scroll } }));
     },
     [history, here, peek],
@@ -276,7 +381,15 @@ function Shell() {
       <header className="appbar">
         {/* The native window's title bar already says "Isoline"; the wordmark is for the browser. */}
         {mode !== "tauri" && (
-          <button type="button" className="wordmark" onClick={() => setFile(null)} disabled={!repo}>
+          <button
+            type="button"
+            className="wordmark"
+            onClick={() => {
+              setFile(null);
+              setCompareOn(false);
+            }}
+            disabled={!repo}
+          >
             Isoline
           </button>
         )}
@@ -287,16 +400,38 @@ function Shell() {
             ariaLabel={`Repo ${repo.name}`}
             align="left"
             items={[
-              { kind: "action", label: "Repo overview", onSelect: () => setFile(null) },
+              {
+                kind: "action",
+                label: "Repo overview",
+                onSelect: () => {
+                  setFile(null);
+                  setCompareOn(false);
+                },
+              },
               { kind: "action", label: "Open repo…", hint: "⌘O", onSelect: () => void pickRepo() },
               ...(recent.filter((r) => r !== repo.root).length ? [{ kind: "sep" as const }, { kind: "label" as const, label: "Recent repos" }] : []),
               ...recent.filter((r) => r !== repo.root).map((r) => ({ kind: "action" as const, label: <code>{r}</code>, onSelect: () => void openRepo(r) })),
             ]}
           />
         )}
+        {repo && git?.isRepo && <BranchMenu status={git} onSwitched={onSwitched} onStatus={setGit} onCompare={openCompare} />}
         {repo && (
           <button type="button" className="iso-btn" aria-pressed={sidebar} onClick={() => setSidebar(!sidebar)}>
             Files
+          </button>
+        )}
+        {repo && git?.isRepo && (
+          <button
+            type="button"
+            className="iso-btn"
+            aria-pressed={compareOn}
+            onClick={() => {
+              if (compareOn) setCompareOn(false);
+              else if (compareReq) setCompareOn(true);
+              else openCompare(null, null);
+            }}
+          >
+            Compare
           </button>
         )}
         {history.back.length > 0 && (
@@ -375,19 +510,24 @@ function Shell() {
         </div>
       </header>
       <div className={`body${repo && sidebar ? " with-side" : ""}`}>
-        {repo && sidebar && tree && <Sidebar tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} />}
+        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} />}
         <main className="content">
           {!repo && <StartScreen recent={recent} onOpen={(p) => void openRepo(p)} onPick={() => void pickRepo()} busy={busy} error={openError} />}
-          {repo && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} />}
-          {repo && file && viewError && (
+          {repo && compareReq && (
+            <div className="compare-host" hidden={!compareOn}>
+              <CompareView status={git} moduleMap={moduleMap} request={compareReq} onOpenFile={(p, line) => openFile(p, { line })} />
+            </div>
+          )}
+          {repo && !compareOn && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} />}
+          {repo && !compareOn && file && viewError && (
             <div className="start">
               <p className="err">
                 Could not open {file.path}: {viewError}
               </p>
             </div>
           )}
-          {repo && file && !viewError && !showView && <div className="loading muted">Opening {file.path}…</div>}
-          {showView && showView.tier === "full" && (
+          {repo && !compareOn && file && !viewError && !showView && <div className="loading muted">Opening {file.path}…</div>}
+          {!compareOn && showView && showView.tier === "full" && (
             <Workbench
               key={showView.path}
               view={showView}
@@ -402,7 +542,7 @@ function Shell() {
               onOpenAi={() => setAiOpen((n) => n + 1)}
             />
           )}
-          {showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} />}
+          {!compareOn && showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} />}
         </main>
       </div>
     </div>

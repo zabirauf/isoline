@@ -167,15 +167,8 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
             }
             let eng = crate::open(Path::new(&path), st.data.as_deref())?;
             let clients = Arc::clone(&st.clients);
-            eng.set_sink(Some(Arc::new(move |e| {
-                let (name, payload) = match e {
-                    Event::IndexProgress(p) => ("index_progress", serde_json::to_value(p)),
-                    Event::IndexDone(s) => ("index_done", serde_json::to_value(s)),
-                    Event::FilesChanged(p) => ("files_changed", serde_json::to_value(p)),
-                    Event::JobProgress(j) => ("job_progress", serde_json::to_value(j)),
-                };
-                let msg =
-                    json!({ "event": name, "payload": payload.unwrap_or(Value::Null) }).to_string();
+            eng.set_sink(Some(Arc::new(move |e: Event| {
+                let msg = json!({ "event": e.name(), "payload": e.payload() }).to_string();
                 clients.lock().retain(|c| c.send(msg.clone()).is_ok());
             })));
             *st.engine.write() = Some(Arc::clone(&eng));
@@ -222,6 +215,33 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
                 &s(args, "id")?,
                 name.as_deref(),
                 color.as_deref(),
+            )?)?
+        }
+        "git_status" => serde_json::to_value(engine(st)?.git_status()?)?,
+        "git_refs" => serde_json::to_value(engine(st)?.git_refs()?)?,
+        "git_switch" => {
+            let create = arg(args, "create")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            serde_json::to_value(engine(st)?.git_switch(&s(args, "name")?, create)?)?
+        }
+        "git_fetch" => serde_json::to_value(engine(st)?.git_fetch()?)?,
+        "git_prs" => serde_json::to_value(engine(st)?.git_prs())?,
+        "compare" => {
+            let three_dot = arg(args, "threeDot")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            let base = arg(args, "base").and_then(|v| v.as_str()).unwrap_or("");
+            let head = arg(args, "head").and_then(|v| v.as_str()).unwrap_or("");
+            serde_json::to_value(engine(st)?.compare(base, head, three_dot, u(args, "pr"))?)?
+        }
+        "compare_file" => {
+            let old = arg(args, "oldPath").and_then(|v| v.as_str());
+            serde_json::to_value(engine(st)?.compare_file(
+                &s(args, "base")?,
+                &s(args, "head")?,
+                &s(args, "path")?,
+                old,
             )?)?
         }
         "launch_args" => json!({ "repo": null, "open": null }),

@@ -405,6 +405,234 @@ ipc! {
     pub struct FileIdWire {
         pub id: FileId,
     }
+
+    // ---------- git ----------
+
+    /// Returned by `git_status`. `isRepo` is false when the folder is not in a git work tree.
+    pub struct GitStatus {
+        pub is_repo: bool,
+        /// Current branch; `None` when HEAD is detached.
+        pub branch: Option<String>,
+        /// Short commit id of HEAD; `None` before the first commit.
+        pub head: Option<String>,
+        pub upstream: Option<String>,
+        pub ahead: u32,
+        pub behind: u32,
+        /// Tracked files with changes, staged or not.
+        pub changed: u32,
+        pub untracked: u32,
+        /// `merge`, `rebase`, `cherry-pick`, `revert` or `bisect` while one is in progress.
+        pub operation: Option<String>,
+        /// A remote points at github.com, so pull requests can be listed through `gh`.
+        pub github: bool,
+    }
+
+    pub struct GitBranch {
+        /// `main`, or `origin/main` for a remote branch.
+        pub name: String,
+        pub remote: bool,
+        pub current: bool,
+        /// Short commit id of the tip.
+        pub sha: String,
+        pub subject: String,
+        pub author: String,
+        /// Committer date of the tip, unix seconds.
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub date: i64,
+        pub upstream: Option<String>,
+    }
+
+    pub struct GitCommit {
+        pub sha: String,
+        pub short: String,
+        pub subject: String,
+        pub author: String,
+        /// Committer date, unix seconds.
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub date: i64,
+        /// Branch and tag names that point at this commit.
+        pub refs: Vec<String>,
+    }
+
+    pub struct GitTag {
+        pub name: String,
+        pub sha: String,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub date: i64,
+    }
+
+    /// Returned by `git_refs`: what the branch menu and the compare pickers offer.
+    pub struct GitRefs {
+        /// Local branches first, then remote ones; most recent commit first within each.
+        pub branches: Vec<GitBranch>,
+        pub tags: Vec<GitTag>,
+        /// Recent commits on HEAD.
+        pub commits: Vec<GitCommit>,
+    }
+
+    pub struct PullRequest {
+        pub number: u32,
+        pub title: String,
+        pub author: String,
+        pub head_ref: String,
+        pub base_ref: String,
+        pub draft: bool,
+        pub url: String,
+        /// Last update, unix seconds.
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub updated: i64,
+        pub additions: u32,
+        pub deletions: u32,
+        pub changed_files: u32,
+    }
+
+    /// Returned by `git_prs`. `available` is false when `gh` is missing or not signed in;
+    /// `message` then says what to do.
+    pub struct PullRequests {
+        pub available: bool,
+        pub message: Option<String>,
+        pub items: Vec<PullRequest>,
+    }
+
+    // ---------- compare ----------
+
+    /// One side of a comparison, resolved.
+    pub struct CompareRev {
+        /// What was asked for: `main`, `a1b2c3d`, `pr:12`, `worktree`.
+        pub spec: String,
+        /// Full commit id; `worktree` for uncommitted changes.
+        pub sha: String,
+        /// Display text: `main`, `#12 · fix-login`, `Working tree`.
+        pub label: String,
+        pub subject: Option<String>,
+    }
+
+    pub struct CompareTotals {
+        pub files: u32,
+        pub added: u32,
+        pub modified: u32,
+        pub deleted: u32,
+        pub renamed: u32,
+        pub additions: u32,
+        pub deletions: u32,
+        pub symbols_added: u32,
+        pub symbols_deleted: u32,
+        pub symbols_modified: u32,
+        pub signatures_changed: u32,
+        pub imports_added: u32,
+        pub imports_deleted: u32,
+    }
+
+    /// Returned by `compare`: what changed between two revisions, in the map's terms.
+    pub struct Comparison {
+        pub base: CompareRev,
+        pub head: CompareRev,
+        /// The base side is this merge base of the two (what a pull request shows).
+        pub merge_base: Option<String>,
+        pub pr: Option<PullRequest>,
+        pub files: Vec<FileChange>,
+        pub totals: CompareTotals,
+        /// Modules with changed files, most changed lines first.
+        pub modules: Vec<ModuleChange>,
+        /// Module dependencies whose file-level import count changed.
+        pub module_edges: Vec<ModuleEdgeChange>,
+        /// Deleted or re-signatured functions that unchanged files still call.
+        pub impact: Vec<ImpactItem>,
+        /// Commits on the head side that the base side lacks, newest first (at most 200).
+        pub commits: Vec<GitCommit>,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub elapsed_ms: u64,
+        /// Too many changed files: symbols were compared for the first ones only.
+        pub truncated: bool,
+    }
+
+    pub struct FileChange {
+        pub path: String,
+        /// Path on the base side, for renames.
+        pub old_path: Option<String>,
+        pub change: ChangeKind,
+        pub lang: Language,
+        pub tier: Tier,
+        pub additions: u32,
+        pub deletions: u32,
+        pub binary: bool,
+        pub module: Option<ModuleRef>,
+        /// Functions, classes and types added, deleted or modified, in file order.
+        pub symbols: Vec<SymbolChange>,
+        /// Imports added and deleted, with what they resolve to.
+        pub imports: Vec<ImportChange>,
+    }
+
+    pub struct SymbolChange {
+        /// Qualified name: `run`, `MyClass.run`.
+        pub name: String,
+        pub kind: SymbolKind,
+        /// `added`, `deleted` or `modified`.
+        pub change: ChangeKind,
+        pub exported: bool,
+        pub signature_before: Option<String>,
+        pub signature_after: Option<String>,
+        /// Lines on the base side (absent for added symbols).
+        pub before: Option<LineRange>,
+        /// Lines on the head side (absent for deleted symbols).
+        pub after: Option<LineRange>,
+        /// Callees that appear in, or vanish from, the body.
+        pub calls_added: Vec<String>,
+        pub calls_deleted: Vec<String>,
+        /// Call sites in other files, from the index.
+        pub callers: u32,
+    }
+
+    pub struct ImportChange {
+        /// `added` or `deleted`.
+        pub change: ChangeKind,
+        pub specifier: String,
+        /// Repo file it resolves to.
+        pub file: Option<String>,
+        /// Package it resolves to.
+        pub external: Option<String>,
+    }
+
+    pub struct ModuleChange {
+        pub id: String,
+        pub name: String,
+        pub color: String,
+        pub dir: String,
+        pub files: u32,
+        pub additions: u32,
+        pub deletions: u32,
+        /// Symbols added, deleted or modified in the module.
+        pub symbols: u32,
+    }
+
+    pub struct ModuleEdgeChange {
+        pub from: String,
+        pub to: String,
+        /// File-level imports from `from` to `to` on each side.
+        pub before: u32,
+        pub after: u32,
+    }
+
+    pub struct ImpactItem {
+        pub symbol: String,
+        pub path: String,
+        pub change: ChangeKind,
+        pub signature_before: Option<String>,
+        pub signature_after: Option<String>,
+        /// Call sites in files the comparison did not change (the first 50 files).
+        pub callers: Vec<FileRef>,
+        /// Unchanged files that call it, including the ones not listed.
+        pub caller_files: u32,
+    }
+
+    /// Returned by `compare_file`: both versions of one file, for the diff view.
+    pub struct FileDiffText {
+        pub path: String,
+        pub old_path: Option<String>,
+        pub before: Option<String>,
+        pub after: Option<String>,
+        pub monaco_lang: String,
+    }
 }
 
 macro_rules! ipc_enum {
@@ -428,6 +656,7 @@ ipc_enum! {
     pub enum SidecarState { Off, Starting, Ready, Failed }
     pub enum AiScope { File, Module, Repo }
     pub enum SymbolOrigin { Local, Imported, External, Builtin }
+    pub enum ChangeKind { Added, Modified, Deleted, Renamed }
 }
 
 #[cfg(all(test, feature = "ts"))]

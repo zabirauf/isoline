@@ -10,6 +10,7 @@ members = [
   "crates/iso-cache",
   "crates/iso-jobs",
   "crates/iso-ai",
+  "crates/iso-git",
   "crates/iso-engine",
   "crates/iso-cli",
   "app/src-tauri",
@@ -24,6 +25,7 @@ default-members = [
   "crates/iso-cache",
   "crates/iso-jobs",
   "crates/iso-ai",
+  "crates/iso-git",
   "crates/iso-engine",
   "crates/iso-cli",
 ]
@@ -43,6 +45,7 @@ iso-graph = { path = "crates/iso-graph" }
 iso-cache = { path = "crates/iso-cache" }
 iso-jobs = { path = "crates/iso-jobs" }
 iso-ai = { path = "crates/iso-ai" }
+iso-git = { path = "crates/iso-git" }
 iso-engine = { path = "crates/iso-engine" }
 
 # Versions checked against crates.io on 2026-11-16.

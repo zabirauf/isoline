@@ -22,6 +22,7 @@ import type { Language } from "../bindings/Language";
 import type { LangCount } from "../bindings/LangCount";
 import data from "./data/mock.json";
 import { generateModuleMap, generateTree } from "./generate";
+import { createMockGit } from "./git";
 
 /** The JSON stores u64 fields as plain numbers; these are the raw shapes before conversion. */
 export type RawLangCount = Omit<LangCount, "lines"> & { lines: number };
@@ -72,6 +73,14 @@ export function createMockBackend(): Backend {
   let ai: AiStatus = { sidecar: "off", signedIn: false, user: null, models: [], enabledForRepo: false, mock: true, deviceCode: null, message: null };
   let nextJob = 1;
   let indexing = false;
+  const git = createMockGit();
+  const sourceOf = (path: string) => {
+    try {
+      return fileFor(path).source;
+    } catch {
+      return null;
+    }
+  };
 
   const leaves = (n: TreeNode, out: TreeNode[] = []) => {
     if (n.isDir) n.children.forEach((c) => leaves(c, out));
@@ -117,6 +126,7 @@ export function createMockBackend(): Backend {
         await wait(ms / steps);
         const done = Math.round((total * i) / steps);
         emit("index_progress", { phase, done, total, current: all[Math.min(total - 1, done)]?.path ?? null, elapsedMs: big(performance.now() - t0) });
+        if (phase === "walk" && i === steps) emit("tree_changed", null);
         if (phase === "parse") {
           const left = pending.slice(Math.round((pending.length * i) / steps));
           jobs = { ...jobs, queued: left.length, done: jobs.done + 1, cacheHits: jobs.cacheHits + big(total / steps), hitRate: 0.86, pendingFiles: left.map((f) => f.path) };
@@ -299,6 +309,29 @@ export function createMockBackend(): Backend {
       return { repo: q.get("repo"), open: q.get("open") };
     },
     pickFolder: () => delay(() => D.repo.root),
+    gitStatus: () => delay(() => git.status()),
+    gitRefs: () => delay(() => git.refs()),
+    gitSwitch: (name, create) =>
+      delay(() => {
+        const s = git.switchTo(name, create);
+        setTimeout(() => {
+          emit("git_changed", s);
+          emit("tree_changed", null);
+        }, 30);
+        return s;
+      }),
+    gitFetch: async () => {
+      await wait(600);
+      const s = git.fetch();
+      emit("git_changed", s);
+      return s;
+    },
+    gitPrs: () => delay(() => git.prs()),
+    compare: async (base, head, threeDot, pr) => {
+      await wait(250);
+      return git.compare(base, head, threeDot, pr, sourceOf);
+    },
+    compareFile: (base, head, path, oldPath) => delay(() => git.compareFile(base, head, path, oldPath, sourceOf)),
     listen: async (event, cb) => {
       let set = listeners.get(event);
       if (!set) listeners.set(event, (set = new Set()));

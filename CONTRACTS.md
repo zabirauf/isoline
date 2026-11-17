@@ -19,6 +19,7 @@ crates/
   iso-cache     versioned content-addressed store              (lead)
   iso-jobs      priority background queue                      (lead)
   iso-ai        Provider trait, skeletons, budget, passes      (workstream I)
+  iso-git       git and gh through their command lines         (lead)
   iso-engine    wires the crates into operations               (lead)
   iso-cli       headless commands                              (lead)
 sidecar/copilot Go: Copilot SDK behind JSON-RPC on stdio       (workstream F)
@@ -148,6 +149,23 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `get_jobs` | | `JobsState` | `job_progress: JobsState` |
 | `rename_module` | `id`, `name?`, `color?` | `ModuleInfo` | |
 | `recent_repos` | | `string[]` | |
+| `git_status` | | `GitStatus` (`isRepo: false` outside git) | `git_changed: GitStatus` |
+| `git_refs` | | `GitRefs` | |
+| `git_switch` | `name`, `create` | `GitStatus`; reindexes the files that differ | `git_changed`, `files_changed`, `tree_changed`, `index_done` |
+| `git_fetch` | | `GitStatus` | `git_changed` |
+| `git_prs` | | `PullRequests` (`available: false` and a `message` without `gh`) | |
+| `compare` | `base`, `head`, `threeDot`, `pr?` | `Comparison` | |
+| `compare_file` | `base`, `head`, `path`, `oldPath?` | `FileDiffText` | |
+
+`tree_changed` (no payload) fires when the set of files changes: right after the first walk
+lists a new repo's files as pending, long before parsing ends, and when files are added or
+deleted. The UI refetches `get_tree` on it.
+
+`compare` takes any revision git understands for `base` and `head`; `head` may be `worktree`
+for uncommitted changes, and `pr` (a pull request number, through `gh`) replaces both. With
+`threeDot` the base side is the merge base of the two, as a pull request shows it. Nothing is
+checked out: both sides are read with `git cat-file --batch` and parsed with the index's
+extractors. `compare_file` takes the resolved `Comparison.base.sha` and `head.sha`.
 
 `get_flow` takes a path and a unit id (`fn`, `Class.method`, `factory.method`) rather than a
 `SymbolId`, because controller methods are units but not symbols.

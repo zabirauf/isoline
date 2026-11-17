@@ -1970,6 +1970,7 @@ dependencies = [
  "iso-ai",
  "iso-cache",
  "iso-core",
+ "iso-git",
  "iso-graph",
  "iso-index",
  "iso-jobs",
@@ -1982,6 +1983,16 @@ dependencies = [
  "rayon",
  "scip",
  "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "iso-git"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "iso-core",
  "serde_json",
  "tempfile",
 ]

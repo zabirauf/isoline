@@ -70,6 +70,23 @@ enum Cmd {
     Modules,
     /// Repo summary.
     Summary,
+    /// Git state: branch, upstream, changed files.
+    GitStatus,
+    /// Branches, tags and recent commits.
+    GitRefs,
+    /// Compare two revisions (`worktree` for uncommitted changes) or a pull request.
+    Compare {
+        #[arg(default_value = "HEAD")]
+        base: String,
+        #[arg(default_value = "worktree")]
+        head: String,
+        /// Compare against the base revision itself, not the merge base.
+        #[arg(long)]
+        direct: bool,
+        /// Compare this pull request (needs `gh`).
+        #[arg(long)]
+        pr: Option<u32>,
+    },
     /// Run installed precise indexers (or import a SCIP file) and upgrade edges.
     Precise {
         /// Import this SCIP file instead of running indexers.
@@ -194,6 +211,14 @@ fn main() -> Result<()> {
                 }
                 Cmd::Modules => print(&eng.module_map()?, cli.pretty),
                 Cmd::Summary => print(&eng.summary()?, cli.pretty),
+                Cmd::GitStatus => print(&eng.git_status()?, cli.pretty),
+                Cmd::GitRefs => print(&eng.git_refs()?, cli.pretty),
+                Cmd::Compare {
+                    base,
+                    head,
+                    direct,
+                    pr,
+                } => print(&eng.compare(&base, &head, !direct, pr)?, cli.pretty),
                 Cmd::Precise { scip } => match scip {
                     Some(p) => print(&eng.import_scip(&std::fs::read(p)?)?, cli.pretty),
                     None => print(&eng.run_precise()?, cli.pretty),

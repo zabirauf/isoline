@@ -98,6 +98,20 @@ function theme(c: ThemeColors, base: "vs" | "vs-dark"): monaco.editor.IStandalon
       "peekViewEditor.background": c["code-bg"],
       "peekViewResult.background": c.surface,
       "peekViewTitle.background": c.surface,
+      // Compare view: added lines in loop green, deleted in warn, as everywhere else in the app.
+      "diffEditor.insertedLineBackground": c["loop-soft"],
+      "diffEditor.removedLineBackground": c["warn-soft"],
+      "diffEditor.insertedTextBackground": c.loop + "38",
+      "diffEditor.removedTextBackground": c.warn + "38",
+      "diffEditorGutter.insertedLineBackground": c["loop-soft"],
+      "diffEditorGutter.removedLineBackground": c["warn-soft"],
+      "diffEditorOverview.insertedForeground": c.loop + "99",
+      "diffEditorOverview.removedForeground": c.warn + "99",
+      "diffEditor.border": c.line,
+      "diffEditor.diagonalFill": c.line + "80",
+      "diffEditor.unchangedRegionBackground": c.bg,
+      "diffEditor.unchangedRegionForeground": c.muted,
+      "diffEditor.unchangedCodeBackground": "#00000000",
     },
   };
 }

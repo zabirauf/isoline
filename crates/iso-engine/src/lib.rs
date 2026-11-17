@@ -15,7 +15,9 @@ use iso_jobs::JobQueue;
 use parking_lot::{Mutex, RwLock};
 
 mod ai;
+mod compare;
 mod edges;
+mod git;
 mod indexer;
 mod modules;
 mod precise;
@@ -36,6 +38,36 @@ pub enum Event {
     /// Files whose facts changed after a watcher batch.
     FilesChanged(Vec<String>),
     JobProgress(iso_core::ipc::JobsState),
+    /// The set of files changed (first listed after a walk, added, deleted): refetch the tree.
+    TreeChanged,
+    /// Branch, HEAD or working-tree state changed through Isoline.
+    GitChanged(iso_core::ipc::GitStatus),
+}
+
+impl Event {
+    /// Event name on the wire, as the UI listens for it.
+    pub fn name(&self) -> &'static str {
+        match self {
+            Event::IndexProgress(_) => "index_progress",
+            Event::IndexDone(_) => "index_done",
+            Event::FilesChanged(_) => "files_changed",
+            Event::JobProgress(_) => "job_progress",
+            Event::TreeChanged => "tree_changed",
+            Event::GitChanged(_) => "git_changed",
+        }
+    }
+
+    pub fn payload(&self) -> serde_json::Value {
+        let v = match self {
+            Event::IndexProgress(p) => serde_json::to_value(p),
+            Event::IndexDone(s) => serde_json::to_value(s),
+            Event::FilesChanged(p) => serde_json::to_value(p),
+            Event::JobProgress(j) => serde_json::to_value(j),
+            Event::TreeChanged => Ok(serde_json::Value::Null),
+            Event::GitChanged(g) => serde_json::to_value(g),
+        };
+        v.unwrap_or(serde_json::Value::Null)
+    }
 }
 
 pub type Sink = Arc<dyn Fn(Event) + Send + Sync>;
@@ -93,6 +125,11 @@ pub struct Engine {
     pub(crate) index_lock: Mutex<()>,
     pub(crate) ai_enabled: AtomicBool,
     pub(crate) ai_hook: RwLock<Option<Arc<dyn AiHook>>>,
+    /// The git work tree the repo is in, looked up on first use.
+    pub(crate) git: std::sync::OnceLock<Option<iso_git::Repo>>,
+    /// Watcher batches seen; with git's own files, decides when a cached status is stale.
+    pub(crate) fs_epoch: std::sync::atomic::AtomicU64,
+    pub(crate) git_status_cache: Mutex<Option<(git::StatusKey, iso_core::ipc::GitStatus)>>,
 }
 
 impl Engine {
@@ -143,6 +180,9 @@ impl Engine {
             index_lock: Mutex::new(()),
             ai_enabled: AtomicBool::new(ai),
             ai_hook: RwLock::new(None),
+            git: std::sync::OnceLock::new(),
+            fs_epoch: Default::default(),
+            git_status_cache: Mutex::new(None),
         }))
     }
 

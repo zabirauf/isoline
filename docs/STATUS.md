@@ -29,6 +29,24 @@ Added after the plan, at the product owner's request: typed parameter signatures
 origin colors, definition peek on hover, go to definition with back and forward, links
 without underlines, and Glance / Read / Dig detail levels (`docs/ux/progressive-disclosure.md`).
 
+Then, also at the product owner's request:
+
+- **Source tree at once:** the tree paints from the first walk (98 ms on 64,228 files), with
+  files pending until parsed, instead of after indexing ends (`tree_changed` event).
+- **Branches (`crates/iso-git`):** current branch, ahead/behind and changed files in the app
+  bar; switch, create and fetch through the user's own `git`; the index follows a switch by
+  reindexing exactly the files that differ. `git status` is cached until git's files or the
+  watched tree change (it costs 0.6 s on openclaw).
+- **Compare:** any two branches, tags or commits, the working tree, or a pull request (through
+  `gh`), without checking anything out. Functions and types added, deleted and modified,
+  signature changes, calls added and removed, imports with what they resolve to on each
+  side, module dependencies that appear or vanish, and deleted or re-signatured exports that
+  unchanged files still call. Isoline's own last 40 commits (329 files) compare in 0.26 s;
+  on openclaw (64,228 files) a working-tree change compares in 1.2 s, flagging a
+  re-signatured function 1,209 files call and a deleted one 4 still call. Tests:
+  `crates/iso-engine/tests/git.rs`, and `crates/iso-git` (a pull request fetched through
+  `refs/pull/N/head` from a local remote, with a stand-in `gh`).
+
 ## Distribution
 
 - **Releases:** `.github/workflows/release.yml` builds the app and `iso-cli` for macOS,

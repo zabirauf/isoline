@@ -53,13 +53,8 @@ async fn open_repo(
     }
     let eng = blocking(move || Engine::open(std::path::Path::new(&path))).await?;
     let handle = app.clone();
-    eng.set_sink(Some(Arc::new(move |e| {
-        let _ = match e {
-            Event::IndexProgress(p) => handle.emit("index_progress", p),
-            Event::IndexDone(s) => handle.emit("index_done", s),
-            Event::FilesChanged(paths) => handle.emit("files_changed", paths),
-            Event::JobProgress(j) => handle.emit("job_progress", j),
-        };
+    eng.set_sink(Some(Arc::new(move |e: Event| {
+        let _ = handle.emit(e.name(), e.payload());
     })));
     *state.engine.write() = Some(Arc::clone(&eng));
     ai::attach(&app, &eng);
@@ -158,6 +153,64 @@ async fn rename_module(
     blocking(move || e.rename_module(&id, name.as_deref(), color.as_deref())).await
 }
 
+#[tauri::command]
+async fn git_status(state: State<'_, AppState>) -> CmdResult<GitStatus> {
+    let e = engine(&state)?;
+    blocking(move || e.git_status()).await
+}
+
+#[tauri::command]
+async fn git_refs(state: State<'_, AppState>) -> CmdResult<GitRefs> {
+    let e = engine(&state)?;
+    blocking(move || e.git_refs()).await
+}
+
+#[tauri::command]
+async fn git_switch(
+    state: State<'_, AppState>,
+    name: String,
+    create: bool,
+) -> CmdResult<GitStatus> {
+    let e = engine(&state)?;
+    blocking(move || e.git_switch(&name, create)).await
+}
+
+#[tauri::command]
+async fn git_fetch(state: State<'_, AppState>) -> CmdResult<GitStatus> {
+    let e = engine(&state)?;
+    blocking(move || e.git_fetch()).await
+}
+
+#[tauri::command]
+async fn git_prs(state: State<'_, AppState>) -> CmdResult<PullRequests> {
+    let e = engine(&state)?;
+    blocking(move || Ok(e.git_prs())).await
+}
+
+#[tauri::command]
+async fn compare(
+    state: State<'_, AppState>,
+    base: String,
+    head: String,
+    three_dot: bool,
+    pr: Option<u32>,
+) -> CmdResult<Comparison> {
+    let e = engine(&state)?;
+    blocking(move || e.compare(&base, &head, three_dot, pr)).await
+}
+
+#[tauri::command]
+async fn compare_file(
+    state: State<'_, AppState>,
+    base: String,
+    head: String,
+    path: String,
+    old_path: Option<String>,
+) -> CmdResult<FileDiffText> {
+    let e = engine(&state)?;
+    blocking(move || e.compare_file(&base, &head, &path, old_path.as_deref())).await
+}
+
 /// Repo (and optionally a file in it) given on the command line: `isoline <repo> [file]`.
 #[tauri::command]
 async fn launch_args() -> CmdResult<serde_json::Value> {
@@ -201,6 +254,13 @@ pub fn run() {
             rename_module,
             recent_repos,
             launch_args,
+            git_status,
+            git_refs,
+            git_switch,
+            git_fetch,
+            git_prs,
+            compare,
+            compare_file,
             ai::ai_status,
             ai::ai_sign_in,
             ai::ai_sign_out,

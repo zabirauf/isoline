@@ -67,7 +67,7 @@ export function FilePath({ path }: { path: string }) {
   return (
     <span className="fpath" title={path}>
       {parts.map((p, i) => (
-        <span key={i}>
+        <span key={i} className="seg">
           {p}
           {i < parts.length - 1 && (
             <>

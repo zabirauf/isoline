@@ -117,7 +117,7 @@ export const Sidebar = memo(function Sidebar({ tree, openPath, onOpen }: Sidebar
     if (i < 0 || !el) return;
     setActive(i);
     const top = i * ROW;
-    if (top < el.scrollTop || top + ROW > el.scrollTop + el.clientHeight) el.scrollTop = Math.max(0, top - el.clientHeight / 3);
+    if (top < el.scrollTop || top + ROW > el.scrollTop + el.clientHeight) el.scrollTop = Math.max(0, top - Math.floor(el.clientHeight / 3 / ROW) * ROW); // whole rows: none half-hidden at the top
   }, [openPath, rows]);
 
   const first = Math.max(0, Math.floor(scroll / ROW) - OVERSCAN);
@@ -206,7 +206,7 @@ export const Sidebar = memo(function Sidebar({ tree, openPath, onOpen }: Sidebar
             );
           })}
         </div>
-        {rows.length === 0 && <p className="muted side-empty">No file matches “{q}”.</p>}
+        {rows.length === 0 && <p className="muted side-empty">{query ? `No file matches “${q}”.` : "No files yet. They appear here as indexing finds them."}</p>}
       </div>
       <div className="side-legend" aria-label="Legend">
         <span>

@@ -26,6 +26,7 @@ code, .mono { font-family: var(--font-mono); }
 .link, .filelink { border: 0; background: none; padding: 0; cursor: pointer; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 .filelink { font: 12px var(--font-mono); text-align: left; word-break: normal; overflow-wrap: break-word; }
 .fpath { word-break: normal; }
+.fpath .seg { white-space: nowrap; }
 .link:hover, .filelink:hover { text-decoration-thickness: 2px; }
 
 /* ---------- app shell ---------- */
@@ -67,7 +68,7 @@ code, .mono { font-family: var(--font-mono); }
 .sidebar { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); background: var(--surface); }
 .side-h { display: flex; align-items: baseline; justify-content: space-between; padding: 12px 12px 6px; }
 .side-filter { margin: 0 10px 10px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: 13px var(--font-body); }
-.tree { flex: 1; min-height: 0; overflow: auto; position: relative; contain: strict; border-top: 1px solid var(--line); padding-top: 4px; scrollbar-width: thin; }
+.tree { flex: 1; min-height: 0; overflow: auto; position: relative; contain: strict; border-top: 1px solid var(--line); scrollbar-width: thin; }
 .side-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; padding: 6px 12px 8px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
 .side-legend > span { display: inline-flex; align-items: center; gap: 4px; }
 .tree .row { position: absolute; left: 0; right: 0; top: 0; height: 26px; display: flex; align-items: center; gap: 6px; padding-right: 10px; font-size: 13px; cursor: pointer; white-space: nowrap; border-left: 3px solid transparent; }

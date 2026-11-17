@@ -15,8 +15,11 @@ export function aiLabel(s: AiStatus | null): string {
   return "Turn on AI…";
 }
 
-export function AiPanel({ status, setStatus, filePath, progress }: { status: AiStatus | null; setStatus(s: AiStatus): void; filePath: string | null; progress: AiProgress | null }) {
+export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 }: { status: AiStatus | null; setStatus(s: AiStatus): void; filePath: string | null; progress: AiProgress | null; openSignal?: number }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (openSignal) setOpen(true);
+  }, [openSignal]);
   const [est, setEst] = useState<AiEstimate | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);

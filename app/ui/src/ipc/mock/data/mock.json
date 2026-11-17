@@ -8,7 +8,7 @@
   "root": "~/code/openclaw",
   "name": "openclaw",
   "files": 50,
-  "lines": 6461,
+  "lines": 6478,
   "tiers": {
    "full": 42,
    "outline": 1,
@@ -19,7 +19,7 @@
     "lang": "typescript",
     "label": "TypeScript",
     "files": 41,
-    "lines": 5751
+    "lines": 5768
    },
    {
     "lang": "markdown",
@@ -76,7 +76,7 @@
   "module": null,
   "color": null,
   "status": "pending",
-  "lines": 6461,
+  "lines": 6478,
   "children": [
    {
     "name": ".github",
@@ -162,7 +162,7 @@
     "module": null,
     "color": null,
     "status": "pending",
-    "lines": 5961,
+    "lines": 5978,
     "children": [
      {
       "name": "agents",
@@ -173,7 +173,7 @@
       "module": "agents-core",
       "color": "#3d8a7a",
       "status": "indexed",
-      "lines": 1981,
+      "lines": 1998,
       "children": [
        {
         "name": "embedded-agent-runner",
@@ -184,7 +184,7 @@
         "module": "agents-runner",
         "color": "#7a5bb5",
         "status": "indexed",
-        "lines": 691,
+        "lines": 695,
         "children": [
          {
           "name": "run",
@@ -195,7 +195,7 @@
           "module": null,
           "color": null,
           "status": "indexed",
-          "lines": 279,
+          "lines": 283,
           "children": [
            {
             "name": "attempt.ts",
@@ -230,7 +230,7 @@
             "module": "agents-runner",
             "color": "#7a5bb5",
             "status": "indexed",
-            "lines": 6,
+            "lines": 10,
             "children": []
            }
           ]
@@ -258,7 +258,7 @@
         "module": "agents-harness",
         "color": "#2f6fb0",
         "status": "indexed",
-        "lines": 1035,
+        "lines": 1048,
         "children": [
          {
           "name": "commentary-diagnostics.ts",
@@ -365,7 +365,7 @@
           "module": "agents-harness",
           "color": "#2f6fb0",
           "status": "indexed",
-          "lines": 31,
+          "lines": 44,
           "children": []
          }
         ]
@@ -976,7 +976,7 @@
     "source": "ai",
     "dir": "src/agents/harness",
     "files": 9,
-    "lines": 1035
+    "lines": 1048
    },
    {
     "id": "agents-runner",
@@ -986,7 +986,7 @@
     "source": "ai",
     "dir": "src/agents/embedded-agent-runner",
     "files": 4,
-    "lines": 691
+    "lines": 695
    },
    {
     "id": "agents-core",
@@ -3305,7 +3305,26 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "agentRunMessageContent"
+      "unit": "agentRunMessageContent",
+      "sig": {
+       "params": [
+        {
+         "name": "prompt",
+         "typeText": "string | undefined",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "assistant",
+         "typeText": "Parameters<typeof resolveFinalMessageRawText>[0]",
+         "default": null,
+         "rest": false,
+         "optional": true
+        }
+       ],
+       "returns": "AgentRunMessageContent | undefined"
+      }
      },
      {
       "id": "83d4dd1f58fb1f4c",
@@ -3342,7 +3361,26 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "assertAgentHarnessContextEngineSupport"
+      "unit": "assertAgentHarnessContextEngineSupport",
+      "sig": {
+       "params": [
+        {
+         "name": "harness",
+         "typeText": "AgentHarness",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "params",
+         "typeText": "AgentHarnessAttemptParamsV2",
+         "default": null,
+         "rest": false,
+         "optional": false
+        }
+       ],
+       "returns": "void"
+      }
      },
      {
       "id": "6ca13e56368be23c",
@@ -3384,7 +3422,33 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "agentHarnessDiagnosticBase"
+      "unit": "agentHarnessDiagnosticBase",
+      "sig": {
+       "params": [
+        {
+         "name": "harness",
+         "typeText": "AgentHarness",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "params",
+         "typeText": "AgentHarnessAttemptParams",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "trace",
+         "typeText": "DiagnosticTraceContext",
+         "default": null,
+         "rest": false,
+         "optional": true
+        }
+       ],
+       "returns": null
+      }
      },
      {
       "id": "c8af90135f0c6583",
@@ -3427,7 +3491,19 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "normalizeAgentHarnessAttemptResult"
+      "unit": "normalizeAgentHarnessAttemptResult",
+      "sig": {
+       "params": [
+        {
+         "name": "result",
+         "typeText": "AgentHarnessAttemptResult",
+         "default": null,
+         "rest": false,
+         "optional": false
+        }
+       ],
+       "returns": "EmbeddedRunAttemptResult"
+      }
      },
      {
       "id": "3667529a03c402d3",
@@ -3468,7 +3544,26 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "agentRunDiagnosticBase"
+      "unit": "agentRunDiagnosticBase",
+      "sig": {
+       "params": [
+        {
+         "name": "params",
+         "typeText": "AgentHarnessAttemptParams",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "trace",
+         "typeText": "DiagnosticTraceContext",
+         "default": null,
+         "rest": false,
+         "optional": false
+        }
+       ],
+       "returns": null
+      }
      },
      {
       "id": "e9625ca9b2b568c3",
@@ -3510,7 +3605,47 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "emitAgentRunCompleted"
+      "unit": "emitAgentRunCompleted",
+      "sig": {
+       "params": [
+        {
+         "name": "params",
+         "typeText": "AgentHarnessAttemptParams",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "trace",
+         "typeText": "DiagnosticTraceContext | undefined",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "startedAt",
+         "typeText": "number",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "completion",
+         "typeText": "AgentRunCompletion",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "classifyMissingError",
+         "typeText": null,
+         "default": "false",
+         "rest": false,
+         "optional": true
+        }
+       ],
+       "returns": "void"
+      }
      },
      {
       "id": "1347487e21ffb1c3",
@@ -3554,7 +3689,19 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "agentRunCompletion"
+      "unit": "agentRunCompletion",
+      "sig": {
+       "params": [
+        {
+         "name": "result",
+         "typeText": "EmbeddedRunAttemptResult",
+         "default": null,
+         "rest": false,
+         "optional": false
+        }
+       ],
+       "returns": "AgentRunCompletion"
+      }
      },
      {
       "id": "3b43f0281a309747",
@@ -3591,7 +3738,26 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "withFallbackDiagnosticTrace"
+      "unit": "withFallbackDiagnosticTrace",
+      "sig": {
+       "params": [
+        {
+         "name": "result",
+         "typeText": "EmbeddedRunAttemptResult",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "trace",
+         "typeText": "DiagnosticTraceContext | undefined",
+         "default": null,
+         "rest": false,
+         "optional": false
+        }
+       ],
+       "returns": "EmbeddedRunAttemptResult"
+      }
      },
      {
       "id": "1096635299d2b4cd",
@@ -3644,7 +3810,19 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "emitAgentHarnessRunCompleted"
+      "unit": "emitAgentHarnessRunCompleted",
+      "sig": {
+       "params": [
+        {
+         "name": "params",
+         "typeText": "{ harness: AgentHarness; attemptParams: AgentHarnessAttemptParams; result: EmbeddedRunAttemptResult; startedAt: number; trace?: DiagnosticTraceContext; }",
+         "default": null,
+         "rest": false,
+         "optional": false
+        }
+       ],
+       "returns": "void"
+      }
      },
      {
       "id": "24ceb4a26627b8ba",
@@ -3711,7 +3889,33 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "createAgentHarnessLifecycleDiagnostics"
+      "unit": "createAgentHarnessLifecycleDiagnostics",
+      "sig": {
+       "params": [
+        {
+         "name": "harness",
+         "typeText": "AgentHarness",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "params",
+         "typeText": "AgentHarnessAttemptParams",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "finalizing",
+         "typeText": null,
+         "default": "false",
+         "rest": false,
+         "optional": true
+        }
+       ],
+       "returns": null
+      }
      },
      {
       "id": "6ee80b7ecfcadc00",
@@ -3767,7 +3971,33 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "runAgentHarnessLifecycleAttempt"
+      "unit": "runAgentHarnessLifecycleAttempt",
+      "sig": {
+       "params": [
+        {
+         "name": "harness",
+         "typeText": "AgentHarness",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "params",
+         "typeText": "AgentHarnessAttemptParamsV2",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "execute",
+         "typeText": "(params: AgentHarnessAttemptParamsV2) => Promise<AgentHarnessAttemptResult>",
+         "default": "( attemptParams, ) => harness.runAttempt(attemptParams)",
+         "rest": false,
+         "optional": true
+        }
+       ],
+       "returns": "Promise<EmbeddedRunAttemptResult>"
+      }
      },
      {
       "id": "e5c33c23aa8c1eb9",
@@ -3828,7 +4058,33 @@
        "model": "mock",
        "ai": true
       },
-      "unit": "runAgentHarnessLifecycleFinalization"
+      "unit": "runAgentHarnessLifecycleFinalization",
+      "sig": {
+       "params": [
+        {
+         "name": "harness",
+         "typeText": "AgentHarness",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "params",
+         "typeText": "AgentHarnessSettledTurnFinalizationAttemptParams<AgentHarnessAttemptParamsV2>",
+         "default": null,
+         "rest": false,
+         "optional": false
+        },
+        {
+         "name": "execute",
+         "typeText": "() => Promise<AgentHarnessSettledTurnFinalizationResult>",
+         "default": null,
+         "rest": false,
+         "optional": false
+        }
+       ],
+       "returns": "Promise<AgentHarnessLifecycleFinalizationOutcome>"
+      }
      }
     ],
     "types": [
@@ -4359,7 +4615,647 @@
      "id": "agents-harness",
      "name": "Agent harness",
      "color": "#2f6fb0"
-    }
+    },
+    "targets": [
+     {
+      "name": "agentRunMessageContent",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 59,
+      "end": 71,
+      "module": null,
+      "doc": "Gated, bounded prompt/answer for child run.completed, like embedded and CLI runs.",
+      "signature": "function agentRunMessageContent( prompt: string | undefined, assistant?: Parameters<typeof resolveFinalMessageRawText>[0], ): AgentRunMessageContent | undefined"
+     },
+     {
+      "name": "assertAgentHarnessContextEngineSupport",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 73,
+      "end": 89,
+      "module": null,
+      "doc": null,
+      "signature": "function assertAgentHarnessContextEngineSupport( harness: AgentHarness, params: AgentHarnessAttemptParamsV2, ): void"
+     },
+     {
+      "name": "agentHarnessDiagnosticBase",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 91,
+      "end": 111,
+      "module": null,
+      "doc": null,
+      "signature": "function agentHarnessDiagnosticBase( harness: AgentHarness, params: AgentHarnessAttemptParams, trace?: DiagnosticTraceContext, )"
+     },
+     {
+      "name": "normalizeAgentHarnessAttemptResult",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 113,
+      "end": 154,
+      "module": null,
+      "doc": null,
+      "signature": "function normalizeAgentHarnessAttemptResult( result: AgentHarnessAttemptResult, ): EmbeddedRunAttemptResult"
+     },
+     {
+      "name": "agentRunDiagnosticBase",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 156,
+      "end": 169,
+      "module": null,
+      "doc": null,
+      "signature": "function agentRunDiagnosticBase(params: AgentHarnessAttemptParams, trace: DiagnosticTraceContext)"
+     },
+     {
+      "name": "emitAgentRunCompleted",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 171,
+      "end": 200,
+      "module": null,
+      "doc": null,
+      "signature": "function emitAgentRunCompleted( params: AgentHarnessAttemptParams, trace: DiagnosticTraceContext | undefined, startedAt: number, completion: AgentRunCompletion, classifyMissingError = false, ): void"
+     },
+     {
+      "name": "agentRunCompletion",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 202,
+      "end": 214,
+      "module": null,
+      "doc": null,
+      "signature": "function agentRunCompletion(result: EmbeddedRunAttemptResult): AgentRunCompletion"
+     },
+     {
+      "name": "withFallbackDiagnosticTrace",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 216,
+      "end": 227,
+      "module": null,
+      "doc": null,
+      "signature": "function withFallbackDiagnosticTrace( result: EmbeddedRunAttemptResult, trace: DiagnosticTraceContext | undefined, ): EmbeddedRunAttemptResult"
+     },
+     {
+      "name": "emitAgentHarnessRunCompleted",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 229,
+      "end": 269,
+      "module": null,
+      "doc": null,
+      "signature": "function emitAgentHarnessRunCompleted(params: { harness: AgentHarness; attemptParams: AgentHarnessAttemptParams; result: EmbeddedRunAttemptResult; startedAt: number; trace?: DiagnosticTraceContext; }…"
+     },
+     {
+      "name": "createAgentHarnessLifecycleDiagnostics",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 271,
+      "end": 355,
+      "module": null,
+      "doc": null,
+      "signature": "function createAgentHarnessLifecycleDiagnostics( harness: AgentHarness, params: AgentHarnessAttemptParams, finalizing = false, )"
+     },
+     {
+      "name": "runAgentHarnessLifecycleAttempt",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 357,
+      "end": 423,
+      "module": null,
+      "doc": null,
+      "signature": "export async function runAgentHarnessLifecycleAttempt( harness: AgentHarness, params: AgentHarnessAttemptParamsV2, execute: (params: AgentHarnessAttemptParamsV2) => Promise<AgentHarnessAttemptResult>…"
+     },
+     {
+      "name": "runAgentHarnessLifecycleFinalization",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 425,
+      "end": 486,
+      "module": null,
+      "doc": null,
+      "signature": "export async function runAgentHarnessLifecycleFinalization( harness: AgentHarness, params: AgentHarnessSettledTurnFinalizationAttemptParams<AgentHarnessAttemptParamsV2>, execute: () => Promise<AgentH…"
+     },
+     {
+      "name": "AgentHarnessLifecycleFinalizationOutcome",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 45,
+      "end": 48,
+      "module": null,
+      "doc": "What the finalization entry point returns: answered or empty, plus the prepared result.",
+      "signature": "type AgentHarnessLifecycleFinalizationOutcome ="
+     },
+     {
+      "name": "AgentHarnessLifecyclePhase",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 50,
+      "end": 50,
+      "module": null,
+      "doc": "The step a failure is attributed to (prepare, send, resolve), borrowed from the harness.run.error event type.",
+      "signature": "type AgentHarnessLifecyclePhase = DiagnosticHarnessRunErrorEvent[\"phase\"];"
+     },
+     {
+      "name": "AgentRunCompletion",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 51,
+      "end": 56,
+      "module": null,
+      "doc": "Internal summary of how a run ended, fed to run.completed.",
+      "signature": "type AgentRunCompletion ="
+     },
+     {
+      "name": "AgentRunMessageContent",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/lifecycle.ts",
+      "start": 57,
+      "end": 57,
+      "module": null,
+      "doc": "Optional prompt and answer text attached to completion events as private data.",
+      "signature": "type AgentRunMessageContent = { userPrompt?: string; finalResponse?: string };"
+     },
+     {
+      "name": "getRuntimeConfigSnapshot",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/config/config.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../../config/config.js",
+      "doc": null,
+      "signature": "export function getRuntimeConfigSnapshot(...args: unknown[]): unknown"
+     },
+     {
+      "name": "assertContextEngineHostSupport",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/context-engine/host-compat.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../../context-engine/host-compat.js",
+      "doc": null,
+      "signature": "export function assertContextEngineHostSupport(...args: unknown[]): unknown"
+     },
+     {
+      "name": "truncateDiagnosticContent",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-content.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../../infra/diagnostic-content.js",
+      "doc": null,
+      "signature": "export function truncateDiagnosticContent(...args: unknown[]): unknown"
+     },
+     {
+      "name": "diagnosticErrorCategory",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-error-metadata.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../../infra/diagnostic-error-metadata.js",
+      "doc": null,
+      "signature": "export function diagnosticErrorCategory(...args: unknown[]): unknown"
+     },
+     {
+      "name": "diagnosticErrorMessage",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-error-metadata.ts",
+      "start": 7,
+      "end": 9,
+      "module": "../../infra/diagnostic-error-metadata.js",
+      "doc": null,
+      "signature": "export function diagnosticErrorMessage(...args: unknown[]): unknown"
+     },
+     {
+      "name": "emitTrustedDiagnosticEvent",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../../infra/diagnostic-events.js",
+      "doc": null,
+      "signature": "export function emitTrustedDiagnosticEvent(...args: unknown[]): unknown"
+     },
+     {
+      "name": "emitTrustedDiagnosticEventWithPrivateData",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 7,
+      "end": 9,
+      "module": "../../infra/diagnostic-events.js",
+      "doc": null,
+      "signature": "export function emitTrustedDiagnosticEventWithPrivateData(...args: unknown[]): unknown"
+     },
+     {
+      "name": "DiagnosticHarnessRunErrorEvent",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 11,
+      "end": 14,
+      "module": "../../infra/diagnostic-events.js",
+      "doc": null,
+      "signature": "export type DiagnosticHarnessRunErrorEvent"
+     },
+     {
+      "name": "DiagnosticHarnessRunOutcome",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 16,
+      "end": 19,
+      "module": "../../infra/diagnostic-events.js",
+      "doc": null,
+      "signature": "export type DiagnosticHarnessRunOutcome"
+     },
+     {
+      "name": "resolveDiagnosticModelContentCapturePolicy",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-llm-content.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../../infra/diagnostic-llm-content.js",
+      "doc": null,
+      "signature": "export function resolveDiagnosticModelContentCapturePolicy(...args: unknown[]): unknown"
+     },
+     {
+      "name": "createChildDiagnosticTraceContext",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../../infra/diagnostic-trace-context.js",
+      "doc": null,
+      "signature": "export function createChildDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "freezeDiagnosticTraceContext",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 7,
+      "end": 9,
+      "module": "../../infra/diagnostic-trace-context.js",
+      "doc": null,
+      "signature": "export function freezeDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "getActiveDiagnosticTraceContext",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 11,
+      "end": 13,
+      "module": "../../infra/diagnostic-trace-context.js",
+      "doc": null,
+      "signature": "export function getActiveDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "runWithDiagnosticTraceContext",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 15,
+      "end": 17,
+      "module": "../../infra/diagnostic-trace-context.js",
+      "doc": null,
+      "signature": "export function runWithDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "DiagnosticTraceContext",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 19,
+      "end": 22,
+      "module": "../../infra/diagnostic-trace-context.js",
+      "doc": null,
+      "signature": "export type DiagnosticTraceContext"
+     },
+     {
+      "name": "normalizeAgentRunAttemptTerminal",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/agents/agent-run-terminal-outcome.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../agent-run-terminal-outcome.js",
+      "doc": null,
+      "signature": "export function normalizeAgentRunAttemptTerminal(...args: unknown[]): unknown"
+     },
+     {
+      "name": "projectAgentRunAttemptTerminal",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/agents/agent-run-terminal-outcome.ts",
+      "start": 7,
+      "end": 9,
+      "module": "../agent-run-terminal-outcome.js",
+      "doc": null,
+      "signature": "export function projectAgentRunAttemptTerminal(...args: unknown[]): unknown"
+     },
+     {
+      "name": "resolveFinalMessageRawText",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/agents/embedded-agent-runner/run/helpers.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../embedded-agent-runner/run/helpers.js",
+      "doc": null,
+      "signature": "export function resolveFinalMessageRawText(...args: unknown[]): unknown"
+     },
+     {
+      "name": "EmbeddedRunAttemptResult",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/agents/embedded-agent-runner/run/types.ts",
+      "start": 4,
+      "end": 10,
+      "module": "../embedded-agent-runner/run/types.js",
+      "doc": "Everything one embedded attempt produced: messages, terminal outcome and usage.",
+      "signature": "export type EmbeddedRunAttemptResult ="
+     },
+     {
+      "name": "copyCoreTtsAttemptResultProvenance",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/agents/tools/tts-tool-result-provenance.ts",
+      "start": 3,
+      "end": 5,
+      "module": "../tools/tts-tool-result-provenance.js",
+      "doc": null,
+      "signature": "export function copyCoreTtsAttemptResultProvenance(...args: unknown[]): unknown"
+     },
+     {
+      "name": "subscribeAgentCommentaryDiagnostics",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/agents/harness/commentary-diagnostics.ts",
+      "start": 3,
+      "end": 5,
+      "module": "./commentary-diagnostics.js",
+      "doc": null,
+      "signature": "export function subscribeAgentCommentaryDiagnostics(...args: unknown[]): unknown"
+     },
+     {
+      "name": "recordAgentHarnessPreflightOwner",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/agents/harness/errors.ts",
+      "start": 3,
+      "end": 5,
+      "module": "./errors.js",
+      "doc": null,
+      "signature": "export function recordAgentHarnessPreflightOwner(...args: unknown[]): unknown"
+     },
+     {
+      "name": "EmptySettledTurnFinalizationError",
+      "origin": "imported",
+      "kind": "class",
+      "path": "src/agents/harness/settled-turn-finalization-outcome.ts",
+      "start": 3,
+      "end": 7,
+      "module": "./settled-turn-finalization-outcome.js",
+      "doc": null,
+      "signature": "export class EmptySettledTurnFinalizationError extends Error"
+     },
+     {
+      "name": "PreparedSettledTurnFinalizationResult",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/agents/harness/settled-turn-finalization-outcome.ts",
+      "start": 9,
+      "end": 12,
+      "module": "./settled-turn-finalization-outcome.js",
+      "doc": null,
+      "signature": "export type PreparedSettledTurnFinalizationResult"
+     },
+     {
+      "name": "assertSettledTurnFinalizationResult",
+      "origin": "imported",
+      "kind": "function",
+      "path": "src/agents/harness/settled-turn-finalization-result.ts",
+      "start": 3,
+      "end": 5,
+      "module": "./settled-turn-finalization-result.js",
+      "doc": null,
+      "signature": "export function assertSettledTurnFinalizationResult(...args: unknown[]): unknown"
+     },
+     {
+      "name": "AgentHarness",
+      "origin": "imported",
+      "kind": "interface",
+      "path": "src/agents/harness/types.ts",
+      "start": 4,
+      "end": 11,
+      "module": "./types.js",
+      "doc": "A pluggable agent runtime: runs attempts and, optionally, classifies their results.",
+      "signature": "export interface AgentHarness"
+     },
+     {
+      "name": "AgentHarnessAttemptParams",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 13,
+      "end": 16,
+      "module": "./types.js",
+      "doc": null,
+      "signature": "export type AgentHarnessAttemptParams"
+     },
+     {
+      "name": "AgentHarnessAttemptParamsV2",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 19,
+      "end": 28,
+      "module": "./types.js",
+      "doc": "Current host-prepared attempt parameters: session, prompt and content policy.",
+      "signature": "export type AgentHarnessAttemptParamsV2 = AgentHarnessAttemptParams &"
+     },
+     {
+      "name": "AgentHarnessAttemptResult",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 31,
+      "end": 34,
+      "module": "./types.js",
+      "doc": "What a harness attempt returns: the embedded result plus the harness classification.",
+      "signature": "export type AgentHarnessAttemptResult = EmbeddedRunAttemptResult &"
+     },
+     {
+      "name": "AgentHarnessSettledTurnFinalizationAttemptParams",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 36,
+      "end": 39,
+      "module": "./types.js",
+      "doc": null,
+      "signature": "export type AgentHarnessSettledTurnFinalizationAttemptParams"
+     },
+     {
+      "name": "AgentHarnessSettledTurnFinalizationResult",
+      "origin": "imported",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 41,
+      "end": 44,
+      "module": "./types.js",
+      "doc": null,
+      "signature": "export type AgentHarnessSettledTurnFinalizationResult"
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "boolean",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "undefined",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "void",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Parameters",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "typeof",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Record",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Error",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/config/config.ts": {
@@ -4415,7 +5311,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "getRuntimeConfigSnapshot"
+      "unit": "getRuntimeConfigSnapshot",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -4444,7 +5352,64 @@
      "id": "config",
      "name": "Config",
      "color": "#5d7a2a"
-    }
+    },
+    "targets": [
+     {
+      "name": "getRuntimeConfigSnapshot",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/config/config.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function getRuntimeConfigSnapshot(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/context-engine/host-compat.ts": {
@@ -4500,7 +5465,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "assertContextEngineHostSupport"
+      "unit": "assertContextEngineHostSupport",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -4529,7 +5506,64 @@
      "id": "context-engine",
      "name": "Context engine",
      "color": "#a8467a"
-    }
+    },
+    "targets": [
+     {
+      "name": "assertContextEngineHostSupport",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/context-engine/host-compat.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function assertContextEngineHostSupport(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/infra/diagnostic-content.ts": {
@@ -4585,7 +5619,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "truncateDiagnosticContent"
+      "unit": "truncateDiagnosticContent",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -4614,7 +5660,64 @@
      "id": "infra-diagnostics",
      "name": "Diagnostics",
      "color": "#b5651d"
-    }
+    },
+    "targets": [
+     {
+      "name": "truncateDiagnosticContent",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-content.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function truncateDiagnosticContent(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/infra/diagnostic-error-metadata.ts": {
@@ -4690,7 +5793,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "diagnosticErrorCategory"
+      "unit": "diagnosticErrorCategory",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      },
      {
       "id": "84b146de4b0ec4aa",
@@ -4710,7 +5825,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "diagnosticErrorMessage"
+      "unit": "diagnosticErrorMessage",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -4747,7 +5874,75 @@
      "id": "infra-diagnostics",
      "name": "Diagnostics",
      "color": "#b5651d"
-    }
+    },
+    "targets": [
+     {
+      "name": "diagnosticErrorCategory",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-error-metadata.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function diagnosticErrorCategory(...args: unknown[]): unknown"
+     },
+     {
+      "name": "diagnosticErrorMessage",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-error-metadata.ts",
+      "start": 7,
+      "end": 9,
+      "module": null,
+      "doc": null,
+      "signature": "export function diagnosticErrorMessage(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/infra/diagnostic-events.ts": {
@@ -4823,7 +6018,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "emitTrustedDiagnosticEvent"
+      "unit": "emitTrustedDiagnosticEvent",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      },
      {
       "id": "1d408b67e1418dd7",
@@ -4843,7 +6050,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "emitTrustedDiagnosticEventWithPrivateData"
+      "unit": "emitTrustedDiagnosticEventWithPrivateData",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [
@@ -4901,7 +6120,97 @@
      "id": "infra-diagnostics",
      "name": "Diagnostics",
      "color": "#b5651d"
-    }
+    },
+    "targets": [
+     {
+      "name": "emitTrustedDiagnosticEvent",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function emitTrustedDiagnosticEvent(...args: unknown[]): unknown"
+     },
+     {
+      "name": "emitTrustedDiagnosticEventWithPrivateData",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 7,
+      "end": 9,
+      "module": null,
+      "doc": null,
+      "signature": "export function emitTrustedDiagnosticEventWithPrivateData(...args: unknown[]): unknown"
+     },
+     {
+      "name": "DiagnosticHarnessRunErrorEvent",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 11,
+      "end": 14,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "DiagnosticHarnessRunOutcome",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/infra/diagnostic-events.ts",
+      "start": 16,
+      "end": 19,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/infra/diagnostic-llm-content.ts": {
@@ -4957,7 +6266,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "resolveDiagnosticModelContentCapturePolicy"
+      "unit": "resolveDiagnosticModelContentCapturePolicy",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -4986,7 +6307,64 @@
      "id": "infra-diagnostics",
      "name": "Diagnostics",
      "color": "#b5651d"
-    }
+    },
+    "targets": [
+     {
+      "name": "resolveDiagnosticModelContentCapturePolicy",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-llm-content.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function resolveDiagnosticModelContentCapturePolicy(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/infra/diagnostic-trace-context.ts": {
@@ -5102,7 +6480,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "createChildDiagnosticTraceContext"
+      "unit": "createChildDiagnosticTraceContext",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      },
      {
       "id": "7782f7cb8e96f7ab",
@@ -5122,7 +6512,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "freezeDiagnosticTraceContext"
+      "unit": "freezeDiagnosticTraceContext",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      },
      {
       "id": "a29c791fd5a24306",
@@ -5142,7 +6544,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "getActiveDiagnosticTraceContext"
+      "unit": "getActiveDiagnosticTraceContext",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      },
      {
       "id": "fd534a367c5237c7",
@@ -5162,7 +6576,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "runWithDiagnosticTraceContext"
+      "unit": "runWithDiagnosticTraceContext",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [
@@ -5226,7 +6652,108 @@
      "id": "infra-diagnostics",
      "name": "Diagnostics",
      "color": "#b5651d"
-    }
+    },
+    "targets": [
+     {
+      "name": "createChildDiagnosticTraceContext",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function createChildDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "freezeDiagnosticTraceContext",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 7,
+      "end": 9,
+      "module": null,
+      "doc": null,
+      "signature": "export function freezeDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "getActiveDiagnosticTraceContext",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 11,
+      "end": 13,
+      "module": null,
+      "doc": null,
+      "signature": "export function getActiveDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "runWithDiagnosticTraceContext",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 15,
+      "end": 17,
+      "module": null,
+      "doc": null,
+      "signature": "export function runWithDiagnosticTraceContext(...args: unknown[]): unknown"
+     },
+     {
+      "name": "DiagnosticTraceContext",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/infra/diagnostic-trace-context.ts",
+      "start": 19,
+      "end": 22,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/agent-run-terminal-outcome.ts": {
@@ -5302,7 +6829,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "normalizeAgentRunAttemptTerminal"
+      "unit": "normalizeAgentRunAttemptTerminal",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      },
      {
       "id": "3d4c3271e1b358c7",
@@ -5322,7 +6861,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "projectAgentRunAttemptTerminal"
+      "unit": "projectAgentRunAttemptTerminal",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -5359,7 +6910,75 @@
      "id": "agents-core",
      "name": "Agent core",
      "color": "#3d8a7a"
-    }
+    },
+    "targets": [
+     {
+      "name": "normalizeAgentRunAttemptTerminal",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/agent-run-terminal-outcome.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function normalizeAgentRunAttemptTerminal(...args: unknown[]): unknown"
+     },
+     {
+      "name": "projectAgentRunAttemptTerminal",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/agent-run-terminal-outcome.ts",
+      "start": 7,
+      "end": 9,
+      "module": null,
+      "doc": null,
+      "signature": "export function projectAgentRunAttemptTerminal(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/embedded-agent-runner/run/helpers.ts": {
@@ -5415,7 +7034,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "resolveFinalMessageRawText"
+      "unit": "resolveFinalMessageRawText",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -5444,11 +7075,68 @@
      "id": "agents-runner",
      "name": "Embedded runner",
      "color": "#7a5bb5"
-    }
+    },
+    "targets": [
+     {
+      "name": "resolveFinalMessageRawText",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/embedded-agent-runner/run/helpers.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function resolveFinalMessageRawText(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/embedded-agent-runner/run/types.ts": {
-   "source": "// types.ts: mock stub generated from what lifecycle.ts imports.\n\nexport type EmbeddedRunAttemptResult = {\n  id: string;\n  createdAt: number;\n};\n",
+   "source": "// types.ts: mock stub generated from what lifecycle.ts imports.\n\n/** Everything one embedded attempt produced: messages, terminal outcome and usage. */\nexport type EmbeddedRunAttemptResult = {\n  /** Captured assistant messages, in order. */\n  messages: unknown[];\n  terminal?: { kind: string; reason?: string };\n  usage?: { inputTokens: number; outputTokens: number };\n  diagnosticTrace?: DiagnosticTraceContext;\n};\n",
    "flows": {},
    "view": {
     "path": "src/agents/embedded-agent-runner/run/types.ts",
@@ -5457,8 +7145,8 @@
     "langLabel": "TypeScript",
     "monacoLang": "typescript",
     "tier": "full",
-    "lines": 6,
-    "contentHash": "25f8bee3d7cf582e",
+    "lines": 10,
+    "contentHash": "52ebbfddccab795c",
     "layers": 0,
     "functions": [],
     "types": [
@@ -5466,10 +7154,10 @@
       "id": "d0cb5927a2c9eff0",
       "name": "EmbeddedRunAttemptResult",
       "kind": "type",
-      "start": 3,
-      "end": 6,
+      "start": 4,
+      "end": 10,
       "exported": true,
-      "doc": null,
+      "doc": "Everything one embedded attempt produced: messages, terminal outcome and usage.",
       "summary": null
      }
     ],
@@ -5489,7 +7177,64 @@
      "id": "agents-runner",
      "name": "Embedded runner",
      "color": "#7a5bb5"
-    }
+    },
+    "targets": [
+     {
+      "name": "EmbeddedRunAttemptResult",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/embedded-agent-runner/run/types.ts",
+      "start": 4,
+      "end": 10,
+      "module": null,
+      "doc": "Everything one embedded attempt produced: messages, terminal outcome and usage.",
+      "signature": null
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/tools/tts-tool-result-provenance.ts": {
@@ -5545,7 +7290,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "copyCoreTtsAttemptResultProvenance"
+      "unit": "copyCoreTtsAttemptResultProvenance",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -5574,7 +7331,64 @@
      "id": "agents-core",
      "name": "Agent core",
      "color": "#3d8a7a"
-    }
+    },
+    "targets": [
+     {
+      "name": "copyCoreTtsAttemptResultProvenance",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/tools/tts-tool-result-provenance.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function copyCoreTtsAttemptResultProvenance(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/harness/commentary-diagnostics.ts": {
@@ -5630,7 +7444,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "subscribeAgentCommentaryDiagnostics"
+      "unit": "subscribeAgentCommentaryDiagnostics",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -5659,7 +7485,64 @@
      "id": "agents-harness",
      "name": "Agent harness",
      "color": "#2f6fb0"
-    }
+    },
+    "targets": [
+     {
+      "name": "subscribeAgentCommentaryDiagnostics",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/commentary-diagnostics.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function subscribeAgentCommentaryDiagnostics(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/harness/errors.ts": {
@@ -5715,7 +7598,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "recordAgentHarnessPreflightOwner"
+      "unit": "recordAgentHarnessPreflightOwner",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -5744,7 +7639,64 @@
      "id": "agents-harness",
      "name": "Agent harness",
      "color": "#2f6fb0"
-    }
+    },
+    "targets": [
+     {
+      "name": "recordAgentHarnessPreflightOwner",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/errors.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function recordAgentHarnessPreflightOwner(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/harness/settled-turn-finalization-outcome.ts": {
@@ -5799,7 +7751,75 @@
      "id": "agents-harness",
      "name": "Agent harness",
      "color": "#2f6fb0"
-    }
+    },
+    "targets": [
+     {
+      "name": "EmptySettledTurnFinalizationError",
+      "origin": "local",
+      "kind": "class",
+      "path": "src/agents/harness/settled-turn-finalization-outcome.ts",
+      "start": 3,
+      "end": 7,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "PreparedSettledTurnFinalizationResult",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/settled-turn-finalization-outcome.ts",
+      "start": 9,
+      "end": 12,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/harness/settled-turn-finalization-result.ts": {
@@ -5855,7 +7875,19 @@
       "typeUses": [],
       "externalCallers": 1,
       "summary": null,
-      "unit": "assertSettledTurnFinalizationResult"
+      "unit": "assertSettledTurnFinalizationResult",
+      "sig": {
+       "params": [
+        {
+         "name": "...args",
+         "typeText": "unknown[]",
+         "default": null,
+         "rest": true,
+         "optional": false
+        }
+       ],
+       "returns": "unknown"
+      }
      }
     ],
     "types": [],
@@ -5884,11 +7916,68 @@
      "id": "agents-harness",
      "name": "Agent harness",
      "color": "#2f6fb0"
-    }
+    },
+    "targets": [
+     {
+      "name": "assertSettledTurnFinalizationResult",
+      "origin": "local",
+      "kind": "function",
+      "path": "src/agents/harness/settled-turn-finalization-result.ts",
+      "start": 3,
+      "end": 5,
+      "module": null,
+      "doc": null,
+      "signature": "export function assertSettledTurnFinalizationResult(...args: unknown[]): unknown"
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "src/agents/harness/types.ts": {
-   "source": "// types.ts: mock stub generated from what lifecycle.ts imports.\n\nexport type AgentHarness = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessAttemptParams = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessAttemptParamsV2 = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessAttemptResult = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessSettledTurnFinalizationAttemptParams = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessSettledTurnFinalizationResult = {\n  id: string;\n  createdAt: number;\n};\n",
+   "source": "// types.ts: mock stub generated from what lifecycle.ts imports.\n\n/** A pluggable agent runtime: runs attempts and, optionally, classifies their results. */\nexport interface AgentHarness {\n  /** Stable id, such as \"openclaw\" or \"codex\". */\n  id: string;\n  label: string;\n  runAttempt(params: AgentHarnessAttemptParamsV2): Promise<AgentHarnessAttemptResult>;\n  classify?(result: AgentHarnessAttemptResult, params: AgentHarnessAttemptParamsV2): AgentHarnessResultClassification | undefined;\n  contextEngineHostCapabilities?: string[];\n}\n\nexport type AgentHarnessAttemptParams = {\n  id: string;\n  createdAt: number;\n};\n\n/** Current host-prepared attempt parameters: session, prompt and content policy. */\nexport type AgentHarnessAttemptParamsV2 = AgentHarnessAttemptParams & {\n  runId: string;\n  sessionId: string;\n  sessionKey?: string;\n  provider: string;\n  model: string;\n  prompt?: string;\n  trigger?: \"user\" | \"schedule\" | \"hook\";\n  messageChannel?: string;\n};\n\n/** What a harness attempt returns: the embedded result plus the harness classification. */\nexport type AgentHarnessAttemptResult = EmbeddedRunAttemptResult & {\n  agentHarnessId?: string;\n  agentHarnessResultClassification?: string;\n};\n\nexport type AgentHarnessSettledTurnFinalizationAttemptParams = {\n  id: string;\n  createdAt: number;\n};\n\nexport type AgentHarnessSettledTurnFinalizationResult = {\n  id: string;\n  createdAt: number;\n};\n",
    "flows": {},
    "view": {
     "path": "src/agents/harness/types.ts",
@@ -5897,34 +7986,24 @@
     "langLabel": "TypeScript",
     "monacoLang": "typescript",
     "tier": "full",
-    "lines": 31,
-    "contentHash": "47c408665d19aab5",
+    "lines": 44,
+    "contentHash": "71251b66e47b57e4",
     "layers": 0,
     "functions": [],
     "types": [
      {
-      "id": "9de6dd896d7cb1d5",
+      "id": "12de11ae3fe09678",
       "name": "AgentHarness",
-      "kind": "type",
-      "start": 3,
-      "end": 6,
+      "kind": "interface",
+      "start": 4,
+      "end": 11,
       "exported": true,
-      "doc": null,
+      "doc": "A pluggable agent runtime: runs attempts and, optionally, classifies their results.",
       "summary": null
      },
      {
       "id": "f3dafd989dcc4b5e",
       "name": "AgentHarnessAttemptParams",
-      "kind": "type",
-      "start": 8,
-      "end": 11,
-      "exported": true,
-      "doc": null,
-      "summary": null
-     },
-     {
-      "id": "fd26d8784da559c6",
-      "name": "AgentHarnessAttemptParamsV2",
       "kind": "type",
       "start": 13,
       "end": 16,
@@ -5933,21 +8012,31 @@
       "summary": null
      },
      {
+      "id": "fd26d8784da559c6",
+      "name": "AgentHarnessAttemptParamsV2",
+      "kind": "type",
+      "start": 19,
+      "end": 28,
+      "exported": true,
+      "doc": "Current host-prepared attempt parameters: session, prompt and content policy.",
+      "summary": null
+     },
+     {
       "id": "08c21decf448b7a7",
       "name": "AgentHarnessAttemptResult",
       "kind": "type",
-      "start": 18,
-      "end": 21,
+      "start": 31,
+      "end": 34,
       "exported": true,
-      "doc": null,
+      "doc": "What a harness attempt returns: the embedded result plus the harness classification.",
       "summary": null
      },
      {
       "id": "6e666c51c52edd86",
       "name": "AgentHarnessSettledTurnFinalizationAttemptParams",
       "kind": "type",
-      "start": 23,
-      "end": 26,
+      "start": 36,
+      "end": 39,
       "exported": true,
       "doc": null,
       "summary": null
@@ -5956,8 +8045,8 @@
       "id": "647921bac2b922ba",
       "name": "AgentHarnessSettledTurnFinalizationResult",
       "kind": "type",
-      "start": 28,
-      "end": 31,
+      "start": 41,
+      "end": 44,
       "exported": true,
       "doc": null,
       "summary": null
@@ -5979,7 +8068,119 @@
      "id": "agents-harness",
      "name": "Agent harness",
      "color": "#2f6fb0"
-    }
+    },
+    "targets": [
+     {
+      "name": "AgentHarness",
+      "origin": "local",
+      "kind": "interface",
+      "path": "src/agents/harness/types.ts",
+      "start": 4,
+      "end": 11,
+      "module": null,
+      "doc": "A pluggable agent runtime: runs attempts and, optionally, classifies their results.",
+      "signature": null
+     },
+     {
+      "name": "AgentHarnessAttemptParams",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 13,
+      "end": 16,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "AgentHarnessAttemptParamsV2",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 19,
+      "end": 28,
+      "module": null,
+      "doc": "Current host-prepared attempt parameters: session, prompt and content policy.",
+      "signature": null
+     },
+     {
+      "name": "AgentHarnessAttemptResult",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 31,
+      "end": 34,
+      "module": null,
+      "doc": "What a harness attempt returns: the embedded result plus the harness classification.",
+      "signature": null
+     },
+     {
+      "name": "AgentHarnessSettledTurnFinalizationAttemptParams",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 36,
+      "end": 39,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "AgentHarnessSettledTurnFinalizationResult",
+      "origin": "local",
+      "kind": "type",
+      "path": "src/agents/harness/types.ts",
+      "start": 41,
+      "end": 44,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "unknown",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "string",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "number",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     },
+     {
+      "name": "Promise",
+      "origin": "builtin",
+      "kind": null,
+      "path": null,
+      "start": 0,
+      "end": 0,
+      "module": null,
+      "doc": null,
+      "signature": null
+     }
+    ]
    }
   },
   "tools/relay/main.go": {
@@ -6113,7 +8314,8 @@
      "id": "relay",
      "name": "Relay (Go)",
      "color": "#46708f"
-    }
+    },
+    "targets": []
    }
   },
   "README.md": {
@@ -6138,7 +8340,8 @@
     "importers": [],
     "overview": null,
     "hasErrors": false,
-    "module": null
+    "module": null,
+    "targets": []
    }
   }
  }

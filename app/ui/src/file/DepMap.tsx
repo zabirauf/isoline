@@ -1,5 +1,5 @@
 // The dependency map for one file, as SVG: the prototype's layout, focus colors, pan and zoom.
-import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, type ReactElement } from "react";
+import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import type { FileView } from "../ipc/bindings/FileView";
 import { type SymInfo } from "../lib/cards";
 import { edgeFocus, focusSets, type Target } from "../lib/focus";
@@ -28,7 +28,18 @@ export interface DepMapProps {
   onSelect(t: Target | null): void;
   onHover(t: Target | null): void;
   onOpenFile(path: string): void;
+  /** ⌘-click on a function node: go to its definition. */
+  onGoTo(name: string): void;
+  /** The "+N modules" stub turns the external-imports column on. */
+  onShowExt(): void;
 }
+
+/**
+ * Below this scale node captions (10.5px) get too small to read; fit stops here and the reader
+ * pans. The spec says 0.6, but at 0.6 captions render at about 6px, which fails its own
+ * acceptance ("captions legible at default zoom"); 0.9 keeps them near 9.5px.
+ */
+export const MIN_FIT_SCALE = 0.9;
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
@@ -40,7 +51,9 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
   const uid = useId().replace(/:/g, "");
   const { view, showExt, showTypes } = p;
 
-  const G: MapLayout = useMemo(() => layoutMap(view.functions, view.modules, { showExt, showTypes }), [view, showExt, showTypes]);
+  const G: MapLayout = useMemo(() => layoutMap(view.functions, view.modules, { showExt, showTypes, collapseModules: true }), [view, showExt, showTypes]);
+  const [hoverMod, setHoverMod] = useState<string | null>(null);
+  const extModules = view.modules.filter((m) => m.symbols.some((s) => showTypes || !s.typeOnly)).length;
 
   const headsRef = useRef<SVGGElement>(null);
   const applyT = useCallback((anim: boolean) => {
@@ -78,13 +91,22 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
       if (!svg) return;
       const r = svg.getBoundingClientRect();
       if (!r.width || !r.height) return;
-      const bw = G.W + 40;
+      const bw = G.W + 40 + (showExt ? 0 : 120);
       const bh = G.H + 70;
-      const k = Math.min(1.1, Math.min(r.width / bw, (r.height - 70) / bh) * 0.95);
-      T.current = { k, x: (r.width - G.W * k) / 2, y: Math.max(52, (r.height - 60 - G.H * k) / 2 + 30) };
+      const fitK = Math.min(1.1, Math.min(r.width / bw, (r.height - 70) / bh) * 0.95);
+      if (fitK >= MIN_FIT_SCALE) {
+        T.current = { k: fitK, x: (r.width - (G.W + (showExt ? 0 : 120)) * fitK) / 2, y: Math.max(52, (r.height - 60 - G.H * fitK) / 2 + 30) };
+      } else {
+        // Too big to fit legibly: show the entry-point column at a readable scale; the reader pans.
+        const k = MIN_FIT_SCALE;
+        const first = G.cols[0] ?? [];
+        const top = first.length ? Math.min(...first.map((n) => n.y)) : 0;
+        const bottom = first.length ? Math.max(...first.map((n) => n.y + n.h)) : G.H;
+        T.current = { k, x: 24, y: Math.max(52, (r.height - (bottom - top) * k) / 2 - top * k) };
+      }
       applyT(anim);
     },
-    [G, applyT],
+    [G, applyT, showExt],
   );
 
   const zoomBy = useCallback(
@@ -256,13 +278,15 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
         }}
         onClick={(e) => {
           const t = targetOf(e.target as Element);
-          if (t) p.onSelect(t);
+          if (t?.kind === "fn" && (e.metaKey || e.ctrlKey)) p.onGoTo(t.id);
+          else if (t) p.onSelect(t);
         }}
         onKeyDown={(e) => {
           const t = targetOf(e.target as Element);
           if (t && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault();
-            p.onSelect(t);
+            if (t.kind === "fn" && (e.metaKey || e.ctrlKey)) p.onGoTo(t.id);
+            else p.onSelect(t);
           }
         }}
       >
@@ -304,9 +328,20 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
             const lit = n.vis.some((s) => (focusT?.kind === "sym" && focusT.id === s.name) || S?.syms.has(s.name));
             const nomatch = q && !(n.vis.some((s) => s.name.toLowerCase().includes(q)) || n.id.toLowerCase().includes(q)) ? " nomatch" : "";
             const resolved = n.m.resolved;
+            // Collapsed to "N symbols" until the module is focused or hovered.
+            const expanded = lit || hoverMod === n.id;
+            const fullH = MOD_HEAD + n.vis.length * SYM_ROW + 6;
+            const h = expanded ? fullH : n.h;
             return (
-              <g key={n.key} className={`mod${lit ? " lit" : ""}${nomatch}`} data-mod={n.id} transform={`translate(${n.x},${n.y})`}>
-                <rect className="box" width={n.w} height={n.h} rx={7} />
+              <g
+                key={n.key}
+                className={`mod${lit ? " lit" : ""}${expanded ? " expanded" : ""}${nomatch}`}
+                data-mod={n.id}
+                transform={`translate(${n.x},${n.y})`}
+                onPointerEnter={() => setHoverMod(n.id)}
+                onPointerLeave={() => setHoverMod((m) => (m === n.id ? null : m))}
+              >
+                <rect className="box" width={n.w} height={h} rx={7} />
                 <rect className="hd" width={n.w} height={22} rx={7} />
                 <rect className="hd" y={12} width={n.w} height={10} />
                 {resolved ? (
@@ -332,7 +367,12 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
                     {n.label}
                   </text>
                 )}
-                {n.vis.map((s, i) => {
+                {!expanded && (
+                  <text className="symcount" x={14} y={MOD_HEAD + 13}>
+                    {n.vis.length} symbol{n.vis.length === 1 ? "" : "s"}
+                  </text>
+                )}
+                {expanded && n.vis.map((s, i) => {
                   const ss = focusT?.kind === "sym" && focusT.id === s.name ? " sel" : S?.syms.has(s.name) ? " dep" : "";
                   return (
                     <g key={s.name} className={`sym${s.typeOnly ? " typeonly" : ""}${ss}`} data-sym={s.name} transform={`translate(0,${MOD_HEAD + i * SYM_ROW})`}>
@@ -359,8 +399,14 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
           ))}
         </g>
       </svg>
-      <div className="legend mlegend">
-        <div className="row">
+      {G.cols.length === 0 && <p className="map-empty muted">No functions to map in this file.</p>}
+      {!showExt && extModules > 0 && (
+        <button type="button" className="ext-stub" onClick={p.onShowExt} title="">
+          + {extModules} module{extModules === 1 ? "" : "s"}
+        </button>
+      )}
+      {focusT && (
+        <div className="legend mlegend legend-strip" aria-hidden="true">
           <span>
             <i style={{ background: "var(--accent)" }} />
             depends on
@@ -369,13 +415,14 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
             <i style={{ background: "var(--user)" }} />
             used by
           </span>
-          <span>
-            <i style={{ background: "var(--ext)" }} />
-            external import
-          </span>
+          {showExt && (
+            <span>
+              <i style={{ background: "var(--ext)" }} />
+              external import
+            </span>
+          )}
         </div>
-        <div>Entry points on the left; arrows run from caller to callee. Click a function to play its call flow.</div>
-      </div>
+      )}
       <div className="tip" ref={tipRef} />
     </>
   );

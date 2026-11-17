@@ -111,6 +111,55 @@ function signatureOf(code) {
   out = out.replace(/\s+/g, " ").trim();
   return out.length > 200 ? out.slice(0, 199) + "…" : out;
 }
+// Parameters and return type from a declaration's text, the way FnCard.sig carries them.
+function splitTop(s, sep) {
+  const out = [];
+  let depth = 0;
+  let cur = "";
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "=" && s[i + 1] === ">") {
+      cur += "=>";
+      i++;
+      continue;
+    }
+    if ("([{<".includes(c)) depth++;
+    if (")]}>".includes(c)) depth--;
+    if (c === sep && depth === 0) {
+      out.push(cur);
+      cur = "";
+    } else cur += c;
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+function sigOf(code, name) {
+  const body = code.replace(/^\s*\/\*\*[\s\S]*?\*\/\s*/, "");
+  const at = body.indexOf(name);
+  let i = body.indexOf("(", at);
+  let depth = 0;
+  let j = i;
+  for (; j < body.length; j++) {
+    if (body[j] === "(") depth++;
+    if (body[j] === ")" && --depth === 0) break;
+  }
+  const inner = body.slice(i + 1, j);
+  const params = splitTop(inner, ",")
+    .map((p) => p.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .map((p) => {
+      const [left, ...defParts] = splitTop(p, "=");
+      const def = defParts.length ? defParts.join("=").trim() : null;
+      const [rawName, ...typeParts] = splitTop(left, ":");
+      const typeText = typeParts.length ? typeParts.join(":").trim() : null;
+      const n = rawName.trim();
+      return { name: n.replace(/\?$/, ""), typeText, default: def, rest: n.startsWith("..."), optional: n.endsWith("?") || def !== null };
+    });
+  const after = body.slice(j + 1);
+  const ret = after.match(/^\s*:\s*([^{]*?)\s*\{/);
+  return { params, returns: ret ? ret[1].replace(/\s+/g, " ").trim() : null };
+}
+
 function importLine(spec) {
   const i = srcLines.findIndex((l) => l.includes(`from "${spec}"`));
   let j = i;
@@ -142,6 +191,7 @@ const cards = fns.map((f) => ({
   externalCallers: EXTERNAL_CALLERS[f.name] ?? 0,
   summary: { desc: f.desc, algo: f.algo, notes: f.notes, model: "mock", ai: true },
   unit: flows[f.name] ? f.name : null,
+  sig: sigOf(f.code, f.name),
 }));
 
 const harnessLine = srcLines.findIndex((l) => l.includes("harness.runAttempt")) + 1;
@@ -198,18 +248,70 @@ for (const mo of importModules) {
   if (!mo.resolved) continue;
   (importedFiles[mo.resolved] ??= []).push(...mo.symbols);
 }
+const RICH_TYPES = {
+  AgentHarness: {
+    doc: "A pluggable agent runtime: runs attempts and, optionally, classifies their results.",
+    kind: "interface",
+    body: [
+      "export interface AgentHarness {",
+      "  /** Stable id, such as \"openclaw\" or \"codex\". */",
+      "  id: string;",
+      "  label: string;",
+      "  runAttempt(params: AgentHarnessAttemptParamsV2): Promise<AgentHarnessAttemptResult>;",
+      "  classify?(result: AgentHarnessAttemptResult, params: AgentHarnessAttemptParamsV2): AgentHarnessResultClassification | undefined;",
+      "  contextEngineHostCapabilities?: string[];",
+      "}",
+    ],
+  },
+  AgentHarnessAttemptParamsV2: {
+    doc: "Current host-prepared attempt parameters: session, prompt and content policy.",
+    kind: "type",
+    body: [
+      "export type AgentHarnessAttemptParamsV2 = AgentHarnessAttemptParams & {",
+      "  runId: string;",
+      "  sessionId: string;",
+      "  sessionKey?: string;",
+      "  provider: string;",
+      "  model: string;",
+      "  prompt?: string;",
+      "  trigger?: \"user\" | \"schedule\" | \"hook\";",
+      "  messageChannel?: string;",
+      "};",
+    ],
+  },
+  AgentHarnessAttemptResult: {
+    doc: "What a harness attempt returns: the embedded result plus the harness classification.",
+    kind: "type",
+    body: ["export type AgentHarnessAttemptResult = EmbeddedRunAttemptResult & {", "  agentHarnessId?: string;", "  agentHarnessResultClassification?: string;", "};"],
+  },
+  EmbeddedRunAttemptResult: {
+    doc: "Everything one embedded attempt produced: messages, terminal outcome and usage.",
+    kind: "type",
+    body: ["export type EmbeddedRunAttemptResult = {", "  /** Captured assistant messages, in order. */", "  messages: unknown[];", "  terminal?: { kind: string; reason?: string };", "  usage?: { inputTokens: number; outputTokens: number };", "  diagnosticTrace?: DiagnosticTraceContext;", "};"],
+  },
+};
+const stubPos = {};
 for (const [path, syms] of Object.entries(importedFiles)) {
   const lines = [`// ${posix.basename(path)}: mock stub generated from what lifecycle.ts imports.`, ""];
   const fnCards = [];
   const types = [];
   for (const s of syms) {
+    const rich = RICH_TYPES[s.name];
+    if (rich) lines.push(`/** ${rich.doc} */`);
     const start = lines.length + 1;
-    if (s.typeOnly) {
+    if (rich) {
+      lines.push(...rich.body, "");
+      const end = start + rich.body.length - 1;
+      types.push({ id: symId(path, s.name, rich.kind), name: s.name, kind: rich.kind, start, end, exported: true, doc: rich.doc, summary: null });
+      stubPos[s.name] = { path, start, end, kind: rich.kind, doc: rich.doc, signature: rich.body[0].replace(/\s*[={]\s*$/, "") };
+    } else if (s.typeOnly) {
       lines.push(`export type ${s.name} = {`, `  id: string;`, `  createdAt: number;`, `};`, "");
       types.push({ id: symId(path, s.name, "type"), name: s.name, kind: "type", start, end: start + 3, exported: true, doc: null, summary: null });
+      stubPos[s.name] = { path, start, end: start + 3, kind: "type", doc: null, signature: `export type ${s.name}` };
     } else if (/^[A-Z]/.test(s.name)) {
       lines.push(`export class ${s.name} extends Error {`, `  constructor(readonly result: unknown) {`, `    super("${s.name}");`, `  }`, `}`, "");
       types.push({ id: symId(path, s.name, "class"), name: s.name, kind: "class", start, end: start + 4, exported: true, doc: null, summary: null });
+      stubPos[s.name] = { path, start, end: start + 4, kind: "class", doc: null, signature: `export class ${s.name} extends Error` };
     } else {
       lines.push(`export function ${s.name}(...args: unknown[]): unknown {`, `  return args[0];`, `}`, "");
       fnCards.push({
@@ -231,7 +333,9 @@ for (const [path, syms] of Object.entries(importedFiles)) {
         externalCallers: 1,
         summary: null,
         unit: s.name,
+        sig: { params: [{ name: "...args", typeText: "unknown[]", default: null, rest: true, optional: false }], returns: "unknown" },
       });
+      stubPos[s.name] = { path, start, end: start + 2, kind: "function", doc: null, signature: `export function ${s.name}(...args: unknown[]): unknown` };
     }
   }
   const text = lines.join("\n");
@@ -260,8 +364,35 @@ for (const [path, syms] of Object.entries(importedFiles)) {
       overview: null,
       hasErrors: false,
       module: modRef(path),
+      targets: [
+        ...fnCards.map((c) => ({ name: c.name, origin: "local", kind: "function", path, start: c.start, end: c.end, module: null, doc: null, signature: c.signature })),
+        ...types.map((t) => ({ name: t.name, origin: "local", kind: t.kind, path, start: t.start, end: t.end, module: null, doc: t.doc, signature: null })),
+        ...builtinTargets(["unknown", "string", "number", "Promise"]),
+      ],
     },
   };
+}
+
+// Definition targets for every name lifecycle.ts uses: drives type colors, peeks and go to definition.
+function builtinTargets(names) {
+  return names.map((name) => ({ name, origin: "builtin", kind: null, path: null, start: 0, end: 0, module: null, doc: null, signature: null }));
+}
+{
+  const v = files[LIFE].view;
+  const srcLines = source.split("\n");
+  const targets = [];
+  for (const c of v.functions) targets.push({ name: c.name, origin: "local", kind: "function", path: LIFE, start: c.start, end: c.end, module: null, doc: c.doc, signature: c.signature });
+  for (const t of D.types) targets.push({ name: t.name, origin: "local", kind: "type", path: LIFE, start: t.start, end: t.end, module: null, doc: t.desc, signature: srcLines[t.start - 1].trim().replace(/\s*[={]\s*$/, "") });
+  for (const m of importModules) {
+    if (!m.resolved) continue;
+    for (const s of m.symbols) {
+      const pos = stubPos[s.name];
+      if (pos) targets.push({ name: s.name, origin: "imported", kind: pos.kind, path: pos.path, start: pos.start, end: pos.end, module: m.id, doc: pos.doc, signature: pos.signature });
+    }
+  }
+  // Names used in signatures that this file does not import: a package type and the built-ins.
+  targets.push(...builtinTargets(["string", "number", "boolean", "undefined", "void", "unknown", "Promise", "Parameters", "typeof", "Record", "Error"]));
+  v.targets = targets;
 }
 
 // ---------- a Go file in the outline tier ----------
@@ -381,6 +512,7 @@ files[GO_PATH] = {
     overview: { text: "Reads diagnostic events from stdin and forwards them to an HTTP collector in batches of up to 100, or every 2 seconds.", model: "mock" },
     hasErrors: false,
     module: modRef(GO_PATH),
+    targets: [],
   },
 };
 
@@ -433,6 +565,7 @@ files["README.md"] = {
     overview: null,
     hasErrors: false,
     module: null,
+    targets: [],
   },
 };
 

@@ -36,6 +36,8 @@ const browser = await chromium.launch();
 
 for (const scheme of schemes) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: scheme, deviceScaleFactor: 1 });
+  // A returning reader: first-run hint dismissed, call-flow key already seen.
+  await ctx.addInitScript(() => localStorage.setItem("isoline.prefs.v1", JSON.stringify({ detail: "read", mapExternal: false, flowKeySeen: true, hintSeen: true, aiNoticeHidden: false })));
   const page = await ctx.newPage();
   page.on("request", (r) => {
     const u = r.url();
@@ -50,6 +52,30 @@ for (const scheme of schemes) {
   await wait(1200);
   console.log(`${scheme}: file view ready in ${Date.now() - t0} ms`);
   await page.screenshot({ path: `${out}/${name}-map-${scheme}.png` });
+  if (fn && scheme === schemes[0]) {
+    // Hover peek over a type in the signature, the ⌘-hold state, and the Glance level.
+    const card = page.locator(`.iso-card[data-card="${fn}"]`);
+    const ty = card.locator(".iso-sig button.ty").first();
+    if (await ty.count()) {
+      await ty.hover();
+      await page.locator(".iso-peek").waitFor({ timeout: 5000 });
+      await page.locator(".iso-peek .peek-code .row, .iso-peek .muted").first().waitFor({ timeout: 10000 });
+      await wait(400);
+      await page.screenshot({ path: `${out}/${name}-peek-${scheme}.png` });
+    } else problems.push(`no typed signature on ${fn}`);
+    await page.mouse.move(420, 640);
+    await wait(500);
+    await page.keyboard.down(process.platform === "darwin" ? "Meta" : "Control");
+    await wait(250);
+    await page.screenshot({ path: `${out}/${name}-cmd-hold-${scheme}.png` });
+    await page.keyboard.up(process.platform === "darwin" ? "Meta" : "Control");
+    await page.locator(".pane-left").click({ position: { x: 4, y: 4 } });
+    await page.keyboard.press("1");
+    await wait(500);
+    await page.screenshot({ path: `${out}/${name}-glance-${scheme}.png` });
+    await page.keyboard.press("2");
+    await wait(400);
+  }
   if (fn) {
     const head = page.locator(`.card-h[aria-label="Focus ${fn} in the graph"]`);
     if (await head.count()) {

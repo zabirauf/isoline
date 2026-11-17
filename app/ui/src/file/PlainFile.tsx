@@ -5,7 +5,7 @@ import type { FileView } from "../ipc/bindings/FileView";
 import { lineRange, plural } from "../lib/format";
 import type { CodeContext } from "../editor/EditorHost";
 import { CodeView } from "../editor/CodeView";
-import { AiMark, Eyebrow, FilePath, RichText, TierBadge } from "../components/ui";
+import { AiMark, Eyebrow, FilePath, RichText } from "../components/ui";
 import { FileHeader } from "./FileHeader";
 import { Splitter, initialSplit } from "./Splitter";
 
@@ -18,6 +18,7 @@ export function tierSentence(view: FileView): string {
 export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; focusLine?: number | null; onOpenFile(path: string): void }) {
   const [reveal, setReveal] = useState<{ line: number; n: number } | null>(focusLine ? { line: focusLine, n: 0 } : null);
   const [split] = useState(initialSplit);
+  const [why, setWhy] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const context = useMemo<CodeContext>(
     () => ({
@@ -36,10 +37,6 @@ export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; foc
         <div className="pane-left">
           <div className="inner">
             <section className="overview tier-note">
-              <Eyebrow>Why there is no call flow</Eyebrow>
-              <p>
-                <TierBadge tier={view.tier} /> {tierSentence(view)}
-              </p>
               {view.overview ? (
                 <p>
                   <RichText text={view.overview.text} />
@@ -48,6 +45,14 @@ export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; foc
               ) : (
                 <p className="muted">No file summary yet. To get one, choose “Turn on AI…” in the top bar and summarize this file.</p>
               )}
+              <Eyebrow>{view.tier === "outline" ? "Outline tier" : "Text tier"}</Eyebrow>
+              <p>
+                {view.tier === "outline" ? "No call flow or dependency map for this language." : "This file is not parsed: no outline, map or call flow."}{" "}
+                <button type="button" className="link-quiet" aria-expanded={why} onClick={() => setWhy(!why)}>
+                  Why ›
+                </button>
+              </p>
+              {why && <p className="muted">{tierSentence(view)}</p>}
             </section>
             {view.tier === "outline" && (
               <section className="outline-list" aria-label="Outline">

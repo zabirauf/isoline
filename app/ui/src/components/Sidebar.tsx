@@ -4,6 +4,14 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { TreeNode } from "../ipc/bindings/TreeNode";
 import { dirname, fmtInt, middleEllipsis } from "../lib/format";
 import { ModuleDot } from "./ui";
+import { usePeek } from "./Peek";
+
+/** Pending and failed only: indexed is the norm and shows nothing. The meaning is in the peek. */
+function StatusDot({ status, text }: { status: keyof typeof STATUS_WORD; text: string }) {
+  const peek = usePeek();
+  const bind = peek.bind(() => ({ kind: "text", title: STATUS_WORD[status], body: text.slice(text.indexOf(":") + 1).trim() }));
+  return <span className={`fst fst-${status}`} role="img" aria-label={STATUS_WORD[status]} onPointerEnter={bind.onPointerEnter} onPointerLeave={bind.onPointerLeave} />;
+}
 
 const ROW = 26;
 const OVERSCAN = 12;
@@ -178,7 +186,7 @@ export const Sidebar = memo(function Sidebar({ tree, openPath, onOpen }: Sidebar
             // Room for the name: row minus indent, dot or twisty, badge, status dot and gaps.
             const room = width - indent - 14 - (badge ? 58 : 0) - (n.isDir ? 14 : 20) - (r.dir !== undefined ? 60 : 0);
             const shown = n.isDir ? n.name : middleEllipsis(n.name, Math.max(4, Math.floor(room / monoCharWidth())));
-            const title = n.isDir ? n.path : `${n.path} (${n.tier ?? "text"} tier, ${STATUS_WORD[n.status].toLowerCase()})`;
+            const title = n.path;
             return (
               <div
                 key={n.path}
@@ -200,28 +208,13 @@ export const Sidebar = memo(function Sidebar({ tree, openPath, onOpen }: Sidebar
                 <span className="nm">{shown}</span>
                 {r.dir !== undefined && <span className="dirhint">{r.dir}</span>}
                 {badge && <span className={`tier-mini tier-${n.tier}`}>{n.tier}</span>}
-                {!n.isDir && <span className={`fst fst-${n.status}`} role="img" title={STATUS_TEXT[n.status]} aria-label={STATUS_WORD[n.status]} />}
-                {n.isDir && n.status === "pending" && <span className="fst fst-pending" role="img" title="Pending: some files in this folder are waiting to be indexed" aria-label="Pending" />}
+                {!n.isDir && n.status !== "indexed" && <StatusDot status={n.status} text={STATUS_TEXT[n.status]} />}
+                {n.isDir && n.status === "pending" && <StatusDot status="pending" text="Pending: some files in this folder are waiting to be indexed" />}
               </div>
             );
           })}
         </div>
         {rows.length === 0 && <p className="muted side-empty">{query ? `No file matches “${q}”.` : "No files yet. They appear here as indexing finds them."}</p>}
-      </div>
-      <div className="side-legend" aria-label="Legend">
-        <span>
-          <span className="fst fst-indexed" aria-hidden="true" />
-          indexed
-        </span>
-        <span>
-          <span className="fst fst-pending" aria-hidden="true" />
-          pending
-        </span>
-        <span>
-          <span className="fst fst-failed" aria-hidden="true" />
-          failed
-        </span>
-        <span title="Files in the full tier carry no badge; outline and text files are marked.">badge: outline or text tier</span>
       </div>
     </nav>
   );

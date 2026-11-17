@@ -19,8 +19,12 @@ const browser = await chromium.launch();
 const problems = [];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function newPage(scheme, query = "") {
+// Screenshots show a returning reader (hint dismissed, call-flow key seen) unless `fresh`.
+const SEEN = JSON.stringify({ detail: "read", mapExternal: false, flowKeySeen: true, hintSeen: true, aiNoticeHidden: false });
+
+async function newPage(scheme, query = "", fresh = false) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: scheme, deviceScaleFactor: 1 });
+  if (!fresh) await ctx.addInitScript((v) => localStorage.setItem("isoline.prefs.v1", v), SEEN);
   const page = await ctx.newPage();
   page.on("request", (r) => {
     if (!r.url().startsWith(base) && !r.url().startsWith("data:") && !r.url().startsWith("blob:")) problems.push(`network request: ${r.url()}`);
@@ -79,6 +83,49 @@ for (const scheme of ["light", "dark"]) {
   if (drillPos?.startsWith("–") && curSteps) problems.push(`after drill the counter says "${drillPos}" but ${curSteps} step is highlighted`);
   await p2.screenshot({ path: `${out}/flow-drill-${scheme}.png` });
   await p2.close();
+}
+
+// Progressive disclosure: peek, ⌘-hold, Glance, first run.
+{
+  const page = await newPage("light");
+  await openLifecycle(page);
+  const sigType = page.locator('.iso-card[data-card="runAgentHarnessLifecycleAttempt"] .iso-sig button.ty', { hasText: /^AgentHarness$/ }).first();
+  await sigType.hover();
+  await page.locator(".iso-peek").waitFor();
+  await page.locator(".iso-peek .peek-code .row").first().waitFor();
+  await wait(300);
+  await page.screenshot({ path: `${out}/peek-light.png` });
+  await page.mouse.move(400, 600);
+  await page.keyboard.down("Meta");
+  await wait(200);
+  await page.screenshot({ path: `${out}/cmd-hold-light.png` });
+  await page.keyboard.up("Meta");
+  await page.locator(".pane-left").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("1");
+  await wait(400);
+  await page.screenshot({ path: `${out}/glance-light.png` });
+  // Go to definition and back: AgentHarness opens types.ts; ⌘[ returns with the same card focused.
+  await page.keyboard.press("2");
+  await page.locator('.card-h[aria-label="Focus runAgentHarnessLifecycleAttempt in the graph"]').click();
+  await wait(1200);
+  await page.locator('.iso-card[data-card="runAgentHarnessLifecycleAttempt"] .iso-sig button.ty', { hasText: /^AgentHarness$/ }).first().click();
+  await page.locator("h1", { hasText: "types.ts" }).waitFor();
+  await wait(500);
+  await page.screenshot({ path: `${out}/goto-definition-light.png` });
+  await page.keyboard.press("Meta+BracketLeft");
+  await page.locator("h1", { hasText: "lifecycle.ts" }).waitFor();
+  await wait(800);
+  if ((await page.locator(".iso-card-sel").getAttribute("data-card")) !== "runAgentHarnessLifecycleAttempt") problems.push("Back did not restore the focused card");
+  await page.close();
+
+  const fresh = await newPage("light", "", true);
+  await openLifecycle(fresh);
+  await fresh.screenshot({ path: `${out}/first-run-light.png` });
+  await fresh.getByRole("button", { name: "Got it" }).click();
+  await fresh.reload();
+  await fresh.getByText("Recent repos").waitFor();
+  if (await fresh.getByText("Hover a type to see its definition").count()) problems.push("the first-run hint came back after Got it");
+  await fresh.close();
 }
 
 // Outline tier (Go) and text tier (Markdown).

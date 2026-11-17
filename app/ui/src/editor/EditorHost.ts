@@ -45,8 +45,17 @@ export interface CodeContext {
   outline?: Map<string, { start: number; end: number; kind: string }>;
   /** The card whose code this is: its name is set bold, not linked. */
   self?: string;
+  /**
+   * Where every name used in the file is defined (FileView.targets): any name with a target
+   * that is not a built-in becomes a link, colored by origin.
+   */
+  targets?: Map<string, { origin: "local" | "imported" | "external" | "builtin"; kind: string | null }>;
+  /** Go to definition (click, F12). Falls back to onJumpToCard for functions in this file. */
+  onGoTo?(name: string): void;
   onJumpToCard?(name: string): void;
   onSymbol?(name: string): void;
+  /** The pointer rests on a link (rect in viewport coordinates), or left it (null). Drives the peek. */
+  onHoverName?(name: string | null, rect: DOMRect | null): void;
 }
 
 export interface EditorHostOptions {
@@ -62,6 +71,8 @@ export interface EditorHostOptions {
 }
 
 type LinkKind = "fn" | "ext" | "type" | "def" | "outline";
+/** How far the pointer may move between press and release for a click to count as a jump. */
+const CLICK_SLOP = 4;
 interface Link {
   line: number;
   startCol: number;
@@ -106,46 +117,23 @@ function registerOpener() {
       if (resource.scheme !== CARD_SCHEME) return false;
       const host = hosts.get(source.getModel()?.uri.toString() ?? "");
       const name = decodeURIComponent(resource.path.replace(/^\//, ""));
-      host?.context.onJumpToCard?.(name);
+      if (host?.context.onGoTo) host.context.onGoTo(name);
+      else host?.context.onJumpToCard?.(name);
       return true;
     },
   });
 }
 
-/** Tiny read-only models that stand for a card, so "peek definition" shows its summary. */
-function cardModel(c: CardRef): monaco.Uri {
-  const uri = monaco.Uri.from({ scheme: CARD_SCHEME, path: "/" + encodeURIComponent(c.name) });
-  if (!monaco.editor.getModel(uri)) monaco.editor.createModel(`${c.name}  ${lineRange(c.start, c.end)}\n${c.desc ?? ""}`, "plaintext", uri);
+/** Tiny read-only models that stand for a definition elsewhere; the opener turns them into go to definition. */
+function nameModel(name: string, text: string): monaco.Uri {
+  const uri = monaco.Uri.from({ scheme: CARD_SCHEME, path: "/" + encodeURIComponent(name) });
+  if (!monaco.editor.getModel(uri)) monaco.editor.createModel(text, "plaintext", uri);
   return uri;
 }
 
 function registerProviders(language: string) {
   if (providersFor.has(language)) return;
   providersFor.add(language);
-  monaco.languages.registerHoverProvider(language, {
-    provideHover(model, pos) {
-      const host = hosts.get(model.uri.toString());
-      const link = host?.linkAt(pos.lineNumber, pos.column);
-      if (!host || !link) return null;
-      const range = new monaco.Range(link.line, link.startCol, link.line, link.endCol);
-      const ctx = host.context;
-      let md: string | null = null;
-      if (link.kind === "fn" || link.kind === "def") {
-        const c = ctx.cards.get(link.name)!;
-        md = `**\`${c.name}\`** · ${lineRange(c.start, c.end)}\n\n${c.desc ?? "No summary yet."}${link.kind === "fn" ? "\n\nClick to open its card." : ""}`;
-      } else if (link.kind === "ext") {
-        const s = ctx.syms.get(link.name)!;
-        md = `**\`${s.label}\`**${s.typeOnly ? " (type)" : ""}\n\n${s.member ? `Reached through the \`${s.receiver}\` parameter.` : `Imported from \`${s.from}\`.`}`;
-      } else if (link.kind === "type") {
-        const t = ctx.types.get(link.name)!;
-        md = `**\`${t.name}\`** · local type · ${lineRange(t.start, t.end)}${t.desc ? `\n\n${t.desc}` : ""}`;
-      } else if (link.kind === "outline") {
-        const o = ctx.outline!.get(link.name)!;
-        md = `**\`${link.name}\`** · ${o.kind} · ${lineRange(o.start, o.end)}`;
-      }
-      return md ? { range, contents: [{ value: md }] } : null;
-    },
-  });
   monaco.languages.registerDefinitionProvider(language, {
     provideDefinition(model, pos) {
       const host = hosts.get(model.uri.toString());
@@ -156,13 +144,10 @@ function registerProviders(language: string) {
         const l = start - host.firstLine + 1;
         return l >= 1 && l <= model.getLineCount() ? { uri: model.uri, range: new monaco.Range(l, 1, l, 1) } : null;
       };
-      if (link.kind === "fn" || link.kind === "def") {
-        const c = ctx.cards.get(link.name)!;
-        return host.fit ? { uri: cardModel(c), range: new monaco.Range(1, 1, 1, 1) } : (inFile(c.start) ?? { uri: cardModel(c), range: new monaco.Range(1, 1, 1, 1) });
-      }
-      if (link.kind === "type") return inFile(ctx.types.get(link.name)!.start);
       if (link.kind === "outline") return inFile(ctx.outline!.get(link.name)!.start);
-      return null;
+      // Everything else goes through the app's go to definition, which knows cards and files.
+      const c = ctx.cards.get(link.name);
+      return { uri: nameModel(link.name, c ? `${c.name}  ${lineRange(c.start, c.end)}\n${c.desc ?? ""}` : link.name), range: new monaco.Range(1, 1, 1, 1) };
     },
   });
 }
@@ -181,6 +166,8 @@ export class EditorHost {
   private heightListeners = new Set<(h: number) => void>();
   private disposed = false;
   private disposables: monaco.IDisposable[] = [];
+  private press: { x: number; y: number } | null = null;
+  private hoverKey = "";
 
   /** Resolves once fonts are measured; create hosts after this so widths are right. */
   static ready(): Promise<void> {
@@ -196,6 +183,7 @@ export class EditorHost {
     const uri = monaco.Uri.from({ scheme: "isoline", path: "/" + opts.context.path, query: `n=${++modelSeq}` });
     // A trailing newline ends the last line; it does not start another (the backend counts lines that way).
     this.model = monaco.editor.createModel(opts.text.endsWith("\n") ? opts.text.slice(0, -1) : opts.text, opts.language, uri);
+    this.model.updateOptions({ bracketColorizationOptions: { enabled: false, independentColorPoolPerBracketType: false } });
     hosts.set(uri.toString(), this);
     this.editor = monaco.editor.create(opts.container, {
       model: this.model,
@@ -228,6 +216,8 @@ export class EditorHost {
       stickyScroll: { enabled: false },
       contextmenu: false,
       links: false,
+      // One peek for cards and code: Monaco's hover is off and the iso-peek is driven from here.
+      hover: { enabled: "off" },
       wordWrap: "off",
       automaticLayout: true,
       fixedOverflowWidgets: true,
@@ -244,16 +234,34 @@ export class EditorHost {
       this.editor.onDidContentSizeChange(() => this.emitHeight()),
       this.editor.onDidLayoutChange(() => this.emitHeight()),
       this.editor.onMouseDown((e) => {
-        if (e.event.rightButton || !e.target.position) return;
+        this.press = e.event.rightButton ? null : { x: e.event.posx, y: e.event.posy };
+      }),
+      // Jump on mouse-up, and only when the pointer barely moved, so drag-select still works.
+      this.editor.onMouseUp((e) => {
+        const press = this.press;
+        this.press = null;
+        if (!press || !e.target.position) return;
+        if (Math.abs(e.event.posx - press.x) > CLICK_SLOP || Math.abs(e.event.posy - press.y) > CLICK_SLOP) return;
         if (e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) return;
         const link = this.linkAt(e.target.position.lineNumber, e.target.position.column);
-        if (!link) return;
-        if (link.kind === "fn") this.context.onJumpToCard?.(link.name);
-        else if (link.kind === "ext") this.context.onSymbol?.(link.name);
-        else if (link.kind === "type" || link.kind === "outline") {
-          const start = link.kind === "type" ? this.context.types.get(link.name)!.start : this.context.outline!.get(link.name)!.start;
-          this.revealLine(start);
+        if (!link || link.kind === "def") return;
+        this.follow(link);
+      }),
+      this.editor.onMouseMove((e) => {
+        const pos = e.target.position;
+        const link = pos && e.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT ? this.linkAt(pos.lineNumber, pos.column) : null;
+        const key = link ? `${link.line}:${link.startCol}` : "";
+        if (key === this.hoverKey) return;
+        this.hoverKey = key;
+        if (!link) {
+          this.context.onHoverName?.(null, null);
+          return;
         }
+        this.context.onHoverName?.(link.name, this.linkRect(link));
+      }),
+      this.editor.onMouseLeave(() => {
+        this.hoverKey = "";
+        this.context.onHoverName?.(null, null);
       }),
     );
     void this.computeLinks();
@@ -314,6 +322,34 @@ export class EditorHost {
     return this.editor.getTopForLineNumber(line - this.firstLine + 1);
   }
 
+  /** Viewport rectangle of a link's text, to anchor the peek under it. */
+  private linkRect(link: Link): DOMRect {
+    const box = this.editor.getDomNode()!.getBoundingClientRect();
+    const a = this.editor.getScrolledVisiblePosition({ lineNumber: link.line, column: link.startCol });
+    const b = this.editor.getScrolledVisiblePosition({ lineNumber: link.line, column: link.endCol });
+    if (!a || !b) return box;
+    return new DOMRect(box.left + a.left, box.top + a.top, Math.max(4, b.left - a.left), a.height);
+  }
+
+  /** Go to definition for a link: the app decides (card, local type, other file, peek). */
+  private follow(link: Link) {
+    const ctx = this.context;
+    if (link.kind === "outline") {
+      this.revealLine(ctx.outline!.get(link.name)!.start);
+      return;
+    }
+    if (ctx.onGoTo) {
+      ctx.onGoTo(link.name);
+      return;
+    }
+    if (link.kind === "fn") ctx.onJumpToCard?.(link.name);
+    else if (link.kind === "ext") ctx.onSymbol?.(link.name);
+    else if (link.kind === "type") {
+      const t = ctx.types.get(link.name);
+      if (t) this.revealLine(t.start);
+    }
+  }
+
   linkAt(line: number, col: number): Link | null {
     const row = this.links[line];
     if (!row) return null;
@@ -356,6 +392,11 @@ export class EditorHost {
           if (s.member ? afterDot && receiver === s.receiver : !afterDot) kind = "ext";
         } else if (!afterDot && ctx.types.has(name)) kind = "type";
         else if (!afterDot && ctx.outline?.has(name)) kind = "outline";
+        else if (!afterDot && ctx.targets?.has(name)) {
+          const t = ctx.targets.get(name)!;
+          if (t.origin === "local") kind = t.kind === "function" ? "fn" : "type";
+          else if (t.origin !== "builtin") kind = "ext";
+        }
         if (!kind) return;
         const link: Link = { line: i + 1, startCol: tok.offset + 1, endCol: tok.offset + 1 + name.length, kind, name };
         (links[i + 1] ??= []).push(link);

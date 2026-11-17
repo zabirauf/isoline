@@ -11,6 +11,8 @@ import { shortPath } from "./format";
 export interface MapOptions {
   showExt: boolean;
   showTypes: boolean;
+  /** Module boxes show one "N symbols" row until focused or hovered; edges meet that row. */
+  collapseModules?: boolean;
 }
 
 type CardLike = Pick<FnCard, "name" | "start" | "end" | "level" | "exported" | "calls" | "calledBy" | "uses" | "typeUses">;
@@ -115,7 +117,7 @@ export function layoutMap(cards: CardLike[], modules: ImportModule[], opt: MapOp
           x: 0,
           y: 0,
           w: Math.max(160, label.length * 6.5 + 22, ...vis.map((s) => (s.name.length + (s.member ? 8 : 0)) * 6.8 + 34)),
-          h: MOD_HEAD + vis.length * SYM_ROW + 6,
+          h: MOD_HEAD + (opt.collapseModules ? 1 : vis.length) * SYM_ROW + 6,
           bary: 0,
         };
       }),
@@ -184,7 +186,7 @@ export function layoutMap(cards: CardLike[], modules: ImportModule[], opt: MapOp
   const symPos: Record<string, Pt> = {};
   mods.forEach(({ m, vis }) => {
     const n = nodes["m:" + m.id];
-    vis.forEach((s, i) => (symPos[s.name] = { x: n.x, y: n.y + MOD_HEAD + i * SYM_ROW + SYM_ROW / 2 }));
+    vis.forEach((s, i) => (symPos[s.name] = { x: n.x, y: n.y + MOD_HEAD + (opt.collapseModules ? 0 : i) * SYM_ROW + SYM_ROW / 2 }));
   });
 
   const edges: MapEdge[] = [];

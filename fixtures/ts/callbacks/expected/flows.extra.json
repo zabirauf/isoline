@@ -1,0 +1,12 @@
+{
+  "helper": {
+    "id": "helper",
+    "owner": "helper",
+    "method": null,
+    "start": 73,
+    "end": 73,
+    "async": false,
+    "params": ["x"],
+    "tree": []
+  }
+}

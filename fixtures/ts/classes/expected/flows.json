@@ -1,0 +1,1 @@
+{"boot":{"id":"boot","owner":"boot","method":null,"start":28,"end":31,"async":false,"params":[],"tree":[{"t":"call","label":"makeRepo","target":{"kind":"other"},"line":29,"await":false,"optional":false,"argOf":null,"inner":[]},{"t":"call","label":"r.load","target":{"kind":"method","id":"load"},"line":30,"await":false,"optional":false,"argOf":null,"inner":[]}]}}

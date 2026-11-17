@@ -1,0 +1,27 @@
+{
+  "symbols": [
+    {"name": "PanelProps", "qualified_name": "PanelProps", "kind": "interface", "start_line": 5, "end_line": 9, "signature": "interface PanelProps", "doc": null, "exported": false, "is_async": false, "params": [], "parent": null},
+    {"name": "Panel", "qualified_name": "Panel", "kind": "function", "start_line": 12, "end_line": 21, "signature": "export function Panel({ title, items, footer }: PanelProps)", "doc": "A titled list.", "exported": true, "is_async": false, "params": ["{ title, items, footer }"], "parent": null},
+    {"name": "List", "qualified_name": "List", "kind": "function", "start_line": 23, "end_line": 23, "signature": "export const List = <T,>({ rows }: { rows: T[] }) =>", "doc": null, "exported": true, "is_async": false, "params": ["{ rows }"], "parent": null},
+    {"name": "App", "qualified_name": "App", "kind": "function", "start_line": 25, "end_line": 27, "signature": "export default function App()", "doc": null, "exported": true, "is_async": false, "params": [], "parent": null}
+  ],
+  "imports": [
+    {"specifier": "react", "kind": "static", "names": [{"name": "default", "alias": "React", "type_only": false}, {"name": "useState", "alias": null, "type_only": false}, {"name": "ReactNode", "alias": null, "type_only": true}], "type_only": false, "line": 1},
+    {"specifier": "./row", "kind": "static", "names": [{"name": "Row", "alias": null, "type_only": false}], "type_only": false, "line": 2},
+    {"specifier": "./types", "kind": "static", "names": [{"name": "Item", "alias": null, "type_only": true}], "type_only": true, "line": 3}
+  ],
+  "calls": [
+    {"caller": "Panel", "callee": "useState", "name": "useState", "receiver": null, "line": 13},
+    {"caller": "Panel", "callee": "setOpen", "name": "setOpen", "receiver": null, "line": 16},
+    {"caller": "Panel", "callee": "items.map", "name": "map", "receiver": "items", "line": 17}
+  ],
+  "refs": [
+    {"from": "PanelProps", "name": "Item", "type_position": true, "line": 7},
+    {"from": "PanelProps", "name": "ReactNode", "type_position": true, "line": 8},
+    {"from": "Panel", "name": "PanelProps", "type_position": true, "line": 12},
+    {"from": "Panel", "name": "useState", "type_position": false, "line": 13},
+    {"from": "Panel", "name": "Row", "type_position": false, "line": 17},
+    {"from": "App", "name": "Panel", "type_position": false, "line": 26}
+  ],
+  "has_errors": false
+}

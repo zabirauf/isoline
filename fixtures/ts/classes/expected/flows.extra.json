@@ -1,0 +1,146 @@
+{
+  "Repo.constructor": {
+    "id": "Repo.constructor",
+    "owner": "Repo",
+    "method": "constructor",
+    "start": 5,
+    "end": 5,
+    "async": false,
+    "params": ["url"],
+    "tree": []
+  },
+  "Repo.open": {
+    "id": "Repo.open",
+    "owner": "Repo",
+    "method": "open",
+    "start": 7,
+    "end": 9,
+    "async": true,
+    "params": [],
+    "tree": [
+      {
+        "t": "call",
+        "label": "connect",
+        "target": { "kind": "ext", "id": "connect", "module": "./db.js" },
+        "line": 8,
+        "await": true,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+      }
+    ]
+  },
+  "Repo.find": {
+    "id": "Repo.find",
+    "owner": "Repo",
+    "method": "find",
+    "start": 11,
+    "end": 14,
+    "async": true,
+    "params": ["id"],
+    "tree": [
+      {
+        "t": "block",
+        "kind": "cond",
+        "kw": "if",
+        "label": "(!this.conn)",
+        "line": 12,
+        "children": [
+          {
+            "t": "call",
+            "label": "this.open",
+            "target": { "kind": "method", "id": "open" },
+            "line": 12,
+            "await": true,
+            "optional": false,
+            "argOf": null,
+            "inner": []
+          }
+        ]
+      },
+      {
+        "t": "call",
+        "label": "this.conn!.query",
+        "target": { "kind": "method", "id": "query" },
+        "line": 13,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+      },
+      { "t": "exit", "kind": "return", "label": "this.conn!.query(id)", "line": 13, "early": false }
+    ]
+  },
+  "Repo.ready": {
+    "id": "Repo.ready",
+    "owner": "Repo",
+    "method": "ready",
+    "start": 16,
+    "end": 18,
+    "async": false,
+    "params": [],
+    "tree": [
+      {
+        "t": "call",
+        "label": "Boolean",
+        "target": { "kind": "other" },
+        "line": 17,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+      },
+      { "t": "exit", "kind": "return", "label": "Boolean(this.conn)", "line": 17, "early": false }
+    ]
+  },
+  "makeRepo": {
+    "id": "makeRepo",
+    "owner": "makeRepo",
+    "method": null,
+    "start": 21,
+    "end": 26,
+    "async": false,
+    "params": ["url"],
+    "tree": [
+      {
+        "t": "call",
+        "label": "new Repo",
+        "target": { "kind": "other" },
+        "line": 22,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+      },
+      {
+        "t": "exit",
+        "kind": "return",
+        "label": "controller object",
+        "line": 23,
+        "early": false,
+        "methods": [{ "name": "load", "unit": "makeRepo.load", "from": null }]
+      }
+    ]
+  },
+  "makeRepo.load": {
+    "id": "makeRepo.load",
+    "owner": "makeRepo",
+    "method": "load",
+    "start": 24,
+    "end": 24,
+    "async": false,
+    "params": ["id"],
+    "tree": [
+      {
+        "t": "call",
+        "label": "repo.find",
+        "target": { "kind": "method", "id": "find" },
+        "line": 24,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+      }
+    ]
+  }
+}

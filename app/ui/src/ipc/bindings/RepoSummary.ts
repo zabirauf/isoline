@@ -5,7 +5,7 @@ import type { TierCounts } from "./TierCounts";
 /**
  * Returned by `open_repo`. Indexing continues in the background.
  */
-export type RepoSummary = { root: string, name: string, files: number, lines: bigint, tiers: TierCounts, languages: Array<LangCount>, 
+export type RepoSummary = { root: string, name: string, files: number, lines: number, tiers: TierCounts, languages: Array<LangCount>, 
 /**
  * Files whose facts are current.
  */

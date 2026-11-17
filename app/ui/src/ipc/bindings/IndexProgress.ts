@@ -4,4 +4,4 @@ import type { IndexPhase } from "./IndexPhase";
 /**
  * Event `index_progress`.
  */
-export type IndexProgress = { phase: IndexPhase, done: number, total: number, current: string | null, elapsedMs: bigint, };
+export type IndexProgress = { phase: IndexPhase, done: number, total: number, current: string | null, elapsedMs: number, };

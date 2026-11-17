@@ -442,6 +442,22 @@ impl Engine {
             })
         })?;
         let name = row.path.rsplit('/').next().unwrap_or(&row.path).to_string();
+        let flow_unit_refs: Vec<FlowUnitRef> = flow_units
+            .iter()
+            .map(|u| FlowUnitRef {
+                id: u.id.clone(),
+                owner: u.owner.clone(),
+                method: u.method.clone(),
+                start: u.start,
+                end: u.end,
+                summary: summaries.get(&u.id).map(|x| x.desc.clone()).or_else(|| {
+                    functions
+                        .iter()
+                        .find(|f| f.qualified_name == u.id)
+                        .and_then(|f| f.summary.as_ref().map(|x| x.desc.clone()))
+                }),
+            })
+            .collect();
         Ok(FileView {
             path: row.path.clone(),
             name,
@@ -461,16 +477,7 @@ impl Engine {
             modules,
             imports_range,
             outline,
-            flow_units: flow_units
-                .iter()
-                .map(|u| FlowUnitRef {
-                    id: u.id.clone(),
-                    owner: u.owner.clone(),
-                    method: u.method.clone(),
-                    start: u.start,
-                    end: u.end,
-                })
-                .collect(),
+            flow_units: flow_unit_refs,
             importers,
             overview: self.overview_for(&row),
             has_errors: row.has_errors,

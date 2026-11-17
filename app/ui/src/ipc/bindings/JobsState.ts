@@ -3,4 +3,4 @@
 /**
  * Returned by `get_jobs`; event `job_progress`.
  */
-export type JobsState = { queued: number, running: number, done: number, failed: number, cacheHits: bigint, cacheMisses: bigint, hitRate: number, pendingFiles: Array<string>, };
+export type JobsState = { queued: number, running: number, done: number, failed: number, cacheHits: number, cacheMisses: number, hitRate: number, pendingFiles: Array<string>, };

@@ -34,6 +34,7 @@ ipc! {
         pub lang: Language,
         pub label: String,
         pub files: u32,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub lines: u64,
     }
 
@@ -42,6 +43,7 @@ ipc! {
         pub root: String,
         pub name: String,
         pub files: u32,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub lines: u64,
         pub tiers: TierCounts,
         pub languages: Vec<LangCount>,
@@ -58,6 +60,7 @@ ipc! {
         pub done: u32,
         pub total: u32,
         pub current: Option<String>,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub elapsed_ms: u64,
     }
 
@@ -217,6 +220,8 @@ ipc! {
         pub method: Option<String>,
         pub start: u32,
         pub end: u32,
+        /// One-sentence description of the unit (model output or doc comment), when known.
+        pub summary: Option<String>,
     }
 
     /// Returned by `get_source`.
@@ -255,6 +260,7 @@ ipc! {
         /// Directory prefix the module is anchored to.
         pub dir: String,
         pub files: u32,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub lines: u64,
     }
 
@@ -312,23 +318,29 @@ ipc! {
         pub symbols: u32,
         pub cached: u32,
         pub requests: u32,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub tokens_in: u64,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub tokens_out: u64,
         pub cost_usd: f64,
         pub model: String,
     }
 
     pub struct AiRunHandle {
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub job_id: u64,
         pub estimate: AiEstimate,
     }
 
     /// Event `ai_progress`.
     pub struct AiProgress {
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub job_id: u64,
         pub done: u32,
         pub total: u32,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub tokens_in: u64,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub tokens_out: u64,
         pub cost_usd: f64,
         pub finished: bool,
@@ -341,7 +353,9 @@ ipc! {
         pub running: u32,
         pub done: u32,
         pub failed: u32,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub cache_hits: u64,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub cache_misses: u64,
         pub hit_rate: f64,
         pub pending_files: Vec<String>,

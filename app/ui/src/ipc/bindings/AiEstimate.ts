@@ -4,4 +4,4 @@ import type { AiScope } from "./AiScope";
 /**
  * Returned by `ai_estimate`.
  */
-export type AiEstimate = { scope: AiScope, symbols: number, cached: number, requests: number, tokensIn: bigint, tokensOut: bigint, costUsd: number, model: string, };
+export type AiEstimate = { scope: AiScope, symbols: number, cached: number, requests: number, tokensIn: number, tokensOut: number, costUsd: number, model: string, };

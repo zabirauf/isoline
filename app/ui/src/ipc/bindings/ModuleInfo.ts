@@ -5,4 +5,4 @@ export type ModuleInfo = { id: string, name: string, role: string | null, color:
 /**
  * Directory prefix the module is anchored to.
  */
-dir: string, files: number, lines: bigint, };
+dir: string, files: number, lines: number, };

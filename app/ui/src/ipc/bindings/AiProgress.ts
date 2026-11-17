@@ -3,4 +3,4 @@
 /**
  * Event `ai_progress`.
  */
-export type AiProgress = { jobId: bigint, done: number, total: number, tokensIn: bigint, tokensOut: bigint, costUsd: number, finished: boolean, error: string | null, };
+export type AiProgress = { jobId: number, done: number, total: number, tokensIn: number, tokensOut: number, costUsd: number, finished: boolean, error: string | null, };

@@ -176,6 +176,7 @@ impl Engine {
                     .map(|nm| nm.local().to_string())
             })
             .collect();
+        let mut param_members: Vec<((String, String), String)> = Vec::new();
         let add_use = |v: &mut Vec<String>, name: &str| {
             if !v.iter().any(|x| x == name) {
                 v.push(name.to_string());
@@ -208,6 +209,20 @@ impl Engine {
                 .unwrap_or(c.name.as_str());
             if import_local.contains(head) && !type_only_local.contains(head) {
                 add_use(&mut uses[from], head);
+            }
+            // `harness.runAttempt()` where the card declares `harness: AgentHarness` and
+            // `AgentHarness` is imported: a member reached through a typed parameter.
+            if let Some(r) = c.receiver.as_deref()
+                && is_ident(r)
+                && !matches!(r, "this" | "self" | "Self" | "cls")
+                && let Some(ty) = param_type(&card_syms[from].signature, r)
+                && binds.contains_key(ty.as_str())
+            {
+                add_use(&mut uses[from], &c.name);
+                let key = (r.to_string(), ty);
+                if !param_members.iter().any(|(k, m)| k == &key && m == &c.name) {
+                    param_members.push((key, c.name.clone()));
+                }
             }
         }
         for r in &facts.refs {
@@ -385,6 +400,34 @@ impl Engine {
                         });
                     }
                 }
+            }
+        }
+        // One module per typed parameter whose members are called, like the prototype's
+        // "harness (AgentHarness param)".
+        for ((param, ty), member) in &param_members {
+            let id = format!("{param} ({ty} param)");
+            let src = imports
+                .iter()
+                .find(|i| i.names.iter().any(|n| n.local() == ty));
+            if !modules.iter().any(|m| m.id == id) {
+                modules.push(ImportModule {
+                    id: id.clone(),
+                    kind: ImportKind::Static,
+                    resolved: src
+                        .and_then(|i| i.resolved)
+                        .and_then(|f| all_files.get(&f).cloned()),
+                    external: src.is_some_and(|i| i.external.is_some()),
+                    symbols: Vec::new(),
+                    line: src.map(|i| i.line).unwrap_or(0),
+                });
+            }
+            let m = modules.iter_mut().find(|m| m.id == id).expect("just added");
+            if !m.symbols.iter().any(|s| &s.name == member) {
+                m.symbols.push(ImportSym {
+                    name: member.clone(),
+                    type_only: false,
+                    member: true,
+                });
             }
         }
         let imports_range = {
@@ -852,6 +895,74 @@ pub struct CachedAi {
     /// One sentence per type, by qualified name.
     pub types: HashMap<String, String>,
     pub overview: Option<AiText>,
+}
+
+fn is_ident(s: &str) -> bool {
+    !s.is_empty()
+        && s.chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '$')
+}
+
+/// Declared type of parameter `name` in a signature: `name: Type`, `name: &mut Type<T>`,
+/// `name?: Type`. Returns the bare type name.
+fn param_type(signature: &str, name: &str) -> Option<String> {
+    let mut from = 0;
+    while let Some(i) = signature[from..].find(name) {
+        let at = from + i;
+        from = at + name.len();
+        let before_ok = at == 0
+            || !signature[..at]
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_alphanumeric() || c == '_' || c == '$' || c == '.');
+        let rest = &signature[at + name.len()..];
+        let rest = rest.strip_prefix('?').unwrap_or(rest).trim_start();
+        let Some(rest) = rest.strip_prefix(':').filter(|r| !r.starts_with(':')) else {
+            continue;
+        };
+        if !before_ok {
+            continue;
+        }
+        let rest = rest.trim_start().trim_start_matches('&').trim_start();
+        let rest = rest.strip_prefix("mut ").unwrap_or(rest).trim_start();
+        let ty: String = rest
+            .chars()
+            .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '$')
+            .collect();
+        if !ty.is_empty() {
+            return Some(ty);
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::param_type;
+
+    #[test]
+    fn parameter_types_from_signatures() {
+        let sig = "export async function run(harness: AgentHarness, params: AgentHarnessAttemptParamsV2, execute = …)";
+        assert_eq!(param_type(sig, "harness").as_deref(), Some("AgentHarness"));
+        assert_eq!(
+            param_type(sig, "params").as_deref(),
+            Some("AgentHarnessAttemptParamsV2")
+        );
+        assert_eq!(param_type(sig, "execute"), None);
+        assert_eq!(
+            param_type("fn f(store: &mut Store<T>)", "store").as_deref(),
+            Some("Store")
+        );
+        assert_eq!(
+            param_type("def f(self, repo: Repo)", "repo").as_deref(),
+            Some("Repo")
+        );
+        assert_eq!(param_type("fn f(a: x::Y)", "a").as_deref(), Some("x"));
+        assert_eq!(
+            param_type("f(opts?: Options)", "opts").as_deref(),
+            Some("Options")
+        );
+    }
 }
 
 /// Supplies cached model output to file views. Implemented by the AI layer.

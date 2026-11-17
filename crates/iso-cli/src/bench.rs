@@ -320,6 +320,16 @@ pub fn copy_walked(src: &Path, dst: &Path) -> Result<()> {
         // A file that vanished or is unreadable mid-copy is skipped, not fatal.
         if let Err(e) = std::fs::copy(src.join(&f.rel), &to) {
             eprintln!("copy skipped {}: {e}", f.rel);
+            continue;
+        }
+        // Copies of read-only files must still be editable by the simulated edits.
+        if let Ok(md) = std::fs::metadata(&to) {
+            let mut perm = md.permissions();
+            if perm.readonly() {
+                #[allow(clippy::permissions_set_readonly_false)]
+                perm.set_readonly(false);
+                let _ = std::fs::set_permissions(&to, perm);
+            }
         }
     }
     if src.join(".gitignore").exists() {

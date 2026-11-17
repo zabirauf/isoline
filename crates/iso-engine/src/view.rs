@@ -936,6 +936,11 @@ fn param_type(signature: &str, name: &str) -> Option<String> {
     None
 }
 
+/// Supplies cached model output to file views. Implemented by the AI layer.
+pub trait AiHook: Send + Sync {
+    fn cached(&self, row: &FileRow, facts: &FileFacts, flows: &[FlowUnit]) -> CachedAi;
+}
+
 #[cfg(test)]
 mod tests {
     use super::param_type;
@@ -963,9 +968,4 @@ mod tests {
             Some("Options")
         );
     }
-}
-
-/// Supplies cached model output to file views. Implemented by the AI layer.
-pub trait AiHook: Send + Sync {
-    fn cached(&self, row: &FileRow, facts: &FileFacts, flows: &[FlowUnit]) -> CachedAi;
 }

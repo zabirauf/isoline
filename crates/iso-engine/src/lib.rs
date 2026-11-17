@@ -76,6 +76,8 @@ pub fn index_path(data: &Path, root: &Path) -> PathBuf {
 pub(crate) struct State {
     pub resolvers: Option<(u64, Arc<iso_resolve::Resolvers>)>,
     pub watcher: Option<iso_walk::watch::Watcher>,
+    /// The Merkle tree, kept in memory after its first load and updated in place.
+    pub tree: Option<iso_walk::MerkleTree>,
 }
 
 pub struct Engine {
@@ -107,6 +109,12 @@ impl Engine {
         let index = Index::open(&index_path(data, &root))?;
         index.write(|tx| {
             iso_index::meta_set(tx, "root", &root.to_string_lossy())?;
+            // An upgraded extractor changes facts for unchanged files: reprocess everything once.
+            let v = iso_core::cache::EXTRACTOR_VERSION.to_string();
+            if iso_index::meta_get(tx, "extractor_version")?.as_deref() != Some(v.as_str()) {
+                tx.execute("UPDATE files SET status = 'pending'", [])?;
+                iso_index::meta_set(tx, "extractor_version", &v)?;
+            }
             Ok(())
         })?;
         let name = root
@@ -128,6 +136,7 @@ impl Engine {
             state: Mutex::new(State {
                 resolvers: None,
                 watcher: None,
+                tree: None,
             }),
             indexing: AtomicBool::new(false),
             index_lock: Mutex::new(()),

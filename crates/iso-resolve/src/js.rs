@@ -96,6 +96,11 @@ impl JsResolver {
         }
     }
 
+    /// Forget cached file-system lookups (after files were added or removed).
+    pub fn clear_cache(&self) {
+        self.oxc.clear_cache();
+    }
+
     /// Repo-relative path of an absolute result, if the walker knows the file.
     fn in_repo(&self, abs: &Path) -> Option<String> {
         let rel = abs

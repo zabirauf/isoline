@@ -17,8 +17,9 @@ use std::sync::Mutex;
 
 pub use rusqlite;
 
-pub const SCHEMA_VERSION: i64 = 1;
+pub const SCHEMA_VERSION: i64 = 2;
 const MIGRATION_1: &str = include_str!("../migrations/0001_init.sql");
+const MIGRATION_2: &str = include_str!("../migrations/0002_unresolved_index.sql");
 pub const AI_CACHE_SQL: &str = include_str!("../migrations/ai_cache.sql");
 
 pub fn now_ms() -> i64 {
@@ -47,7 +48,11 @@ pub fn migrate(conn: &Connection) -> Result<()> {
     let v: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
     if v < 1 {
         conn.execute_batch(MIGRATION_1).context("migration 1")?;
-        conn.execute_batch(&format!("PRAGMA user_version={SCHEMA_VERSION}"))?;
+        conn.execute_batch("PRAGMA user_version=1")?;
+    }
+    if v < 2 {
+        conn.execute_batch(MIGRATION_2).context("migration 2")?;
+        conn.execute_batch("PRAGMA user_version=2")?;
     }
     Ok(())
 }
@@ -820,6 +825,55 @@ pub fn retarget_edge(
     Ok(conn
         .prepare_cached("UPDATE edges SET to_symbol = ?3, confidence = ?5 WHERE from_symbol = ?1 AND to_symbol = ?2 AND line = ?4")?
         .execute(params![from.as_i64(), old_to.as_i64(), new_to.as_i64(), line, c.as_str()])?)
+}
+
+/// Write some tree nodes (insert or replace) and delete others, for incremental updates.
+pub fn update_tree<'a>(
+    conn: &Connection,
+    upserts: impl IntoIterator<Item = (&'a str, bool, &'a str, Option<&'a str>)>,
+    removed: impl IntoIterator<Item = &'a str>,
+) -> Result<()> {
+    let mut ins = conn.prepare_cached(
+        "INSERT OR REPLACE INTO tree_nodes (path, kind, hash, parent_path) VALUES (?1, ?2, ?3, ?4)",
+    )?;
+    for (path, is_dir, hash, parent) in upserts {
+        ins.execute(params![
+            path,
+            if is_dir { "dir" } else { "file" },
+            hash,
+            parent
+        ])?;
+    }
+    let mut del = conn.prepare_cached("DELETE FROM tree_nodes WHERE path = ?1")?;
+    for path in removed {
+        del.execute([path])?;
+    }
+    Ok(())
+}
+
+/// Imports that may resolve differently after files were added or removed: the unresolved
+/// ones and those that pointed at a removed file. Uses the indexes instead of a full scan.
+pub fn imports_to_recheck(
+    conn: &Connection,
+    removed: impl IntoIterator<Item = FileId>,
+) -> Result<Vec<ImportRow>> {
+    let mut out = {
+        let mut st = conn.prepare_cached(&format!(
+            "SELECT {IMP_COLS} FROM imports WHERE unresolved = 1"
+        ))?;
+        st.query_map([], imp_row)?
+            .collect::<rusqlite::Result<Vec<_>>>()?
+    };
+    let mut st = conn.prepare_cached(&format!(
+        "SELECT {IMP_COLS} FROM imports WHERE resolved_file_id = ?1"
+    ))?;
+    for f in removed {
+        out.extend(
+            st.query_map([f.as_i64()], imp_row)?
+                .collect::<rusqlite::Result<Vec<_>>>()?,
+        );
+    }
+    Ok(out)
 }
 
 #[cfg(test)]

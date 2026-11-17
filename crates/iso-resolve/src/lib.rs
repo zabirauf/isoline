@@ -31,6 +31,15 @@ pub struct RepoFiles {
     pub root: PathBuf,
     /// Every walked file, repo-relative with `/` separators.
     pub files: HashSet<String>,
+    /// Files added and removed since `files` was built, shared by every clone so all resolvers
+    /// see an incremental change at once (see [`Resolvers::apply_file_changes`]).
+    pub overlay: std::sync::Arc<parking_lot::RwLock<Overlay>>,
+}
+
+#[derive(Debug, Default)]
+pub struct Overlay {
+    pub added: HashSet<String>,
+    pub removed: HashSet<String>,
 }
 
 impl RepoFiles {
@@ -38,10 +47,15 @@ impl RepoFiles {
         RepoFiles {
             root: root.into(),
             files: files.into_iter().collect(),
+            overlay: Default::default(),
         }
     }
     pub fn contains(&self, rel: &str) -> bool {
-        self.files.contains(rel)
+        let o = self.overlay.read();
+        if o.removed.contains(rel) {
+            return false;
+        }
+        self.files.contains(rel) || o.added.contains(rel)
     }
     pub fn abs(&self, rel: &str) -> PathBuf {
         self.root.join(rel)
@@ -74,6 +88,41 @@ impl Resolvers {
             rust: rust::RustResolver::new(repo),
             html: html::LinkResolver::new(repo),
         }
+    }
+
+    /// Files whose addition or removal changes what the resolvers precompute (package
+    /// manifests, tsconfig files, Python package markers, Cargo manifests). Changes to any
+    /// other files can be applied incrementally.
+    pub fn is_manifest(rel: &str) -> bool {
+        let name = rel.rsplit('/').next().unwrap_or(rel);
+        matches!(
+            name,
+            "package.json"
+                | "jsconfig.json"
+                | "pyproject.toml"
+                | "setup.cfg"
+                | "setup.py"
+                | "Cargo.toml"
+                | "__init__.py"
+                | "__init__.pyi"
+        ) || (name.starts_with("tsconfig") && name.ends_with(".json"))
+    }
+
+    /// Apply added and removed files without rebuilding. Callers rebuild instead when any of
+    /// them [`is_manifest`](Self::is_manifest).
+    pub fn apply_file_changes(&self, added: &[String], removed: &[String]) {
+        {
+            let mut o = self.js.repo.overlay.write();
+            for a in added {
+                o.removed.remove(a);
+                o.added.insert(a.clone());
+            }
+            for r in removed {
+                o.added.remove(r);
+                o.removed.insert(r.clone());
+            }
+        }
+        self.js.clear_cache();
     }
 
     pub fn resolve(&self, lang: Language, from_rel: &str, import: &ImportFact) -> Resolution {

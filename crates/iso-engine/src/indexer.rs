@@ -30,6 +30,22 @@ use serde::Serialize;
 
 use crate::{Engine, Event};
 
+/// A file's import resolutions: (specifier, resolved file, external package, unresolved).
+type ResolutionSet = std::collections::BTreeSet<(String, Option<FileId>, Option<String>, bool)>;
+
+fn resolution_set(rows: &[iso_index::ImportRow]) -> ResolutionSet {
+    rows.iter()
+        .map(|i| {
+            (
+                i.specifier.clone(),
+                i.resolved,
+                i.external.clone(),
+                i.unresolved,
+            )
+        })
+        .collect()
+}
+
 /// What one index run did. The eval loop records these.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct IndexReport {
@@ -235,6 +251,11 @@ impl Engine {
         };
         rep.deleted = deleted.len() as u32;
         rep.added = todo.iter().filter(|(_, r)| r.is_none()).count() as u32;
+        let added_paths: Vec<String> = todo
+            .iter()
+            .filter(|(_, r)| r.is_none())
+            .map(|(w, _)| w.rel.clone())
+            .collect();
 
         // Show pending files at once so the tree can paint before parsing finishes.
         if full && !todo.is_empty() {
@@ -309,9 +330,15 @@ impl Engine {
         let mut facts_changed: HashSet<FileId> = HashSet::new();
         let mut exports_changed: HashSet<FileId> = HashSet::new();
         let mut batch: Vec<Processed> = Vec::with_capacity(256);
+        let mut tree_changes: Vec<(String, Option<String>)> = Vec::new();
+        // Each changed file's import resolutions before its rows were replaced, so the graph
+        // stages can tell a real change from a rewrite of the same imports.
+        let mut old_res: HashMap<FileId, ResolutionSet> = HashMap::new();
         let mut done = 0u32;
         let mut last_emit = Instant::now();
         let flush = |batch: &mut Vec<Processed>,
+                     tree_changes: &mut Vec<(String, Option<String>)>,
+                     old_res: &mut HashMap<FileId, ResolutionSet>,
                      facts_changed: &mut HashSet<FileId>,
                      exports_changed: &mut HashSet<FileId>,
                      rep: &mut IndexReport|
@@ -337,6 +364,12 @@ impl Engine {
                             == p.row.facts_hash.as_deref()
                             && old.is_some_and(|o| o.parsed_at.is_some());
                         if !same_facts {
+                            if old.is_some() {
+                                old_res.insert(
+                                    p.row.id,
+                                    resolution_set(&iso_index::imports_for_file(tx, p.row.id)?),
+                                );
+                            }
                             iso_index::replace_facts(tx, p.row.id, &p.row.path, f)?;
                             facts_changed.insert(p.row.id);
                         }
@@ -358,6 +391,9 @@ impl Engine {
                             exports_changed.insert(p.row.id);
                         }
                     }
+                    if !p.content_same {
+                        tree_changes.push((p.row.path.clone(), Some(p.row.content_hash.clone())));
+                    }
                     rep.parsed += p.parsed as u32;
                     rep.facts_cache_hits += p.cache_hit as u32;
                     rep.hashed += p.hashed as u32;
@@ -377,6 +413,8 @@ impl Engine {
                 let current = batch.last().map(|p| p.row.path.clone());
                 flush(
                     &mut batch,
+                    &mut tree_changes,
+                    &mut old_res,
                     &mut facts_changed,
                     &mut exports_changed,
                     &mut rep,
@@ -395,6 +433,8 @@ impl Engine {
         }
         flush(
             &mut batch,
+            &mut tree_changes,
+            &mut old_res,
             &mut facts_changed,
             &mut exports_changed,
             &mut rep,
@@ -402,6 +442,7 @@ impl Engine {
         for h in handles {
             let _ = h.join();
         }
+        tree_changes.extend(deleted.iter().map(|d| (d.path.clone(), None)));
         if !deleted.is_empty() {
             self.index.write(|tx| {
                 for d in &deleted {
@@ -432,7 +473,8 @@ impl Engine {
             Vec::new()
         };
         let resolvers = if need_all {
-            self.resolvers(&all_files, file_set_changed)
+            let removed: Vec<String> = deleted.iter().map(|d| d.path.clone()).collect();
+            self.resolvers(&all_files, &added_paths, &removed)
         } else {
             Arc::clone(
                 &self
@@ -462,7 +504,7 @@ impl Engine {
             })?
         };
         let to_resolve: Vec<iso_index::ImportRow> = self.index.read(|c| {
-            if full && (existing.is_empty() || file_set_changed)
+            if full && existing.is_empty()
                 || (need_all && facts_changed.len() > all_files.len() / 2)
             {
                 // Cold run or big change: resolve everything that changed, plus anything that
@@ -482,11 +524,11 @@ impl Engine {
                     v.extend(iso_index::imports_for_file(c, *f)?);
                 }
                 if file_set_changed {
-                    v.extend(iso_index::imports_all(c)?.into_iter().filter(|i| {
-                        !facts_changed.contains(&i.file_id)
-                            && (i.unresolved
-                                || i.resolved.is_some_and(|r| deleted_ids.contains(&r)))
-                    }));
+                    v.extend(
+                        iso_index::imports_to_recheck(c, deleted_ids.iter().copied())?
+                            .into_iter()
+                            .filter(|i| !facts_changed.contains(&i.file_id)),
+                    );
                 }
                 Ok(v)
             }
@@ -532,6 +574,24 @@ impl Engine {
             }
             Ok(())
         })?;
+        // A changed file whose imports resolve to the same places as before did not change the
+        // import graph, even though its rows were rewritten.
+        if !old_res.is_empty() {
+            let same: Vec<FileId> = self.index.read(|c| {
+                let mut v = Vec::new();
+                for (f, before) in &old_res {
+                    if resolution_changed.contains(f)
+                        && &resolution_set(&iso_index::imports_for_file(c, *f)?) == before
+                    {
+                        v.push(*f);
+                    }
+                }
+                Ok(v)
+            })?;
+            for f in same {
+                resolution_changed.remove(&f);
+            }
+        }
         rep.resolved_files = resolved_files.len() as u32;
         rep.imports_resolved = resolved
             .iter()
@@ -585,86 +645,34 @@ impl Engine {
             || rep.deleted > 0
             || rep.added > 0
             || !resolution_changed.is_empty();
+        self.update_tree(&tree_changes, &mut rep)?;
+        let (files, lines): (i64, i64) = self.index.read(|c| {
+            Ok(c.query_row(
+                "SELECT COUNT(*), COALESCE(SUM(lines), 0) FROM files",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )?)
+        })?;
+        rep.files = files as u32;
+        rep.lines = lines as u64;
         if full || file_set_changed {
-            let all_files =
-                if rep.deleted > 0 || rep.added > 0 || rep.hashed > 0 || all_files.is_empty() {
+            let has_modules = self
+                .index
+                .read(|c| Ok(!iso_index::modules_all(c)?.is_empty()))?;
+            let big_change = (rep.added + rep.deleted) as u64 > (rep.files as u64 / 50).max(500);
+            if !has_modules || (changed_anything && big_change) {
+                let all_files = if all_files.is_empty() || rep.added > 0 || rep.deleted > 0 {
                     self.index.read(iso_index::files_all)?
                 } else {
                     all_files
                 };
-            rep.files = all_files.len() as u32;
-            rep.lines = all_files.iter().map(|f| f.lines as u64).sum();
-            // The Merkle tree is stored after full runs; incremental runs leave it to the next
-            // full run, which keeps the edit path independent of repo size.
-            let stored_root = self.index.read(|c| iso_index::meta_get(c, "root_hash"))?;
-            if full && (rep.hashed > 0 || rep.deleted > 0 || stored_root.is_none()) {
-                let tree = iso_walk::MerkleTree::build(
-                    all_files
-                        .iter()
-                        .map(|f| (f.path.as_str(), f.content_hash.as_str())),
-                );
-                let root_hash = tree.root_hash().map(|s| s.to_string());
-                rep.tree_dirs_total = tree.nodes.values().filter(|n| n.is_dir).count() as u32;
-                if stored_root.is_some() && root_hash != stored_root {
-                    let old = iso_walk::MerkleTree {
-                        nodes: self
-                            .index
-                            .read(iso_index::load_tree)?
-                            .into_iter()
-                            .map(|(p, is_dir, hash, parent)| {
-                                (
-                                    p,
-                                    iso_walk::MerkleNode {
-                                        is_dir,
-                                        hash,
-                                        parent,
-                                    },
-                                )
-                            })
-                            .collect(),
-                    };
-                    let d = iso_walk::MerkleTree::diff(&old, &tree);
-                    rep.tree_changed_files = d.changed.len() as u32;
-                    rep.tree_dirs_visited = d.dirs_visited as u32;
-                    rep.tree_changed_sample = d.changed.iter().take(50).cloned().collect();
-                }
-                if root_hash != stored_root {
-                    self.index.write(|tx| {
-                        iso_index::replace_tree(
-                            tx,
-                            tree.nodes.iter().map(|(p, n)| {
-                                (p.as_str(), n.is_dir, n.hash.as_str(), n.parent.as_deref())
-                            }),
-                        )?;
-                        if let Some(h) = &root_hash {
-                            iso_index::meta_set(tx, "root_hash", h)?;
-                        }
-                        Ok(())
-                    })?;
-                }
-                rep.root_hash = root_hash;
-            } else {
-                rep.root_hash = stored_root;
-            }
-            let has_modules = self
-                .index
-                .read(|c| Ok(!iso_index::modules_all(c)?.is_empty()))?;
-            if (changed_anything && (file_set_changed || (full && !resolution_changed.is_empty())))
-                || !has_modules
-            {
                 crate::modules::recluster(self, &all_files)?;
                 rep.reclustered = true;
+            } else if !added_paths.is_empty() {
+                // New files join the module of their nearest directory; module ids, names and
+                // colors stay stable.
+                crate::modules::assign_by_directory(self, &added_paths)?;
             }
-        } else {
-            let (files, lines): (i64, i64) = self.index.read(|c| {
-                Ok(c.query_row(
-                    "SELECT COUNT(*), COALESCE(SUM(lines), 0) FROM files",
-                    [],
-                    |r| Ok((r.get(0)?, r.get(1)?)),
-                )?)
-            })?;
-            rep.files = files as u32;
-            rep.lines = lines as u64;
         }
         rep.ms_tree = t_tree.elapsed().as_millis() as u64;
         self.emit(Event::IndexProgress(IndexProgress {
@@ -675,6 +683,95 @@ impl Engine {
             elapsed_ms: t0.elapsed().as_millis() as u64,
         }));
         Ok(rep)
+    }
+
+    /// Keep the Merkle tree current: apply this run's file changes to the in-memory tree,
+    /// rehashing only their ancestor directories, and persist only the nodes that changed.
+    /// The first run (or a missing stored tree) builds it from the files table.
+    fn update_tree(
+        &self,
+        changes: &[(String, Option<String>)],
+        rep: &mut IndexReport,
+    ) -> Result<()> {
+        let mut st = self.state.lock();
+        if st.tree.is_none() {
+            let rows = self.index.read(iso_index::load_tree)?;
+            if !rows.is_empty() {
+                st.tree = Some(iso_walk::MerkleTree {
+                    nodes: rows
+                        .into_iter()
+                        .map(|(p, is_dir, hash, parent)| {
+                            (
+                                p,
+                                iso_walk::MerkleNode {
+                                    is_dir,
+                                    hash,
+                                    parent,
+                                },
+                            )
+                        })
+                        .collect(),
+                });
+            }
+        }
+        let Some(tree) = st.tree.as_mut() else {
+            // No stored tree yet: build it once from every file.
+            let files = self.index.read(iso_index::files_all)?;
+            let tree = iso_walk::MerkleTree::build(
+                files
+                    .iter()
+                    .map(|f| (f.path.as_str(), f.content_hash.as_str())),
+            );
+            let root = tree.root_hash().map(str::to_string);
+            self.index.write(|tx| {
+                iso_index::replace_tree(
+                    tx,
+                    tree.nodes
+                        .iter()
+                        .map(|(p, n)| (p.as_str(), n.is_dir, n.hash.as_str(), n.parent.as_deref())),
+                )?;
+                if let Some(h) = &root {
+                    iso_index::meta_set(tx, "root_hash", h)?;
+                }
+                Ok(())
+            })?;
+            rep.tree_dirs_total = tree.nodes.values().filter(|n| n.is_dir).count() as u32;
+            rep.root_hash = root;
+            st.tree = Some(tree);
+            return Ok(());
+        };
+        if changes.is_empty() {
+            rep.root_hash = tree.root_hash().map(str::to_string);
+            return Ok(());
+        }
+        // The diff against the previous tree is what a reopen or branch switch would compute;
+        // it is reported so validation can check it against git.
+        let before = tree.clone();
+        let nc = tree.apply(changes);
+        let d = iso_walk::MerkleTree::diff(&before, tree);
+        rep.tree_changed_files = d.changed.len() as u32;
+        rep.tree_dirs_visited = d.dirs_visited as u32;
+        rep.tree_changed_sample = d.changed.iter().take(50).cloned().collect();
+        rep.tree_dirs_total = tree.nodes.values().filter(|n| n.is_dir).count() as u32;
+        let root = tree.root_hash().map(str::to_string);
+        let tree = &*tree;
+        self.index.write(|tx| {
+            iso_index::update_tree(
+                tx,
+                nc.upserts.iter().filter_map(|p| {
+                    tree.nodes
+                        .get(p)
+                        .map(|n| (p.as_str(), n.is_dir, n.hash.as_str(), n.parent.as_deref()))
+                }),
+                nc.removed.iter().map(String::as_str),
+            )?;
+            if let Some(h) = &root {
+                iso_index::meta_set(tx, "root_hash", h)?;
+            }
+            Ok(())
+        })?;
+        rep.root_hash = root;
+        Ok(())
     }
 
     /// Read, hash, classify and (if needed) extract one file.
@@ -772,25 +869,29 @@ impl Engine {
     }
 
     /// Resolvers are rebuilt only when the set of files changes.
-    fn resolvers(&self, files: &[FileRow], file_set_changed: bool) -> Arc<Resolvers> {
-        let key = files.len() as u64
-            ^ iso_core::hash64(
-                files
-                    .iter()
-                    .map(|f| f.path.as_str())
-                    .collect::<Vec<_>>()
-                    .join("\n")
-                    .as_bytes(),
-            );
+    /// Resolvers are built once per engine. Adding or removing ordinary files updates them in
+    /// place; only manifest changes (package.json, tsconfig, pyproject, Cargo.toml,
+    /// __init__.py) or very large changes rebuild them.
+    fn resolvers(&self, files: &[FileRow], added: &[String], removed: &[String]) -> Arc<Resolvers> {
         let mut st = self.state.lock();
-        if let Some((k, r)) = &st.resolvers
-            && (*k == key || !file_set_changed)
-        {
-            return Arc::clone(r);
+        if let Some((_, r)) = &st.resolvers {
+            if added.is_empty() && removed.is_empty() {
+                return Arc::clone(r);
+            }
+            let small = added.len() + removed.len() <= 2000;
+            if small
+                && !added
+                    .iter()
+                    .chain(removed)
+                    .any(|p| Resolvers::is_manifest(p))
+            {
+                r.apply_file_changes(added, removed);
+                return Arc::clone(r);
+            }
         }
         let repo = RepoFiles::new(self.root.clone(), files.iter().map(|f| f.path.clone()));
         let r = Arc::new(Resolvers::new(&repo));
-        st.resolvers = Some((key, Arc::clone(&r)));
+        st.resolvers = Some((files.len() as u64, Arc::clone(&r)));
         r
     }
 

@@ -48,6 +48,8 @@ pub struct Step {
     pub tree_dirs_visited: u32,
     pub tree_dirs_total: u32,
     pub ms: u64,
+    /// Stage timings: walk, parse, resolve, edges, tree.
+    pub stages_ms: [u64; 5],
     /// `hashed` and the Merkle diff both equal the git change set.
     pub exact: bool,
     /// Paths in one set but not the other (up to 10), when not exact.
@@ -191,14 +193,18 @@ pub fn history(repo: &Path, args: &HistoryArgs) -> Result<HistoryReport> {
     let mut prev: Option<String> = None;
     let mut prev_walk: BTreeSet<String> = BTreeSet::new();
     let mut times = Vec::new();
+    // One engine for the whole replay, as in the running app watching a repo while the user
+    // switches branches. The checkout path never changes, so its index is reused.
+    let mut eng = None;
     for (i, (label, commit)) in plan.iter().enumerate() {
         git(&wt, &["checkout", "--quiet", "--force", commit])?;
         let walk: BTreeSet<String> = iso_walk::walk(&wt).into_iter().map(|f| f.rel).collect();
-        let eng = Engine::open_with_data(&wt, &data)?;
+        if eng.is_none() {
+            eng = Some(Engine::open_with_data(&wt, &data)?);
+        }
         let t = Instant::now();
-        let r: IndexReport = eng.index()?;
+        let r: IndexReport = eng.as_ref().expect("opened").index()?;
         let ms = t.elapsed().as_millis() as u64;
-        drop(eng);
         let mut step = Step {
             label: label.clone(),
             commit: commit[..12.min(commit.len())].to_string(),
@@ -214,6 +220,7 @@ pub fn history(repo: &Path, args: &HistoryArgs) -> Result<HistoryReport> {
             tree_dirs_visited: r.tree_dirs_visited,
             tree_dirs_total: r.tree_dirs_total,
             ms,
+            stages_ms: [r.ms_walk, r.ms_parse, r.ms_resolve, r.ms_edges, r.ms_tree],
             ..Default::default()
         };
         if let Some(p) = &prev {
@@ -259,9 +266,10 @@ pub fn history(repo: &Path, args: &HistoryArgs) -> Result<HistoryReport> {
             step.verified = Some(v);
         }
         eprintln!(
-            "{:<24} {} git {:>5} hashed {:>5} parsed {:>5} cache {:>5} deps {:>4} tree {:>5} dirs {:>5}/{:<5} {:>6} ms {}{}",
+            "{:<24} {} {:?} git {:>5} hashed {:>5} parsed {:>5} cache {:>5} deps {:>4} tree {:>5} dirs {:>5}/{:<5} {:>6} ms {}{}",
             step.label,
             step.commit,
+            step.stages_ms,
             step.git_changed,
             step.hashed,
             step.parsed,

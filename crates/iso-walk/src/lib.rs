@@ -5,7 +5,7 @@
 //! far faster than the read, so seeding from git would save nothing there. On reopen the
 //! size + mtime check below skips reading entirely, which is the case that matters.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{Duration, Instant, UNIX_EPOCH};
@@ -262,6 +262,117 @@ impl MerkleTree {
         MerkleTree { nodes }
     }
 
+    /// Apply file changes in place: `(path, Some(content hash))` for added or modified files,
+    /// `(path, None)` for removed ones. Only the ancestor directories of changed files are
+    /// rehashed. Returns the node paths to write and the node paths to delete, so storage can
+    /// be updated without rewriting the whole tree.
+    pub fn apply(&mut self, changes: &[(String, Option<String>)]) -> NodeChanges {
+        let mut out = NodeChanges::default();
+        let mut affected: HashSet<String> = HashSet::new();
+        for (path, hash) in changes {
+            let parent = parent_of(path);
+            match hash {
+                Some(h) => {
+                    let n = self.nodes.entry(path.clone()).or_insert(MerkleNode {
+                        is_dir: false,
+                        hash: String::new(),
+                        parent: Some(parent.clone()),
+                    });
+                    n.hash = h.clone();
+                    out.upserts.insert(path.clone());
+                }
+                None => {
+                    if self.nodes.remove(path).is_some() {
+                        out.removed.insert(path.clone());
+                    }
+                }
+            }
+            // Every ancestor needs rehashing (and creating, for a new directory).
+            let mut d = parent;
+            loop {
+                affected.insert(d.clone());
+                if !self.nodes.contains_key(&d) {
+                    let p = if d.is_empty() {
+                        None
+                    } else {
+                        Some(parent_of(&d))
+                    };
+                    self.nodes.insert(
+                        d.clone(),
+                        MerkleNode {
+                            is_dir: true,
+                            hash: String::new(),
+                            parent: p,
+                        },
+                    );
+                }
+                if d.is_empty() {
+                    break;
+                }
+                d = parent_of(&d);
+            }
+        }
+        // Children of the affected directories only.
+        let mut kids: HashMap<String, Vec<(String, String)>> = HashMap::new();
+        for (p, n) in &self.nodes {
+            if let Some(par) = &n.parent
+                && affected.contains(par)
+            {
+                let name = p.rsplit('/').next().unwrap_or(p).to_string();
+                kids.entry(par.clone()).or_default().push((name, p.clone()));
+            }
+        }
+        let mut dirs: Vec<String> = affected.into_iter().collect();
+        dirs.sort_by_key(|d| {
+            std::cmp::Reverse(if d.is_empty() {
+                0
+            } else {
+                d.matches('/').count() + 1
+            })
+        });
+        for d in dirs {
+            let mut ks = kids.remove(&d).unwrap_or_default();
+            if ks.is_empty() && !d.is_empty() {
+                // An emptied directory disappears; its parent was already queued.
+                if self.nodes.remove(&d).is_some() {
+                    out.removed.insert(d.clone());
+                    out.upserts.remove(&d);
+                }
+                if let Some(par) = Some(parent_of(&d))
+                    && let Some(v) = kids.get_mut(&par)
+                {
+                    v.retain(|(_, p)| p != &d);
+                }
+                continue;
+            }
+            ks.sort();
+            let mut h = blake3::Hasher::new();
+            for (name, p) in &ks {
+                let ch = self.nodes.get(p).map(|n| n.hash.as_str()).unwrap_or("");
+                h.update(name.as_bytes());
+                h.update(&[0]);
+                h.update(ch.as_bytes());
+                h.update(&[0]);
+            }
+            let hash = h.finalize().to_hex().to_string();
+            let n = self.nodes.get_mut(&d).expect("created above");
+            if n.hash != hash {
+                n.hash = hash;
+                out.upserts.insert(d.clone());
+            }
+            // Make sure the parent sees this directory as a child.
+            if !d.is_empty() {
+                let par = parent_of(&d);
+                let name = d.rsplit('/').next().unwrap_or(&d).to_string();
+                let v = kids.entry(par).or_default();
+                if !v.iter().any(|(_, p)| p == &d) {
+                    v.push((name, d.clone()));
+                }
+            }
+        }
+        out
+    }
+
     pub fn root_hash(&self) -> Option<&str> {
         self.nodes.get("").map(|n| n.hash.as_str())
     }
@@ -322,6 +433,13 @@ fn collect_files(tree: &MerkleTree, dir: &str, out: &mut Vec<String>) {
             out.push(p.clone());
         }
     }
+}
+
+/// Nodes changed by [`MerkleTree::apply`].
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct NodeChanges {
+    pub upserts: std::collections::BTreeSet<String>,
+    pub removed: std::collections::BTreeSet<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -393,6 +511,46 @@ mod tests {
         assert_eq!(
             MerkleTree::diff(&a, &c).changed,
             vec!["lib/c.py", "src/b.ts"]
+        );
+    }
+
+    #[test]
+    fn apply_matches_a_full_rebuild() {
+        let files = [
+            ("src/a.ts", "1"),
+            ("src/b.ts", "2"),
+            ("lib/c.py", "3"),
+            ("README.md", "4"),
+            ("x/y/z.rs", "5"),
+        ];
+        let mut t = MerkleTree::build(files);
+        let changes = vec![
+            ("src/a.ts".to_string(), Some("1x".to_string())),
+            ("x/y/z.rs".to_string(), None),
+            ("new/deep/d.go".to_string(), Some("6".to_string())),
+        ];
+        let ch = t.apply(&changes);
+        let rebuilt = MerkleTree::build([
+            ("src/a.ts", "1x"),
+            ("src/b.ts", "2"),
+            ("lib/c.py", "3"),
+            ("README.md", "4"),
+            ("new/deep/d.go", "6"),
+        ]);
+        assert_eq!(t, rebuilt);
+        assert!(
+            ch.removed.contains("x/y/z.rs")
+                && ch.removed.contains("x/y")
+                && ch.removed.contains("x")
+        );
+        assert!(
+            ch.upserts.contains("")
+                && ch.upserts.contains("src")
+                && ch.upserts.contains("new/deep")
+        );
+        assert!(
+            !ch.upserts.contains("lib"),
+            "untouched directories are not rewritten"
         );
     }
 

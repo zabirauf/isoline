@@ -144,4 +144,4 @@ pub struct FlowUnit {
 }
 
 /// Version of the call-flow walker. Bump when output changes so cached trees are recomputed.
-pub const FLOW_WALKER_VERSION: u32 = 2;
+pub const FLOW_WALKER_VERSION: u32 = 3;

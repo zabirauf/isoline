@@ -45,6 +45,31 @@ pub(crate) fn recluster(eng: &Engine, files: &[FileRow]) -> Result<()> {
         .write(|tx| iso_index::replace_modules(tx, &rows, &members))
 }
 
+/// Put new files in the module whose directory is their nearest ancestor.
+pub(crate) fn assign_by_directory(eng: &Engine, paths: &[String]) -> Result<()> {
+    let mods = eng.index.read(iso_index::modules_all)?;
+    if mods.is_empty() {
+        return Ok(());
+    }
+    let pick = |p: &str| -> Option<&str> {
+        mods.iter()
+            .filter(|m| m.dir.is_empty() || p.starts_with(&format!("{}/", m.dir)))
+            .max_by_key(|m| m.dir.len())
+            .map(|m| m.id.as_str())
+    };
+    eng.index.write(|tx| {
+        let mut st = tx.prepare_cached(
+            "INSERT OR REPLACE INTO file_modules (file_id, module_id) VALUES (?1, ?2)",
+        )?;
+        for p in paths {
+            if let Some(m) = pick(p) {
+                st.execute(iso_index::rusqlite::params![FileId::of_path(p).as_i64(), m])?;
+            }
+        }
+        Ok(())
+    })
+}
+
 impl Engine {
     /// Modules and the aggregated import edges between them.
     pub fn module_map(&self) -> Result<ModuleMap> {

@@ -22,6 +22,9 @@ jobs:
       - name: Placeholder UI build (the Tauri crate embeds app/ui/dist at compile time)
         shell: bash
         run: mkdir -p app/ui/dist && [ -f app/ui/dist/index.html ] || echo '<!doctype html><title>Isoline</title>' > app/ui/dist/index.html
+      - name: Sidecar binary (the Tauri build script checks that externalBin exists)
+        shell: bash
+        run: sh sidecar/copilot/build.sh --mock-only
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace

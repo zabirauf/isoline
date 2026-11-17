@@ -4204,119 +4204,136 @@
       "owner": "agentRunMessageContent",
       "method": null,
       "start": 60,
-      "end": 71
+      "end": 71,
+      "summary": "Builds the optional, privacy-gated prompt/answer text that rides along on completion events."
      },
      {
       "id": "assertAgentHarnessContextEngineSupport",
       "owner": "assertAgentHarnessContextEngineSupport",
       "method": null,
       "start": 73,
-      "end": 89
+      "end": 89,
+      "summary": "Fails fast when the harness cannot host the configured (non-legacy) context engine."
      },
      {
       "id": "agentHarnessDiagnosticBase",
       "owner": "agentHarnessDiagnosticBase",
       "method": null,
       "start": 91,
-      "end": 111
+      "end": 111,
+      "summary": "Builds the identity fields shared by every harness.* diagnostic event."
      },
      {
       "id": "normalizeAgentHarnessAttemptResult",
       "owner": "normalizeAgentHarnessAttemptResult",
       "method": null,
       "start": 113,
-      "end": 154
+      "end": 154,
+      "summary": "Converts a harness result from the legacy or current contract into the canonical shape with a single terminal field."
      },
      {
       "id": "agentRunDiagnosticBase",
       "owner": "agentRunDiagnosticBase",
       "method": null,
       "start": 156,
-      "end": 169
+      "end": 169,
+      "summary": "Builds the shared fields for run.* events on the child agent-run span."
      },
      {
       "id": "emitAgentRunCompleted",
       "owner": "emitAgentRunCompleted",
       "method": null,
       "start": 171,
-      "end": 200
+      "end": 200,
+      "summary": "Emits run.completed for the child run span, if one was opened."
      },
      {
       "id": "agentRunCompletion",
       "owner": "agentRunCompletion",
       "method": null,
       "start": 202,
-      "end": 214
+      "end": 214,
+      "summary": "Maps a normalized attempt terminal to a run outcome: aborted, blocked, error or completed."
      },
      {
       "id": "withFallbackDiagnosticTrace",
       "owner": "withFallbackDiagnosticTrace",
       "method": null,
       "start": 216,
-      "end": 227
+      "end": 227,
+      "summary": "Stamps the lifecycle's trace onto a result that came back without one."
      },
      {
       "id": "emitAgentHarnessRunCompleted",
       "owner": "emitAgentHarnessRunCompleted",
       "method": null,
       "start": 229,
-      "end": 269
+      "end": 269,
+      "summary": "Emits harness.run.completed with outcome, classification, item lifecycle and the gated final answer."
      },
      {
       "id": "createAgentHarnessLifecycleDiagnostics",
       "owner": "createAgentHarnessLifecycleDiagnostics",
       "method": null,
       "start": 271,
-      "end": 355
+      "end": 355,
+      "summary": "Opens the harness span and returns a controller for phases, the child run span, failure and completion."
      },
      {
       "id": "createAgentHarnessLifecycleDiagnostics.complete",
       "owner": "createAgentHarnessLifecycleDiagnostics",
       "method": "complete",
       "start": 301,
-      "end": 308
+      "end": 308,
+      "summary": "Emits run.completed for this lifecycle's run span; does nothing if no span was opened."
      },
      {
       "id": "createAgentHarnessLifecycleDiagnostics.setPhase",
       "owner": "createAgentHarnessLifecycleDiagnostics",
       "method": "setPhase",
       "start": 314,
-      "end": 316
+      "end": 316,
+      "summary": "Records which phase (prepare, send, resolve) is running, so a failure can be attributed to it."
      },
      {
       "id": "createAgentHarnessLifecycleDiagnostics.startAgentRun",
       "owner": "createAgentHarnessLifecycleDiagnostics",
       "method": "startAgentRun",
       "start": 317,
-      "end": 330
+      "end": 330,
+      "summary": "Opens the child run span if one is needed and emits run.started."
      },
      {
       "id": "createAgentHarnessLifecycleDiagnostics.run",
       "owner": "createAgentHarnessLifecycleDiagnostics",
       "method": "run",
       "start": 331,
-      "end": 333
+      "end": 333,
+      "summary": "Executes a callback inside the run trace context when there is one, otherwise runs it directly."
      },
      {
       "id": "createAgentHarnessLifecycleDiagnostics.fail",
       "owner": "createAgentHarnessLifecycleDiagnostics",
       "method": "fail",
       "start": 334,
-      "end": 353
+      "end": 353,
+      "summary": "Reports a failure: harness.run.error tagged with the phase, then run.completed as an error."
      },
      {
       "id": "runAgentHarnessLifecycleAttempt",
       "owner": "runAgentHarnessLifecycleAttempt",
       "method": null,
       "start": 357,
-      "end": 423
+      "end": 423,
+      "summary": "Entry point: runs one harness attempt inside full diagnostics, then classifies and normalizes the result."
      },
      {
       "id": "runAgentHarnessLifecycleFinalization",
       "owner": "runAgentHarnessLifecycleFinalization",
       "method": null,
       "start": 425,
-      "end": 486
+      "end": 486,
+      "summary": "Entry point: runs a settled-turn finalization under diagnostics, treating an empty result as a normal outcome."
      }
     ],
     "importers": [
@@ -4411,7 +4428,8 @@
       "owner": "getRuntimeConfigSnapshot",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -4495,7 +4513,8 @@
       "owner": "assertContextEngineHostSupport",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -4579,7 +4598,8 @@
       "owner": "truncateDiagnosticContent",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -4703,14 +4723,16 @@
       "owner": "diagnosticErrorCategory",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      },
      {
       "id": "diagnosticErrorMessage",
       "owner": "diagnosticErrorMessage",
       "method": null,
       "start": 7,
-      "end": 9
+      "end": 9,
+      "summary": null
      }
     ],
     "importers": [
@@ -4855,14 +4877,16 @@
       "owner": "emitTrustedDiagnosticEvent",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      },
      {
       "id": "emitTrustedDiagnosticEventWithPrivateData",
       "owner": "emitTrustedDiagnosticEventWithPrivateData",
       "method": null,
       "start": 7,
-      "end": 9
+      "end": 9,
+      "summary": null
      }
     ],
     "importers": [
@@ -4946,7 +4970,8 @@
       "owner": "resolveDiagnosticModelContentCapturePolicy",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -5161,28 +5186,32 @@
       "owner": "createChildDiagnosticTraceContext",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      },
      {
       "id": "freezeDiagnosticTraceContext",
       "owner": "freezeDiagnosticTraceContext",
       "method": null,
       "start": 7,
-      "end": 9
+      "end": 9,
+      "summary": null
      },
      {
       "id": "getActiveDiagnosticTraceContext",
       "owner": "getActiveDiagnosticTraceContext",
       "method": null,
       "start": 11,
-      "end": 13
+      "end": 13,
+      "summary": null
      },
      {
       "id": "runWithDiagnosticTraceContext",
       "owner": "runWithDiagnosticTraceContext",
       "method": null,
       "start": 15,
-      "end": 17
+      "end": 17,
+      "summary": null
      }
     ],
     "importers": [
@@ -5306,14 +5335,16 @@
       "owner": "normalizeAgentRunAttemptTerminal",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      },
      {
       "id": "projectAgentRunAttemptTerminal",
       "owner": "projectAgentRunAttemptTerminal",
       "method": null,
       "start": 7,
-      "end": 9
+      "end": 9,
+      "summary": null
      }
     ],
     "importers": [
@@ -5397,7 +5428,8 @@
       "owner": "resolveFinalMessageRawText",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -5526,7 +5558,8 @@
       "owner": "copyCoreTtsAttemptResultProvenance",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -5610,7 +5643,8 @@
       "owner": "subscribeAgentCommentaryDiagnostics",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -5694,7 +5728,8 @@
       "owner": "recordAgentHarnessPreflightOwner",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [
@@ -5833,7 +5868,8 @@
       "owner": "assertSettledTurnFinalizationResult",
       "method": null,
       "start": 3,
-      "end": 5
+      "end": 5,
+      "summary": null
      }
     ],
     "importers": [

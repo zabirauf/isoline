@@ -258,7 +258,10 @@ export function Workbench({ view, focusName, focusLine, onOpenFile }: WorkbenchP
 
   const entries = cards.filter((c) => c.exported);
   const hiddenMap = mode === "flow";
-  const flowDesc = curUnit ? (curUnit.method ? null : (byName.get(curUnit.owner)?.summary?.desc ?? byName.get(curUnit.owner)?.doc ?? null)) : null;
+  const unitRef = curUnit ? view.flowUnits.find((u) => u.id === curUnit.id) : undefined;
+  const flowDesc = curUnit
+    ? (unitRef?.summary ?? (curUnit.method ? null : (byName.get(curUnit.owner)?.summary?.desc ?? byName.get(curUnit.owner)?.doc ?? null)))
+    : null;
 
   return (
     <div className="workbench">

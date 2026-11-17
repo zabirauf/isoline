@@ -50,7 +50,7 @@ const BIG_MODULES = Number(params.get("modules") ?? 0);
 const SIMULATE_INDEX = params.get("index") !== "0";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const big = (n: number) => BigInt(Math.round(n));
+const big = (n: number) => Math.round(n);
 const clone = <T>(x: T): T => structuredClone(x);
 
 function toRepoSummary(r: RawRepo): RepoSummary {
@@ -68,7 +68,7 @@ export function createMockBackend(): Backend {
   const moduleMap: RawModuleMap = BIG_MODULES ? generateModuleMap(BIG_MODULES) : clone(D.moduleMap);
   let repo: RawRepo = BIG_FILES ? summarize(tree) : clone(D.repo);
   const files: Record<string, MockFile> = clone(D.files);
-  let jobs: JobsState = { queued: 0, running: 0, done: 0, failed: 0, cacheHits: 0n, cacheMisses: 0n, hitRate: 0, pendingFiles: [] };
+  let jobs: JobsState = { queued: 0, running: 0, done: 0, failed: 0, cacheHits: 0, cacheMisses: 0, hitRate: 0, pendingFiles: [] };
   let ai: AiStatus = { sidecar: "off", signedIn: false, user: null, models: [], enabledForRepo: false, mock: true, deviceCode: null, message: null };
   let nextJob = 1;
   let indexing = false;
@@ -413,7 +413,7 @@ function generatedFile(node: TreeNode): MockFile {
     return {
       source: src,
       flows,
-      view: { ...common, lines: src.split("\n").length - 1, layers: 2, functions: fns, outline: [], flowUnits: fns.map((f) => ({ id: f.name, owner: f.name, method: null, start: f.start, end: f.end })) },
+      view: { ...common, lines: src.split("\n").length - 1, layers: 2, functions: fns, outline: [], flowUnits: fns.map((f) => ({ id: f.name, owner: f.name, method: null, start: f.start, end: f.end, summary: null })) },
     };
   }
   const src =

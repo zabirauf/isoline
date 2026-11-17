@@ -6,7 +6,7 @@ import { mockModuleMap } from "./testdata";
 
 const big = (n: number): ModuleMap => {
   const raw = generateModuleMap(n);
-  return { ...raw, modules: raw.modules.map((m) => ({ ...m, lines: BigInt(m.lines) })) };
+  return { ...raw, modules: raw.modules.map((m) => ({ ...m, lines: Number(m.lines) })) };
 };
 
 describe("module map layout", () => {
@@ -46,7 +46,7 @@ describe("module map layout", () => {
   });
 
   it("stacks a small, deep map top to bottom", () => {
-    const map = { ...mockModuleMap, modules: mockModuleMap.modules.map((m) => ({ ...m, lines: BigInt(m.lines) })) };
+    const map = { ...mockModuleMap, modules: mockModuleMap.modules.map((m) => ({ ...m, lines: Number(m.lines) })) };
     const L = layoutModules(map);
     expect(L.vertical).toBe(true);
     const cli = L.index.get("cli")!;

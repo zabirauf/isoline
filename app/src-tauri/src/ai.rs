@@ -57,6 +57,10 @@ pub async fn ai_estimate(_scope: AiScope, _path: Option<String>) -> CmdResult<Ai
 }
 
 #[tauri::command]
-pub async fn ai_run(_scope: AiScope, _path: Option<String>, _budget_usd: f64) -> CmdResult<AiRunHandle> {
+pub async fn ai_run(
+    _scope: AiScope,
+    _path: Option<String>,
+    _budget_usd: f64,
+) -> CmdResult<AiRunHandle> {
     Err("AI summaries are not available in this build.".into())
 }

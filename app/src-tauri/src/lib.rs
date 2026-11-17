@@ -24,16 +24,29 @@ fn err(e: impl std::fmt::Display) -> String {
 }
 
 fn engine(state: &State<'_, AppState>) -> CmdResult<Arc<Engine>> {
-    state.engine.read().clone().ok_or_else(|| "No repo is open.".to_string())
+    state
+        .engine
+        .read()
+        .clone()
+        .ok_or_else(|| "No repo is open.".to_string())
 }
 
 /// Run blocking engine work off the UI thread.
-async fn blocking<T: Send + 'static>(f: impl FnOnce() -> anyhow::Result<T> + Send + 'static) -> CmdResult<T> {
-    tauri::async_runtime::spawn_blocking(f).await.map_err(err)?.map_err(err)
+async fn blocking<T: Send + 'static>(
+    f: impl FnOnce() -> anyhow::Result<T> + Send + 'static,
+) -> CmdResult<T> {
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(err)?
+        .map_err(err)
 }
 
 #[tauri::command]
-async fn open_repo(app: AppHandle, state: State<'_, AppState>, path: String) -> CmdResult<RepoSummary> {
+async fn open_repo(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    path: String,
+) -> CmdResult<RepoSummary> {
     if let Some(old) = state.engine.write().take() {
         old.stop_watch();
         old.set_sink(None);
@@ -91,13 +104,22 @@ async fn get_flow(state: State<'_, AppState>, path: String, unit: String) -> Cmd
 }
 
 #[tauri::command]
-async fn get_source(state: State<'_, AppState>, path: String, start: Option<u32>, end: Option<u32>) -> CmdResult<SourceSlice> {
+async fn get_source(
+    state: State<'_, AppState>,
+    path: String,
+    start: Option<u32>,
+    end: Option<u32>,
+) -> CmdResult<SourceSlice> {
     let e = engine(&state)?;
     blocking(move || e.source(&path, start, end)).await
 }
 
 #[tauri::command]
-async fn get_impact(state: State<'_, AppState>, symbol: String, transitive: bool) -> CmdResult<Impact> {
+async fn get_impact(
+    state: State<'_, AppState>,
+    symbol: String,
+    transitive: bool,
+) -> CmdResult<Impact> {
     let e = engine(&state)?;
     let id = SymbolId::from_hex(&symbol).ok_or("Bad symbol id.")?;
     blocking(move || e.impact(id, transitive)).await
@@ -110,7 +132,11 @@ async fn get_module_map(state: State<'_, AppState>) -> CmdResult<ModuleMap> {
 }
 
 #[tauri::command]
-async fn search(state: State<'_, AppState>, query: String, limit: Option<usize>) -> CmdResult<Vec<SearchHit>> {
+async fn search(
+    state: State<'_, AppState>,
+    query: String,
+    limit: Option<usize>,
+) -> CmdResult<Vec<SearchHit>> {
     let e = engine(&state)?;
     blocking(move || e.search(&query, limit.unwrap_or(30))).await
 }
@@ -122,7 +148,12 @@ async fn get_jobs(state: State<'_, AppState>) -> CmdResult<JobsState> {
 }
 
 #[tauri::command]
-async fn rename_module(state: State<'_, AppState>, id: String, name: Option<String>, color: Option<String>) -> CmdResult<ModuleInfo> {
+async fn rename_module(
+    state: State<'_, AppState>,
+    id: String,
+    name: Option<String>,
+    color: Option<String>,
+) -> CmdResult<ModuleInfo> {
     let e = engine(&state)?;
     blocking(move || e.rename_module(&id, name.as_deref(), color.as_deref())).await
 }

@@ -416,17 +416,47 @@ impl Engine {
             current: None,
             elapsed_ms: t0.elapsed().as_millis() as u64,
         }));
-        let all_files = self.index.read(iso_index::files_all)?;
         let file_set_changed = rep.added > 0 || rep.deleted > 0;
-        let resolvers = self.resolvers(&all_files, file_set_changed);
+        // Incremental runs over modified files never read the whole files table.
+        let need_all = full || file_set_changed || self.state.lock().resolvers.is_none();
+        let all_files: Vec<FileRow> = if need_all {
+            self.index.read(iso_index::files_all)?
+        } else {
+            Vec::new()
+        };
+        let resolvers = if need_all {
+            self.resolvers(&all_files, file_set_changed)
+        } else {
+            Arc::clone(
+                &self
+                    .state
+                    .lock()
+                    .resolvers
+                    .as_ref()
+                    .expect("checked above")
+                    .1,
+            )
+        };
         let deleted_ids: HashSet<FileId> = deleted.iter().map(|d| d.id).collect();
-        let lang_of: HashMap<FileId, (Language, String)> = all_files
-            .iter()
-            .map(|f| (f.id, (f.lang, f.path.clone())))
-            .collect();
+        let lang_of: HashMap<FileId, (Language, String)> = if need_all {
+            all_files
+                .iter()
+                .map(|f| (f.id, (f.lang, f.path.clone())))
+                .collect()
+        } else {
+            self.index.read(|c| {
+                let mut m = HashMap::new();
+                for f in &facts_changed {
+                    if let Some(r) = iso_index::file_by_id(c, *f)? {
+                        m.insert(r.id, (r.lang, r.path));
+                    }
+                }
+                Ok(m)
+            })?
+        };
         let to_resolve: Vec<iso_index::ImportRow> = self.index.read(|c| {
             if full && (existing.is_empty() || file_set_changed)
-                || facts_changed.len() > all_files.len() / 2
+                || (need_all && facts_changed.len() > all_files.len() / 2)
             {
                 // Cold run or big change: resolve everything that changed, plus anything that
                 // was unresolved or pointed at a deleted file.
@@ -462,7 +492,7 @@ impl Engine {
                 let to = match r {
                     Resolution::File(p) => {
                         let id = FileId::of_path(&p);
-                        if lang_of.contains_key(&id) {
+                        if !need_all || lang_of.contains_key(&id) {
                             ResolvedTo::File(id)
                         } else {
                             ResolvedTo::Unresolved
@@ -536,11 +566,9 @@ impl Engine {
                 current: None,
                 elapsed_ms: t0.elapsed().as_millis() as u64,
             }));
-            crate::edges::rebuild(
-                self,
-                &edge_targets.into_iter().collect::<Vec<_>>(),
-                &all_files,
-            )?;
+            // Preloading every export pays off only when many files need edges.
+            let preload = edge_targets.len() > 2000;
+            crate::edges::rebuild(self, &edge_targets.into_iter().collect::<Vec<_>>(), preload)?;
         }
         rep.ms_edges = t_edges.elapsed().as_millis() as u64;
 
@@ -550,47 +578,62 @@ impl Engine {
             || rep.deleted > 0
             || rep.added > 0
             || !resolution_changed.is_empty();
-        let all_files = if rep.deleted > 0 || rep.added > 0 || rep.hashed > 0 {
-            self.index.read(iso_index::files_all)?
-        } else {
-            all_files
-        };
-        rep.files = all_files.len() as u32;
-        rep.lines = all_files.iter().map(|f| f.lines as u64).sum();
-        let stored_root = self.index.read(|c| iso_index::meta_get(c, "root_hash"))?;
-        if rep.hashed > 0 || rep.deleted > 0 || stored_root.is_none() {
-            let tree = iso_walk::MerkleTree::build(
-                all_files
-                    .iter()
-                    .map(|f| (f.path.as_str(), f.content_hash.as_str())),
-            );
-            let root_hash = tree.root_hash().map(|s| s.to_string());
-            if root_hash != stored_root {
-                self.index.write(|tx| {
-                    iso_index::replace_tree(
-                        tx,
-                        tree.nodes.iter().map(|(p, n)| {
-                            (p.as_str(), n.is_dir, n.hash.as_str(), n.parent.as_deref())
-                        }),
-                    )?;
-                    if let Some(h) = &root_hash {
-                        iso_index::meta_set(tx, "root_hash", h)?;
-                    }
-                    Ok(())
-                })?;
+        if full || file_set_changed {
+            let all_files =
+                if rep.deleted > 0 || rep.added > 0 || rep.hashed > 0 || all_files.is_empty() {
+                    self.index.read(iso_index::files_all)?
+                } else {
+                    all_files
+                };
+            rep.files = all_files.len() as u32;
+            rep.lines = all_files.iter().map(|f| f.lines as u64).sum();
+            // The Merkle tree is stored after full runs; incremental runs leave it to the next
+            // full run, which keeps the edit path independent of repo size.
+            let stored_root = self.index.read(|c| iso_index::meta_get(c, "root_hash"))?;
+            if full && (rep.hashed > 0 || rep.deleted > 0 || stored_root.is_none()) {
+                let tree = iso_walk::MerkleTree::build(
+                    all_files
+                        .iter()
+                        .map(|f| (f.path.as_str(), f.content_hash.as_str())),
+                );
+                let root_hash = tree.root_hash().map(|s| s.to_string());
+                if root_hash != stored_root {
+                    self.index.write(|tx| {
+                        iso_index::replace_tree(
+                            tx,
+                            tree.nodes.iter().map(|(p, n)| {
+                                (p.as_str(), n.is_dir, n.hash.as_str(), n.parent.as_deref())
+                            }),
+                        )?;
+                        if let Some(h) = &root_hash {
+                            iso_index::meta_set(tx, "root_hash", h)?;
+                        }
+                        Ok(())
+                    })?;
+                }
+                rep.root_hash = root_hash;
+            } else {
+                rep.root_hash = stored_root;
             }
-            rep.root_hash = root_hash;
+            let has_modules = self
+                .index
+                .read(|c| Ok(!iso_index::modules_all(c)?.is_empty()))?;
+            if (changed_anything && (file_set_changed || (full && !resolution_changed.is_empty())))
+                || !has_modules
+            {
+                crate::modules::recluster(self, &all_files)?;
+                rep.reclustered = true;
+            }
         } else {
-            rep.root_hash = stored_root;
-        }
-        let has_modules = self
-            .index
-            .read(|c| Ok(!iso_index::modules_all(c)?.is_empty()))?;
-        if (changed_anything && (file_set_changed || !resolution_changed.is_empty()))
-            || !has_modules
-        {
-            crate::modules::recluster(self, &all_files)?;
-            rep.reclustered = true;
+            let (files, lines): (i64, i64) = self.index.read(|c| {
+                Ok(c.query_row(
+                    "SELECT COUNT(*), COALESCE(SUM(lines), 0) FROM files",
+                    [],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )?)
+            })?;
+            rep.files = files as u32;
+            rep.lines = lines as u64;
         }
         rep.ms_tree = t_tree.elapsed().as_millis() as u64;
         self.emit(Event::IndexProgress(IndexProgress {

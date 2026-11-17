@@ -163,7 +163,9 @@ impl Engine {
             cache_hits: hits,
             cache_misses: misses,
             hit_rate: self.derived.stats.hit_rate(),
-            pending_files: self.queue.queued_targets(iso_core::jobs::JobKind::Parse, 200),
+            pending_files: self
+                .queue
+                .queued_targets(iso_core::jobs::JobKind::Parse, 200),
         }
     }
 

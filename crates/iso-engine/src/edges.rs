@@ -21,52 +21,115 @@ pub(crate) struct Exports {
     reexports: Vec<(String, String, FileId)>,
 }
 
-pub(crate) struct ExportTable {
-    files: HashMap<FileId, Exports>,
+pub(crate) struct ExportTable<'a> {
+    /// Engine for lazy per-file loads (incremental runs); `None` when everything is preloaded.
+    eng: Option<&'a Engine>,
+    files: parking_lot::RwLock<HashMap<FileId, std::sync::Arc<Exports>>>,
 }
 
-impl ExportTable {
-    pub(crate) fn load(eng: &Engine, files: &[FileRow]) -> Result<ExportTable> {
+type ExportRow = (SymbolId, FileId, String, String, SymbolKind, Option<String>);
+
+fn export_row(r: &iso_index::rusqlite::Row) -> iso_index::rusqlite::Result<ExportRow> {
+    Ok((
+        SymbolId::from_i64(r.get(0)?),
+        FileId::from_i64(r.get(1)?),
+        r.get::<_, String>(2)?,
+        r.get::<_, String>(3)?,
+        SymbolKind::parse(&r.get::<_, String>(4)?),
+        r.get::<_, Option<String>>(5)?,
+    ))
+}
+
+fn add_symbol(e: &mut Exports, row: ExportRow) {
+    let (id, _file, name, qn, kind, parent) = row;
+    if parent.is_none() {
+        e.by_name.entry(name).or_insert((id, kind));
+    }
+    e.by_qualified.insert(qn, id);
+}
+
+fn add_reexports(e: &mut Exports, names: &str, target: FileId) {
+    let names: Vec<iso_core::ImportedName> = serde_json::from_str(names).unwrap_or_default();
+    if names.is_empty() {
+        e.reexports.push(("*".into(), "*".into(), target));
+    }
+    for n in names {
+        e.reexports
+            .push((n.local().to_string(), n.name.clone(), target));
+    }
+}
+
+const EXPORT_SQL: &str = "SELECT id, file_id, name, qualified_name, kind, parent FROM symbols WHERE (exported = 1 OR parent IS NOT NULL)";
+const REEXPORT_SQL: &str = "SELECT file_id, names_json, resolved_file_id FROM imports WHERE kind = 'reexport' AND resolved_file_id IS NOT NULL";
+
+impl<'a> ExportTable<'a> {
+    /// Preload every file's exports in two queries (full index runs).
+    pub(crate) fn preload(eng: &Engine) -> Result<ExportTable<'static>> {
         let mut map: HashMap<FileId, Exports> = HashMap::new();
         eng.index.read(|c| {
-            let mut st = c.prepare_cached(
-                "SELECT id, file_id, name, qualified_name, kind, parent FROM symbols WHERE exported = 1 OR parent IS NOT NULL",
-            )?;
+            let mut st = c.prepare_cached(EXPORT_SQL)?;
+            for row in st.query_map([], export_row)? {
+                let row = row?;
+                add_symbol(map.entry(row.1).or_default(), row);
+            }
+            let mut st = c.prepare_cached(REEXPORT_SQL)?;
             let rows = st.query_map([], |r| {
                 Ok((
-                    SymbolId::from_i64(r.get(0)?),
-                    FileId::from_i64(r.get(1)?),
-                    r.get::<_, String>(2)?,
-                    r.get::<_, String>(3)?,
-                    SymbolKind::parse(&r.get::<_, String>(4)?),
-                    r.get::<_, Option<String>>(5)?,
+                    FileId::from_i64(r.get(0)?),
+                    r.get::<_, String>(1)?,
+                    FileId::from_i64(r.get(2)?),
                 ))
             })?;
             for row in rows {
-                let (id, file, name, qn, kind, parent) = row?;
-                let e = map.entry(file).or_default();
-                if parent.is_none() {
-                    e.by_name.entry(name).or_insert((id, kind));
-                }
-                e.by_qualified.insert(qn, id);
-            }
-            let mut st = c.prepare_cached("SELECT file_id, names_json, resolved_file_id FROM imports WHERE kind = 'reexport' AND resolved_file_id IS NOT NULL")?;
-            let rows = st.query_map([], |r| Ok((FileId::from_i64(r.get(0)?), r.get::<_, String>(1)?, FileId::from_i64(r.get(2)?))))?;
-            for row in rows {
                 let (file, names, target) = row?;
-                let names: Vec<iso_core::ImportedName> = serde_json::from_str(&names).unwrap_or_default();
-                let e = map.entry(file).or_default();
-                if names.is_empty() {
-                    e.reexports.push(("*".into(), "*".into(), target));
-                }
-                for n in names {
-                    e.reexports.push((n.local().to_string(), n.name.clone(), target));
-                }
+                add_reexports(map.entry(file).or_default(), &names, target);
             }
             Ok(())
         })?;
-        let _ = files;
-        Ok(ExportTable { files: map })
+        Ok(ExportTable {
+            eng: None,
+            files: parking_lot::RwLock::new(
+                map.into_iter()
+                    .map(|(k, v)| (k, std::sync::Arc::new(v)))
+                    .collect(),
+            ),
+        })
+    }
+
+    /// Load exports on demand, one file at a time (incremental runs and file views).
+    pub(crate) fn lazy(eng: &'a Engine) -> ExportTable<'a> {
+        ExportTable {
+            eng: Some(eng),
+            files: parking_lot::RwLock::new(HashMap::new()),
+        }
+    }
+
+    fn get(&self, file: FileId) -> Option<std::sync::Arc<Exports>> {
+        if let Some(e) = self.files.read().get(&file) {
+            return Some(std::sync::Arc::clone(e));
+        }
+        let eng = self.eng?;
+        let mut e = Exports::default();
+        eng.index
+            .read(|c| {
+                let mut st = c.prepare_cached(&format!("{EXPORT_SQL} AND file_id = ?1"))?;
+                for row in st.query_map([file.as_i64()], export_row)? {
+                    add_symbol(&mut e, row?);
+                }
+                let mut st = c.prepare_cached(&format!("{REEXPORT_SQL} AND file_id = ?1"))?;
+                let rows = st.query_map([file.as_i64()], |r| {
+                    Ok((r.get::<_, String>(1)?, FileId::from_i64(r.get(2)?)))
+                })?;
+                for row in rows {
+                    let (names, target) = row?;
+                    add_reexports(&mut e, &names, target);
+                }
+                Ok(())
+            })
+            .ok()?;
+        let e = std::sync::Arc::new(e);
+        self.files.write().insert(file, std::sync::Arc::clone(&e));
+        Some(e)
     }
 
     /// Find an exported symbol `name` in `file`, following re-exports.
@@ -76,7 +139,7 @@ impl ExportTable {
         name: &str,
         depth: u32,
     ) -> Option<(SymbolId, SymbolKind)> {
-        let e = self.files.get(&file)?;
+        let e = self.get(file)?;
         if let Some(s) = e.by_name.get(name) {
             return Some(*s);
         }
@@ -106,7 +169,7 @@ impl ExportTable {
     }
 
     pub(crate) fn find_qualified(&self, file: FileId, qn: &str) -> Option<SymbolId> {
-        self.files.get(&file)?.by_qualified.get(qn).copied()
+        self.get(file)?.by_qualified.get(qn).copied()
     }
 
     pub(crate) fn has_type(&self, file: FileId, name: &str) -> bool {
@@ -161,20 +224,32 @@ pub(crate) fn bindings(imports: &[ImportRow]) -> HashMap<String, Binding> {
     m
 }
 
-/// Build and store outgoing edges for `targets`.
-pub(crate) fn rebuild(eng: &Engine, targets: &[FileId], files: &[FileRow]) -> Result<()> {
-    let by_id: HashMap<FileId, &FileRow> = files.iter().map(|f| (f.id, f)).collect();
-    let table = ExportTable::load(eng, files)?;
-    let results: Vec<(FileId, Vec<EdgeRow>)> = targets
+/// Build and store outgoing edges for `targets`. `preload` loads every export up front (full
+/// runs); otherwise exports load lazily for just the files the targets import.
+pub(crate) fn rebuild(eng: &Engine, targets: &[FileId], preload: bool) -> Result<()> {
+    let rows: Vec<FileRow> = eng.index.read(|c| {
+        let mut v = Vec::with_capacity(targets.len());
+        for t in targets {
+            if let Some(r) = iso_index::file_by_id(c, *t)? {
+                v.push(r);
+            }
+        }
+        Ok(v)
+    })?;
+    let table = if preload {
+        ExportTable::preload(eng)?
+    } else {
+        ExportTable::lazy(eng)
+    };
+    let results: Vec<(FileId, Vec<EdgeRow>)> = rows
         .par_iter()
-        .filter_map(|fid| {
-            let row = by_id.get(fid)?;
+        .filter_map(|row| {
             let facts = eng.facts_for(row).ok()?;
             let imports = eng
                 .index
-                .read(|c| iso_index::imports_for_file(c, *fid))
+                .read(|c| iso_index::imports_for_file(c, row.id))
                 .ok()?;
-            Some((*fid, build_edges(row, &facts, &imports, &table)))
+            Some((row.id, build_edges(row, &facts, &imports, &table)))
         })
         .collect();
     for chunk in results.chunks(500) {

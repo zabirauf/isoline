@@ -128,14 +128,15 @@ impl Engine {
             .index
             .read(|c| iso_index::imports_for_file(c, row.id))?;
         let binds = bindings(&imports);
+        let importer_rows = self.index.read(|c| iso_index::importers_of(c, row.id))?;
         let all_files: HashMap<FileId, String> = self.index.read(|c| {
-            let mut st = c.prepare_cached("SELECT id, path FROM files")?;
-            let v = st
-                .query_map([], |r| {
-                    Ok((FileId::from_i64(r.get(0)?), r.get::<_, String>(1)?))
-                })?
-                .collect::<iso_index::rusqlite::Result<Vec<_>>>()?;
-            Ok(v.into_iter().collect())
+            iso_index::file_paths(
+                c,
+                imports
+                    .iter()
+                    .filter_map(|i| i.resolved)
+                    .chain(importer_rows.iter().map(|(f, _)| *f)),
+            )
         })?;
 
         // ---- cards
@@ -413,9 +414,7 @@ impl Engine {
                 _ => None,
             }
         };
-        let importers = self
-            .index
-            .read(|c| iso_index::importers_of(c, row.id))?
+        let importers = importer_rows
             .into_iter()
             .filter_map(|(f, line)| {
                 all_files.get(&f).map(|p| FileRef {
@@ -693,11 +692,11 @@ impl Engine {
             })
             .collect();
         let ql = q.to_lowercase();
-        let files = self.index.read(iso_index::files_all)?;
+        let files = self.index.read(|c| iso_index::search_paths(c, q, limit))?;
         let mut fh: Vec<SearchHit> = files
             .iter()
-            .filter_map(|f| {
-                let pl = f.path.to_lowercase();
+            .filter_map(|path| {
+                let pl = path.to_lowercase();
                 let name = pl.rsplit('/').next().unwrap_or(&pl);
                 let score = if name == ql {
                     3.5
@@ -712,8 +711,8 @@ impl Engine {
                 };
                 Some(SearchHit {
                     kind: SearchKind::File,
-                    name: f.path.rsplit('/').next().unwrap_or(&f.path).to_string(),
-                    path: f.path.clone(),
+                    name: path.rsplit('/').next().unwrap_or(path).to_string(),
+                    path: path.clone(),
                     line: None,
                     symbol_kind: None,
                     score,
@@ -734,12 +733,21 @@ impl Engine {
 
     /// Dependents and dependencies of a symbol, direct or transitive.
     pub fn impact(&self, sym: SymbolId, transitive: bool) -> Result<Impact> {
-        let paths: HashMap<FileId, String> = self.index.read(|c| {
-            Ok(iso_index::files_all(c)?
-                .into_iter()
-                .map(|f| (f.id, f.path))
-                .collect())
-        })?;
+        let paths_cache: parking_lot::Mutex<HashMap<FileId, String>> =
+            parking_lot::Mutex::new(HashMap::new());
+        let path_of = |f: FileId| -> String {
+            if let Some(p) = paths_cache.lock().get(&f) {
+                return p.clone();
+            }
+            let p = self
+                .index
+                .read(|c| iso_index::file_paths(c, [f]))
+                .ok()
+                .and_then(|m| m.get(&f).cloned())
+                .unwrap_or_default();
+            paths_cache.lock().insert(f, p.clone());
+            p
+        };
         let me = self
             .index
             .read(|c| iso_index::symbol_by_id(c, sym))?
@@ -753,7 +761,7 @@ impl Engine {
             Some(SymRef {
                 id,
                 name: s.qualified_name,
-                path: paths.get(&s.file_id).cloned().unwrap_or_default(),
+                path: path_of(s.file_id),
                 line: s.start_line,
                 confidence: conf,
                 depth,
@@ -803,7 +811,7 @@ impl Engine {
             symbol: SymRef {
                 id: sym,
                 name: me.qualified_name,
-                path: paths.get(&me.file_id).cloned().unwrap_or_default(),
+                path: path_of(me.file_id),
                 line: me.start_line,
                 confidence: iso_core::Confidence::Exact,
                 depth: 0,

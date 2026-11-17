@@ -758,6 +758,46 @@ pub fn row_to_fact(r: &SymbolRow) -> SymbolFact {
     }
 }
 
+/// Paths for a set of file ids.
+pub fn file_paths(
+    conn: &Connection,
+    ids: impl IntoIterator<Item = FileId>,
+) -> Result<std::collections::HashMap<FileId, String>> {
+    let mut st = conn.prepare_cached("SELECT path FROM files WHERE id = ?1")?;
+    let mut out = std::collections::HashMap::new();
+    for id in ids {
+        if out.contains_key(&id) {
+            continue;
+        }
+        if let Some(p) = st
+            .query_row([id.as_i64()], |r| r.get::<_, String>(0))
+            .optional()?
+        {
+            out.insert(id, p);
+        }
+    }
+    Ok(out)
+}
+
+/// Paths containing `q` (case-insensitive), file-name matches first.
+pub fn search_paths(conn: &Connection, q: &str, limit: usize) -> Result<Vec<String>> {
+    let esc = q
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    let mut st = conn.prepare_cached(
+        "SELECT path FROM files WHERE path LIKE ?1 ESCAPE '\\'
+         ORDER BY (path LIKE ?2 ESCAPE '\\') DESC, length(path) LIMIT ?3",
+    )?;
+    let rows = st
+        .query_map(
+            params![format!("%{esc}%"), format!("%/{esc}%"), (limit * 4) as i64],
+            |r| r.get::<_, String>(0),
+        )?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,0 +1,442 @@
+{
+ "Cache.__init__": {
+  "id": "Cache.__init__",
+  "owner": "Cache",
+  "method": "__init__",
+  "start": 7,
+  "end": 9,
+  "async": false,
+  "params": [
+   "self",
+   "size = …"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "super",
+    "target": {
+     "kind": "builtin",
+     "id": "super"
+    },
+    "line": 8,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "super().__init__",
+    "target": {
+     "kind": "method",
+     "id": "__init__"
+    },
+    "line": 8,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   }
+  ]
+ },
+ "Cache.full": {
+  "id": "Cache.full",
+  "owner": "Cache",
+  "method": "full",
+  "start": 11,
+  "end": 13,
+  "async": false,
+  "params": [
+   "self"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "len",
+    "target": {
+     "kind": "builtin",
+     "id": "len"
+    },
+    "line": 13,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "len(self.items) >= self.size",
+    "line": 13,
+    "early": false
+   }
+  ]
+ },
+ "Cache.refresh": {
+  "id": "Cache.refresh",
+  "owner": "Cache",
+  "method": "refresh",
+  "start": 15,
+  "end": 20,
+  "async": true,
+  "params": [
+   "self",
+   "keys",
+   "on_done = …"
+  ],
+  "tree": [
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "for k in keys",
+    "line": 16,
+    "children": [
+     {
+      "t": "call",
+      "label": "self.load",
+      "target": {
+       "kind": "method",
+       "id": "load",
+       "unit": "Cache.load"
+      },
+      "line": 16,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "asyncio.gather",
+    "target": {
+     "kind": "ext",
+     "id": "asyncio.gather",
+     "module": "asyncio"
+    },
+    "line": 17,
+    "await": true,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "if",
+    "label": "on_done",
+    "line": 18,
+    "children": [
+     {
+      "t": "call",
+      "label": "on_done",
+      "target": {
+       "kind": "param",
+       "id": "on_done"
+      },
+      "line": 19,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "zip",
+    "target": {
+     "kind": "builtin",
+     "id": "zip"
+    },
+    "line": 20,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "block",
+    "kind": "loop",
+    "kw": "loop",
+    "label": "for k, v in zip(keys, values)",
+    "line": 20,
+    "children": [
+     {
+      "t": "call",
+      "label": "np.mean",
+      "target": {
+       "kind": "ext",
+       "id": "np.mean",
+       "module": "numpy"
+      },
+      "line": 20,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "{k: np.mean(v) for k, v in zip(keys, values)}",
+    "line": 20,
+    "early": false
+   }
+  ]
+ },
+ "Cache.load": {
+  "id": "Cache.load",
+  "owner": "Cache",
+  "method": "load",
+  "start": 22,
+  "end": 23,
+  "async": false,
+  "params": [
+   "self",
+   "key"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "fetch",
+    "target": {
+     "kind": "ext",
+     "id": "fetch",
+     "module": ".store"
+    },
+    "line": 23,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "fetch(key)",
+    "line": 23,
+    "early": false
+   }
+  ]
+ },
+ "summarize": {
+  "id": "summarize",
+  "owner": "summarize",
+  "method": null,
+  "start": 26,
+  "end": 36,
+  "async": false,
+  "params": [
+   "rows",
+   "key = …"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "sorted",
+    "target": {
+     "kind": "builtin",
+     "id": "sorted"
+    },
+    "line": 30,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": [
+     {
+      "t": "block",
+      "kind": "callback",
+      "kw": "callback",
+      "label": "score() runs inside sorted()",
+      "line": 27,
+      "children": [
+       {
+        "t": "call",
+        "label": "weight",
+        "target": {
+         "kind": "fn",
+         "id": "weight"
+        },
+        "line": 28,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       },
+       {
+        "t": "exit",
+        "kind": "return",
+        "label": "weight(row) * 2",
+        "line": 28,
+        "early": false
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "map",
+    "target": {
+     "kind": "builtin",
+     "id": "map"
+    },
+    "line": 31,
+    "await": false,
+    "optional": false,
+    "argOf": "list",
+    "inner": [
+     {
+      "t": "block",
+      "kind": "loop",
+      "kw": "loop",
+      "label": "each item of map()",
+      "line": 31,
+      "children": [
+       {
+        "t": "call",
+        "label": "r.name.upper",
+        "target": {
+         "kind": "method",
+         "id": "upper"
+        },
+        "line": 31,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "list",
+    "target": {
+     "kind": "builtin",
+     "id": "list"
+    },
+    "line": 31,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "block",
+    "kind": "deferred",
+    "kw": "later",
+    "label": "later() defined here, runs when invoked",
+    "line": 32,
+    "children": [
+     {
+      "t": "call",
+      "label": "notify",
+      "target": {
+       "kind": "other"
+      },
+      "line": 32,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "report",
+    "target": {
+     "kind": "local",
+     "id": "report"
+    },
+    "line": 34,
+    "await": false,
+    "optional": false,
+    "argOf": "print",
+    "inner": [
+     {
+      "t": "block",
+      "kind": "inline",
+      "kw": "body",
+      "label": "report()",
+      "line": 33,
+      "children": [
+       {
+        "t": "call",
+        "label": "render",
+        "target": {
+         "kind": "other"
+        },
+        "line": 33,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "print",
+    "target": {
+     "kind": "builtin",
+     "id": "print"
+    },
+    "line": 34,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "key",
+    "target": {
+     "kind": "param",
+     "id": "key"
+    },
+    "line": 35,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "names",
+    "line": 36,
+    "early": false
+   }
+  ]
+ },
+ "weight": {
+  "id": "weight",
+  "owner": "weight",
+  "method": null,
+  "start": 39,
+  "end": 40,
+  "async": false,
+  "params": [
+   "row"
+  ],
+  "tree": [
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "row.size or 1",
+    "line": 40,
+    "early": false
+   }
+  ]
+ }
+}

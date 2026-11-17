@@ -13,7 +13,7 @@ use std::sync::OnceLock;
 use iso_core::{FlowUnit, Language};
 use tree_sitter::{Node, Tree};
 
-use super::spec::{FlowSpec, KindNames, SpecDef, is};
+use super::spec::{FlowSpec, KindNames, SpecDef, Style, is};
 use super::{
     FlowLang, Param, Prepared, Prop, Scope, UnitSeed, end_line, field, line, named, walk_units,
 };
@@ -63,6 +63,13 @@ pub static TS_DEF: SpecDef = SpecDef {
         "generator_function",
     ],
     object: &["object"],
+    fn_decl: &[],
+    assign: &[],
+    match_: &[],
+    with: &[],
+    comprehension: &[],
+    try_op: &[],
+    macro_: &[],
     logical_ops: &[("&&", "only if"), ("||", "unless"), ("??", "if nullish")],
     iter_methods: &[
         "map",
@@ -99,6 +106,7 @@ pub static TS_DEF: SpecDef = SpecDef {
         template_string: "template_string",
         optional_chain: &["?.", "optional_chain"],
     },
+    style: Style::JS,
 };
 
 /// The flow table for one TS/JS grammar.
@@ -291,7 +299,7 @@ impl JsFlow {
         body: Option<Node<'t>>,
         src: &'s str,
         top_fns: &HashMap<&'s str, Node<'t>>,
-        imports: &HashMap<&'s str, &'s str>,
+        imports: &HashMap<String, String>,
     ) -> Scope<'t, 's> {
         let mut sc = Scope::default();
         let Some(body) = body else {
@@ -329,8 +337,8 @@ impl JsFlow {
                     let fname = &src[callee.byte_range()];
                     if let Some((k, _)) = top_fns.get_key_value(fname) {
                         sc.origins.insert(nm, k);
-                    } else if let Some((k, _)) = imports.get_key_value(fname) {
-                        sc.value_from.insert(nm, k);
+                    } else if imports.contains_key(fname) {
+                        sc.value_from.insert(nm, fname);
                     }
                 }
             }
@@ -390,7 +398,7 @@ impl JsFlow {
         let text = |n: Node| -> &'s str { &src[n.byte_range()] };
 
         // Pass 1: imports and top-level functions.
-        let mut imports: HashMap<&'s str, &'s str> = HashMap::new();
+        let mut imports: HashMap<String, String> = HashMap::new();
         let mut top_order: Vec<&'s str> = Vec::new();
         let mut top_fns: HashMap<&'s str, Node<'t>> = HashMap::new();
         let mut top_outer: HashMap<&'s str, Node<'t>> = HashMap::new();
@@ -406,7 +414,7 @@ impl JsFlow {
                         for ni in named(clause).filter(|c| c.kind() == "named_imports") {
                             for spec in named(ni).filter(|c| c.kind() == "import_specifier") {
                                 if let Some(local) = field(spec, f.alias).or(field(spec, f.name)) {
-                                    imports.insert(text(local), module);
+                                    imports.insert(text(local).to_string(), module.to_string());
                                 }
                             }
                         }
@@ -430,6 +438,7 @@ impl JsFlow {
 
         let mut prepared = Prepared {
             imports,
+            import_paths: HashMap::new(),
             top_fns: top_fns.keys().copied().collect(),
             factory_props: HashMap::new(),
             units: Vec::new(),
@@ -541,6 +550,8 @@ impl JsFlow {
                             is_async: has_token(fnode, "async"),
                             param_labels: self.param_labels(fnode, src),
                             factory: None,
+                            self_type: None,
+                            prefix: String::new(),
                         };
                         push(&mut prepared, &mut index, u);
                     }
@@ -583,6 +594,8 @@ impl JsFlow {
             is_async: has_token(async_node, "async"),
             param_labels: self.param_labels(fn_node, src),
             factory: None,
+            self_type: None,
+            prefix: String::new(),
         };
         push(prepared, index, unit);
 
@@ -638,6 +651,8 @@ impl JsFlow {
                     is_async: has_token(b, "async"),
                     param_labels: self.param_labels(b, src),
                     factory: None,
+                    self_type: None,
+                    prefix: String::new(),
                 };
                 push(prepared, index, u);
                 set(&mut props, pn, Prop::Unit(id));

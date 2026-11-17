@@ -1,0 +1,262 @@
+{
+ "spawn": {
+  "id": "spawn",
+  "owner": "spawn",
+  "method": null,
+  "start": 4,
+  "end": 16,
+  "async": false,
+  "params": [
+   "jobs"
+  ],
+  "tree": [
+   {
+    "t": "call",
+    "label": "jobs.first",
+    "target": {
+     "kind": "method",
+     "id": "first"
+    },
+    "line": 5,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "block",
+    "kind": "cond",
+    "kw": "else",
+    "label": "if the pattern does not match",
+    "line": 5,
+    "children": [
+     {
+      "t": "exit",
+      "kind": "throw",
+      "label": "bail!(\"no jobs\")",
+      "line": 6
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "thread::spawn",
+    "target": {
+     "kind": "ext",
+     "id": "thread::spawn",
+     "module": "std::thread"
+    },
+    "line": 8,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": [
+     {
+      "t": "block",
+      "kind": "callback",
+      "kw": "callback",
+      "label": "runs inside thread::spawn()",
+      "line": 8,
+      "children": [
+       {
+        "t": "call",
+        "label": "run",
+        "target": {
+         "kind": "other"
+        },
+        "line": 8,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "first.name",
+    "target": {
+     "kind": "method",
+     "id": "name"
+    },
+    "line": 9,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "first.name().unwrap_or_else",
+    "target": {
+     "kind": "method",
+     "id": "unwrap_or_else"
+    },
+    "line": 9,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": [
+     {
+      "t": "block",
+      "kind": "callback",
+      "kw": "callback",
+      "label": "runs inside first.name().unwrap_or_else()",
+      "line": 9,
+      "children": [
+       {
+        "t": "call",
+        "label": "fallback",
+        "target": {
+         "kind": "other"
+        },
+        "line": 9,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "t": "block",
+    "kind": "deferred",
+    "kw": "later",
+    "label": "on_exit() defined here, runs when invoked",
+    "line": 10,
+    "children": [
+     {
+      "t": "call",
+      "label": "cleanup",
+      "target": {
+       "kind": "other"
+      },
+      "line": 11,
+      "await": false,
+      "optional": false,
+      "argOf": null,
+      "inner": []
+     }
+    ]
+   },
+   {
+    "t": "call",
+    "label": "summary",
+    "target": {
+     "kind": "other"
+    },
+    "line": 13,
+    "await": false,
+    "optional": false,
+    "argOf": "vec!",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "stats",
+    "target": {
+     "kind": "other"
+    },
+    "line": 13,
+    "await": false,
+    "optional": false,
+    "argOf": "util::render",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "util::render",
+    "target": {
+     "kind": "other"
+    },
+    "line": 13,
+    "await": false,
+    "optional": false,
+    "argOf": "vec!",
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "vec!",
+    "target": {
+     "kind": "builtin",
+     "id": "vec!"
+    },
+    "line": 13,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "handle.join",
+    "target": {
+     "kind": "method",
+     "id": "join"
+    },
+    "line": 14,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "handle.join().ok",
+    "target": {
+     "kind": "method",
+     "id": "ok"
+    },
+    "line": 14,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "call",
+    "label": "handle.join().ok().context",
+    "target": {
+     "kind": "method",
+     "id": "context"
+    },
+    "line": 14,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "throw",
+    "label": "handle.join().ok().context(\"join\")?",
+    "line": 14
+   },
+   {
+    "t": "call",
+    "label": "Ok",
+    "target": {
+     "kind": "builtin",
+     "id": "Ok"
+    },
+    "line": 15,
+    "await": false,
+    "optional": false,
+    "argOf": null,
+    "inner": []
+   },
+   {
+    "t": "exit",
+    "kind": "return",
+    "label": "Ok(())",
+    "line": 15,
+    "early": false
+   }
+  ]
+ }
+}

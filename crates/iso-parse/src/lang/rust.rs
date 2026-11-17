@@ -29,8 +29,8 @@ use std::collections::HashSet;
 use std::path::Path;
 
 use iso_core::{
-    CallFact, FileFacts, ImportFact, ImportKind, ImportedName, Language, RefFact, SymbolFact,
-    SymbolKind,
+    CallFact, FileFacts, FlowUnit, ImportFact, ImportKind, ImportedName, Language, RefFact,
+    SymbolFact, SymbolKind,
 };
 use tree_sitter::Node;
 
@@ -54,6 +54,11 @@ impl Extractor for RustExtractor {
         x.facts.has_errors = root.has_error();
         x.facts.calls.sort_by_key(|c| c.line);
         x.facts
+    }
+    /// Call flow (workstream H, `flow/rust.rs`); imports come from this extractor's facts.
+    fn flow_units(&self, path: &Path, source: &str, tree: &tree_sitter::Tree) -> Vec<FlowUnit> {
+        let facts = self.extract(path, source, tree);
+        crate::flow::rust::flow_units(source, tree, &facts)
     }
 }
 

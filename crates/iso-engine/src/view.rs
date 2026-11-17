@@ -495,7 +495,7 @@ impl Engine {
             })
         })?;
         let name = row.path.rsplit('/').next().unwrap_or(&row.path).to_string();
-        let targets = self.symbol_targets(&row, &facts, &functions, &binds);
+        let targets = self.symbol_targets(&row, &facts, &functions, &binds, &imports);
         let flow_unit_refs: Vec<FlowUnitRef> = flow_units
             .iter()
             .map(|u| FlowUnitRef {
@@ -548,6 +548,7 @@ impl Engine {
         facts: &FileFacts,
         cards: &[FnCard],
         binds: &HashMap<String, Binding>,
+        imports: &[iso_index::ImportRow],
     ) -> Vec<SymbolTarget> {
         let mut wanted: Vec<String> = Vec::new();
         let mut want = |n: &str| {
@@ -611,19 +612,13 @@ impl Engine {
                             .ok()
                             .and_then(|m| m.get(&fid).cloned())
                     };
-                    let module = self
-                        .index
-                        .read(|c| iso_index::imports_for_file(c, row.id))
-                        .ok()
-                        .and_then(|v| {
-                            v.into_iter()
-                                .find(|i| {
-                                    i.names.iter().any(|n| n.local() == name)
-                                        || (i.names.is_empty()
-                                            && i.specifier.ends_with(name.as_str()))
-                                })
-                                .map(|i| i.specifier)
-                        });
+                    let module = imports
+                        .iter()
+                        .find(|i| {
+                            i.names.iter().any(|n| n.local() == name)
+                                || (i.names.is_empty() && i.specifier.ends_with(name.as_str()))
+                        })
+                        .map(|i| i.specifier.clone());
                     match found {
                         Some(sym) => out.push(SymbolTarget {
                             name,

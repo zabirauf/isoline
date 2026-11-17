@@ -59,6 +59,13 @@ pub struct IndexReport {
     pub dependents_recomputed: u32,
     pub reclustered: bool,
     pub root_hash: Option<String>,
+    /// Files the Merkle diff between the stored tree and the new one reports as changed.
+    pub tree_changed_files: u32,
+    /// Directories the Merkle diff descended into, out of `tree_dirs_total`.
+    pub tree_dirs_visited: u32,
+    pub tree_dirs_total: u32,
+    /// Up to 50 of the changed paths, for validation.
+    pub tree_changed_sample: Vec<String>,
     pub ms_walk: u64,
     pub ms_parse: u64,
     pub ms_resolve: u64,
@@ -597,6 +604,30 @@ impl Engine {
                         .map(|f| (f.path.as_str(), f.content_hash.as_str())),
                 );
                 let root_hash = tree.root_hash().map(|s| s.to_string());
+                rep.tree_dirs_total = tree.nodes.values().filter(|n| n.is_dir).count() as u32;
+                if stored_root.is_some() && root_hash != stored_root {
+                    let old = iso_walk::MerkleTree {
+                        nodes: self
+                            .index
+                            .read(iso_index::load_tree)?
+                            .into_iter()
+                            .map(|(p, is_dir, hash, parent)| {
+                                (
+                                    p,
+                                    iso_walk::MerkleNode {
+                                        is_dir,
+                                        hash,
+                                        parent,
+                                    },
+                                )
+                            })
+                            .collect(),
+                    };
+                    let d = iso_walk::MerkleTree::diff(&old, &tree);
+                    rep.tree_changed_files = d.changed.len() as u32;
+                    rep.tree_dirs_visited = d.dirs_visited as u32;
+                    rep.tree_changed_sample = d.changed.iter().take(50).cloned().collect();
+                }
                 if root_hash != stored_root {
                     self.index.write(|tx| {
                         iso_index::replace_tree(

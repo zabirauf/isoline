@@ -11,6 +11,7 @@ use iso_engine::{Engine, Event};
 
 mod bench;
 mod eval;
+mod history;
 mod serve;
 
 #[derive(Parser)]
@@ -77,6 +78,9 @@ enum Cmd {
     },
     /// Benchmark the performance targets on this repo.
     Bench(bench::BenchArgs),
+    /// Replay commit history through incremental indexing and check the work done and the
+    /// result against cold indexes (works on a scratch clone).
+    History(history::HistoryArgs),
     /// Serve the built UI and the IPC commands on 127.0.0.1 (development and screenshots).
     Serve(serve::ServeArgs),
     /// Run the validation loop over eval/repos.toml and write eval/results/<round>.json.
@@ -126,6 +130,7 @@ fn main() -> Result<()> {
         Cmd::Bench(args) => bench::run(&repo, data, args),
         Cmd::Eval(args) => eval::run(data, args),
         Cmd::Serve(args) => serve::run(data, args),
+        Cmd::History(args) => history::run(&repo, args),
         cmd => {
             let eng = open(&repo, data)?;
             match cmd {
@@ -197,7 +202,8 @@ fn main() -> Result<()> {
                 | Cmd::Flows { .. }
                 | Cmd::Bench(_)
                 | Cmd::Eval(_)
-                | Cmd::Serve(_) => {
+                | Cmd::Serve(_)
+                | Cmd::History(_) => {
                     unreachable!()
                 }
             }

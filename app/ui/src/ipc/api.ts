@@ -31,7 +31,7 @@ export type EventName = keyof BackendEvents;
 export type Unlisten = () => void;
 
 export interface Backend {
-  readonly kind: "tauri" | "mock";
+  readonly kind: "tauri" | "mock" | "http";
   openRepo(path: string): Promise<RepoSummary>;
   getTree(): Promise<TreeNode>;
   getFileView(path: string): Promise<FileView>;
@@ -91,10 +91,72 @@ async function createTauriBackend(): Promise<Backend> {
   };
 }
 
+/**
+ * Development and test bridge: the same commands over HTTP to `iso-cli serve`, which binds to
+ * 127.0.0.1 only and serves this UI from the same origin. Selected with `?backend=http`. Lets a
+ * plain browser (and Playwright) drive the real engine; the desktop app never uses it.
+ */
+function createHttpBackend(): Backend {
+  const call = async <T>(cmd: string, args: Record<string, unknown> = {}): Promise<T> => {
+    const res = await fetch(`./invoke/${cmd}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(args) });
+    const body = await res.json();
+    if (!res.ok) throw new Error(typeof body?.error === "string" ? body.error : `${cmd} failed`);
+    return body as T;
+  };
+  let source: EventSource | null = null;
+  const handlers = new Map<string, Set<(p: unknown) => void>>();
+  const ensureSource = () => {
+    if (source) return;
+    source = new EventSource("./events");
+    source.onmessage = (m) => {
+      const { event, payload } = JSON.parse(m.data) as { event: string; payload: unknown };
+      handlers.get(event)?.forEach((h) => h(payload));
+    };
+  };
+  return {
+    kind: "http",
+    openRepo: (path) => call("open_repo", { path }),
+    getTree: () => call("get_tree"),
+    getFileView: (path) => call("get_file_view", { path }),
+    getFlow: (path, unit) => call("get_flow", { path, unit }),
+    getSource: (path, start, end) => call("get_source", { path, start: start ?? null, end: end ?? null }),
+    getImpact: (symbol, transitive) => call("get_impact", { symbol, transitive }),
+    getModuleMap: () => call("get_module_map"),
+    search: (query, limit) => call("search", { query, limit: limit ?? null }),
+    aiStatus: () => call("ai_status"),
+    aiSignIn: () => call("ai_sign_in"),
+    aiSignOut: () => call("ai_sign_out"),
+    aiEstimate: (scope, path) => call("ai_estimate", { scope, path: path ?? null }),
+    aiRun: (scope, path, budgetUsd) => call("ai_run", { scope, path: path ?? null, budgetUsd }),
+    aiEnable: (enabled) => call("ai_enable", { enabled }),
+    getJobs: () => call("get_jobs"),
+    renameModule: (id, name, color) => call("rename_module", { id, name: name ?? null, color: color ?? null }),
+    recentRepos: () => call("recent_repos"),
+    pickFolder: async () => window.prompt("Repo folder") || null,
+    listen: async (event, cb) => {
+      ensureSource();
+      const set = handlers.get(event) ?? new Set();
+      const h = cb as (p: unknown) => void;
+      set.add(h);
+      handlers.set(event, set);
+      return () => set.delete(h);
+    },
+  };
+}
+
+function wantsHttp(): boolean {
+  return typeof window !== "undefined" && new URLSearchParams(window.location.search).get("backend") === "http";
+}
+
 let backendPromise: Promise<Backend> | null = null;
 
 export function backend(): Promise<Backend> {
-  if (!backendPromise) backendPromise = isTauri() ? createTauriBackend() : import("./mock").then((m) => m.createMockBackend());
+  if (!backendPromise)
+    backendPromise = isTauri()
+      ? createTauriBackend()
+      : wantsHttp()
+        ? Promise.resolve(createHttpBackend())
+        : import("./mock").then((m) => m.createMockBackend());
   return backendPromise;
 }
 

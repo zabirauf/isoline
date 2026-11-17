@@ -11,6 +11,7 @@ use iso_engine::{Engine, Event};
 
 mod bench;
 mod eval;
+mod serve;
 
 #[derive(Parser)]
 #[command(name = "iso-cli", version, about = "Isoline, headless")]
@@ -76,6 +77,8 @@ enum Cmd {
     },
     /// Benchmark the performance targets on this repo.
     Bench(bench::BenchArgs),
+    /// Serve the built UI and the IPC commands on 127.0.0.1 (development and screenshots).
+    Serve(serve::ServeArgs),
     /// Run the validation loop over eval/repos.toml and write eval/results/<round>.json.
     Eval(eval::EvalArgs),
 }
@@ -122,6 +125,7 @@ fn main() -> Result<()> {
         }
         Cmd::Bench(args) => bench::run(&repo, data, args),
         Cmd::Eval(args) => eval::run(data, args),
+        Cmd::Serve(args) => serve::run(data, args),
         cmd => {
             let eng = open(&repo, data)?;
             match cmd {
@@ -189,7 +193,11 @@ fn main() -> Result<()> {
                     Some(p) => print(&eng.import_scip(&std::fs::read(p)?)?, cli.pretty),
                     None => print(&eng.run_precise()?, cli.pretty),
                 },
-                Cmd::Facts { .. } | Cmd::Flows { .. } | Cmd::Bench(_) | Cmd::Eval(_) => {
+                Cmd::Facts { .. }
+                | Cmd::Flows { .. }
+                | Cmd::Bench(_)
+                | Cmd::Eval(_)
+                | Cmd::Serve(_) => {
                     unreachable!()
                 }
             }

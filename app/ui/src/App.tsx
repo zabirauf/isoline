@@ -48,7 +48,7 @@ export function App() {
   const [theme, setTheme] = useState<ThemeChoice>(loadThemeChoice);
   const [busy, setBusy] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"tauri" | "mock" | null>(null);
+  const [mode, setMode] = useState<"tauri" | "mock" | "http" | null>(null);
   const fileRef = useRef<OpenFile | null>(null);
   fileRef.current = file;
 
@@ -139,11 +139,14 @@ export function App() {
 
   // Deep link for the mock: ?open=<path> opens the first recent repo and that file.
   useEffect(() => {
-    if (mode !== "mock") return;
-    const p = new URLSearchParams(location.search).get("open");
-    if (p === null) return;
+    if (mode !== "mock" && mode !== "http") return;
+    const q = new URLSearchParams(location.search);
+    const p = q.get("open");
+    const repo = q.get("repo");
+    if (p === null && repo === null) return;
     void api.recentRepos().then(async (r) => {
-      if (r[0]) await openRepo(r[0]);
+      const root = repo ?? r[0];
+      if (root) await openRepo(root);
       if (p) openFile(p);
     });
   }, [mode]);

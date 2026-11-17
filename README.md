@@ -31,6 +31,22 @@ GitHub Copilot sign-in, and never before the user turns AI on for a repo.
 - **Gets faster with use**: everything derived is cached by content hash, so a branch switch
   back and forth costs nothing and AI summaries are never paid for twice.
 
+## Install
+
+Download a build for macOS, Windows or Linux (arm64 and x64) from the
+[latest release](https://github.com/zabirauf/isoline/releases/latest): a `.dmg` for macOS,
+an installer `.exe` or `.msi` for Windows, and an `.AppImage`, `.deb` or `.rpm` for Linux.
+Each release also has the `iso-cli` binary for every target and a `SHA256SUMS.txt`. The builds
+are not code-signed yet; see the release notes for opening them the first time.
+
+With Nix (flakes), build from source:
+
+```sh
+nix run github:zabirauf/isoline                 # the desktop app
+nix run github:zabirauf/isoline#iso-cli -- --help
+nix profile install github:zabirauf/isoline      # or add overlays.default to your config
+```
+
 ## Layout
 
 | Path | What |

@@ -2,12 +2,12 @@
 //! over HTTP on 127.0.0.1 only, so a plain browser or Playwright can drive the real engine
 //! (`http://127.0.0.1:<port>/?backend=http`). The desktop app never uses it.
 
-use std::io::Read;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow};
-use crossbeam_channel::{Receiver, Sender, unbounded};
+use crossbeam_channel::{Sender, unbounded};
 use iso_core::SymbolId;
 use iso_engine::{Engine, Event};
 use parking_lot::{Mutex, RwLock};
@@ -80,23 +80,21 @@ fn handle(st: &Arc<State>, ui: &Path, mut req: tiny_http::Request) -> Result<()>
         return Ok(());
     }
     if url == "/events" {
+        // Server-sent events, written straight to the socket and flushed per event: a
+        // tiny_http response body goes through an 8 KB chunk buffer, which held back the last
+        // events of an index run (the "done" ones) until more traffic pushed them out.
         let (tx, rx) = unbounded::<String>();
         st.clients.lock().push(tx);
-        let resp = tiny_http::Response::new(
-            200.into(),
-            vec![
-                "content-type: text/event-stream".parse().unwrap(),
-                "cache-control: no-cache".parse().unwrap(),
-            ],
-            EventStream {
-                rx,
-                buf: Vec::new(),
-                pos: 0,
-            },
-            None,
-            None,
-        );
-        let _ = req.respond(resp);
+        let mut w = req.into_writer();
+        w.write_all(
+            b"HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\ncache-control: no-cache\r\nconnection: keep-alive\r\n\r\n",
+        )?;
+        w.flush()?;
+        while let Ok(msg) = rx.recv() {
+            if w.write_all(format!("data: {msg}\n\n").as_bytes()).is_err() || w.flush().is_err() {
+                break;
+            }
+        }
         return Ok(());
     }
     // Static UI.
@@ -137,31 +135,6 @@ fn handle(st: &Arc<State>, ui: &Path, mut req: tiny_http::Request) -> Result<()>
         }
     }
     Ok(())
-}
-
-/// Server-sent events: one `data:` line per engine event.
-struct EventStream {
-    rx: Receiver<String>,
-    buf: Vec<u8>,
-    pos: usize,
-}
-
-impl Read for EventStream {
-    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
-        if self.pos >= self.buf.len() {
-            match self.rx.recv() {
-                Ok(msg) => {
-                    self.buf = format!("data: {msg}\n\n").into_bytes();
-                    self.pos = 0;
-                }
-                Err(_) => return Ok(0),
-            }
-        }
-        let n = out.len().min(self.buf.len() - self.pos);
-        out[..n].copy_from_slice(&self.buf[self.pos..self.pos + n]);
-        self.pos += n;
-        Ok(n)
-    }
 }
 
 fn arg<'a>(args: &'a Value, k: &str) -> Option<&'a Value> {

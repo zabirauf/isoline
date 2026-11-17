@@ -18,6 +18,8 @@ use std::sync::Mutex;
 pub use rusqlite;
 
 pub const SCHEMA_VERSION: i64 = 2;
+/// Reader connections per index.
+const READERS: usize = 4;
 const MIGRATION_1: &str = include_str!("../migrations/0001_init.sql");
 const MIGRATION_2: &str = include_str!("../migrations/0002_unresolved_index.sql");
 pub const AI_CACHE_SQL: &str = include_str!("../migrations/ai_cache.sql");
@@ -33,7 +35,8 @@ pub fn now_ms() -> i64 {
 pub struct Index {
     path: PathBuf,
     writer: Mutex<Connection>,
-    reader: Mutex<Connection>,
+    /// A small pool of reader connections, so UI reads never queue behind indexing reads.
+    readers: Vec<Mutex<Connection>>,
 }
 
 fn configure(conn: &Connection) -> Result<()> {
@@ -65,12 +68,16 @@ impl Index {
         let writer = Connection::open(path).with_context(|| format!("open {}", path.display()))?;
         configure(&writer)?;
         migrate(&writer)?;
-        let reader = Connection::open(path)?;
-        configure(&reader)?;
+        let mut readers = Vec::new();
+        for _ in 0..READERS {
+            let r = Connection::open(path)?;
+            configure(&r)?;
+            readers.push(Mutex::new(r));
+        }
         Ok(Index {
             path: path.to_path_buf(),
             writer: Mutex::new(writer),
-            reader: Mutex::new(reader),
+            readers,
         })
     }
 
@@ -89,7 +96,19 @@ impl Index {
 
     /// Run `f` on the reader connection.
     pub fn read<T>(&self, f: impl FnOnce(&Connection) -> Result<T>) -> Result<T> {
-        let conn = self.reader.lock().unwrap_or_else(|e| e.into_inner());
+        // Take the first free reader; if all are busy, wait on one chosen by thread.
+        for r in &self.readers {
+            if let Ok(conn) = r.try_lock() {
+                return f(&conn);
+            }
+        }
+        let i = {
+            use std::hash::{Hash, Hasher};
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            std::thread::current().id().hash(&mut h);
+            h.finish() as usize % self.readers.len()
+        };
+        let conn = self.readers[i].lock().unwrap_or_else(|e| e.into_inner());
         f(&conn)
     }
 }

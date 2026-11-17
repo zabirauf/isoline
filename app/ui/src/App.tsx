@@ -123,9 +123,23 @@ function Shell() {
       api.listen("index_done", (r) => {
         setRepo(r);
         refreshRepoData();
+        // A file opened mid-index was shown before its imports resolved; refresh it now.
+        const open = fileRef.current?.path;
+        if (open) {
+          invalidate(open);
+          void api.getFileView(open).then(setView).catch(() => {});
+        }
         setTimeout(() => setProgress((p) => (p?.phase === "done" ? null : p)), 4000);
       }),
       api.listen("job_progress", setJobs),
+      // Files saved in an editor: refresh the open file when it is among them.
+      api.listen("files_changed", (paths) => {
+        const open = fileRef.current?.path;
+        if (open && paths.includes(open)) {
+          invalidate(open);
+          void api.getFileView(open).then(setView).catch(() => {});
+        }
+      }),
       api.listen("ai_progress", setAiProgress),
       api.listen("summary_ready", ({ path }) => {
         invalidate(path);

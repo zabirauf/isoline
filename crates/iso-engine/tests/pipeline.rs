@@ -271,16 +271,68 @@ fn precise_index_corrects_a_wrong_heuristic_edge() {
 fn adding_rust_crate_roots_matches_a_cold_index() {
     let src = tempfile::tempdir().unwrap();
     let r = src.path();
-    write(r, "Cargo.toml", "[package]\nname = \"demo\"\nversion = \"0.1.0\"\n");
+    write(
+        r,
+        "Cargo.toml",
+        "[package]\nname = \"demo\"\nversion = \"0.1.0\"\n",
+    );
     write(r, "src/lib.rs", "pub fn f() {}\n");
     let data = tempfile::tempdir().unwrap();
     let e = open(r, data.path());
     e.index().unwrap();
     write(r, "tests/common/mod.rs", "pub fn setup() {}\n");
-    write(r, "tests/it.rs", "mod common;\n\n#[test]\nfn t() {\n    common::setup();\n}\n");
+    write(
+        r,
+        "tests/it.rs",
+        "mod common;\n\n#[test]\nfn t() {\n    common::setup();\n}\n",
+    );
     let rep = e.index().unwrap();
     assert_eq!(rep.added, 2);
     let view = e.file_view("tests/it.rs").unwrap();
-    let m = view.modules.iter().find(|m| m.id == "common").expect("mod common");
+    let m = view
+        .modules
+        .iter()
+        .find(|m| m.id == "common")
+        .expect("mod common");
     assert_eq!(m.resolved.as_deref(), Some("tests/common/mod.rs"));
+}
+
+/// The visible file opens while a full index is running, without waiting for the run.
+#[test]
+fn file_opens_during_a_full_index() {
+    let src = tempfile::tempdir().unwrap();
+    let r = src.path();
+    for i in 0..400 {
+        write(
+            r,
+            &format!("src/m{i}.ts"),
+            &format!(
+                "import {{ f{} }} from \"./m{}\";\nexport function f{i}() {{ return {i}; }}\n",
+                (i + 1) % 400,
+                (i + 1) % 400
+            ),
+        );
+    }
+    write(
+        r,
+        "src/open.ts",
+        "export function opened(a: number): number {\n  return a + 1;\n}\n",
+    );
+    let data = tempfile::tempdir().unwrap();
+    let e = open(r, data.path());
+    let bg = Arc::clone(&e);
+    let h = std::thread::spawn(move || bg.index().unwrap());
+    // Wait until the run has started, then open a file.
+    let t0 = std::time::Instant::now();
+    while !e.is_indexing() && t0.elapsed().as_secs() < 5 {
+        std::thread::yield_now();
+    }
+    let v = e.file_view("src/open.ts").unwrap();
+    assert_eq!(v.functions[0].name, "opened");
+    h.join().unwrap();
+    let v = e.file_view("src/open.ts").unwrap();
+    assert_eq!(
+        v.functions[0].sig.params[0].type_text.as_deref(),
+        Some("number")
+    );
 }

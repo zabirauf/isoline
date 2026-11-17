@@ -26,6 +26,8 @@ export interface BackendEvents {
   ai_progress: AiProgress;
   summary_ready: { path: string };
   job_progress: JobsState;
+  /** Repo-relative paths whose facts changed after a save (watcher). */
+  files_changed: string[];
 }
 export type EventName = keyof BackendEvents;
 export type Unlisten = () => void;

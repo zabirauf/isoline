@@ -107,7 +107,12 @@ impl Engine {
                 path,
                 iso_core::jobs::Priority::VisibleFile,
             );
-            self.index_paths(&[path.to_string()])?;
+            if self.is_indexing() {
+                // A full run holds the index lock; the visible file does not wait for it.
+                self.index_one_now(path)?;
+            } else {
+                self.index_paths(&[path.to_string()])?;
+            }
         }
         self.index
             .read(|c| iso_index::file_by_path(c, path))?

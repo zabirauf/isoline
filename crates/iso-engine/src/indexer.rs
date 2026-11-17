@@ -778,6 +778,42 @@ impl Engine {
         Ok(())
     }
 
+    /// Process one file right away while a full run holds the index lock (the file the user
+    /// just opened): read, hash, extract and store its row and facts. Its import resolution
+    /// and edges arrive with the running full run.
+    pub(crate) fn index_one_now(&self, path: &str) -> Result<()> {
+        let md = std::fs::metadata(self.root.join(path))?;
+        let mtime = md
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_nanos() as i64)
+            .unwrap_or(0);
+        let w = WalkedFile {
+            rel: path.to_string(),
+            size: md.len(),
+            mtime,
+        };
+        let old = self.index.read(|c| iso_index::file_by_path(c, path))?;
+        let p = self.process_file(&w, old.as_ref())?;
+        self.index.write(|tx| {
+            iso_index::upsert_file(tx, &p.row)?;
+            if let Some((key, bytes)) = &p.derived {
+                iso_index::derived_put(
+                    tx,
+                    DerivedKind::Facts.as_str(),
+                    *key,
+                    EXTRACTOR_VERSION,
+                    bytes,
+                )?;
+            }
+            if let Some(f) = &p.facts {
+                iso_index::replace_facts(tx, p.row.id, &p.row.path, f)?;
+            }
+            Ok(())
+        })
+    }
+
     /// Read, hash, classify and (if needed) extract one file.
     fn process_file(&self, w: &WalkedFile, old: Option<&FileRow>) -> Result<Processed> {
         let read = iso_walk::read_file(&self.root, &w.rel)?;

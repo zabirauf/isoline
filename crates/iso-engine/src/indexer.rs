@@ -645,7 +645,7 @@ impl Engine {
             || rep.deleted > 0
             || rep.added > 0
             || !resolution_changed.is_empty();
-        self.update_tree(&tree_changes, &mut rep)?;
+        self.update_tree(&tree_changes, full, &mut rep)?;
         let (files, lines): (i64, i64) = self.index.read(|c| {
             Ok(c.query_row(
                 "SELECT COUNT(*), COALESCE(SUM(lines), 0) FROM files",
@@ -691,15 +691,15 @@ impl Engine {
     fn update_tree(
         &self,
         changes: &[(String, Option<String>)],
+        full: bool,
         rep: &mut IndexReport,
     ) -> Result<()> {
         let mut st = self.state.lock();
         if st.tree.is_none() {
             let rows = self.index.read(iso_index::load_tree)?;
             if !rows.is_empty() {
-                st.tree = Some(iso_walk::MerkleTree {
-                    nodes: rows
-                        .into_iter()
+                st.tree = Some(iso_walk::MerkleTree::from_nodes(
+                    rows.into_iter()
                         .map(|(p, is_dir, hash, parent)| {
                             (
                                 p,
@@ -711,7 +711,7 @@ impl Engine {
                             )
                         })
                         .collect(),
-                });
+                ));
             }
         }
         let Some(tree) = st.tree.as_mut() else {
@@ -735,7 +735,7 @@ impl Engine {
                 }
                 Ok(())
             })?;
-            rep.tree_dirs_total = tree.nodes.values().filter(|n| n.is_dir).count() as u32;
+            rep.tree_dirs_total = tree.dir_count() as u32;
             rep.root_hash = root;
             st.tree = Some(tree);
             return Ok(());
@@ -746,13 +746,17 @@ impl Engine {
         }
         // The diff against the previous tree is what a reopen or branch switch would compute;
         // it is reported so validation can check it against git.
-        let before = tree.clone();
+        // Full runs (open, branch switch) also report the Merkle diff so validation can check
+        // it against git; the edit path skips that whole-tree copy.
+        let before = full.then(|| tree.clone());
         let nc = tree.apply(changes);
-        let d = iso_walk::MerkleTree::diff(&before, tree);
-        rep.tree_changed_files = d.changed.len() as u32;
-        rep.tree_dirs_visited = d.dirs_visited as u32;
-        rep.tree_changed_sample = d.changed.iter().take(50).cloned().collect();
-        rep.tree_dirs_total = tree.nodes.values().filter(|n| n.is_dir).count() as u32;
+        if let Some(before) = before {
+            let d = iso_walk::MerkleTree::diff(&before, tree);
+            rep.tree_changed_files = d.changed.len() as u32;
+            rep.tree_dirs_visited = d.dirs_visited as u32;
+            rep.tree_changed_sample = d.changed.iter().take(50).cloned().collect();
+        }
+        rep.tree_dirs_total = tree.dir_count() as u32;
         let root = tree.root_hash().map(str::to_string);
         let tree = &*tree;
         self.index.write(|tx| {

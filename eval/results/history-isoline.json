@@ -1,26 +1,52 @@
 {
   "repo": "~/Documents/Projects/my-github/isoline",
-  "commits": 29,
+  "commits": 34,
   "steps": [
     {
       "label": "forward 1",
       "commit": "fc683827d798",
       "git_changed": 0,
       "hashed": 159,
-      "parsed": 111,
+      "parsed": 110,
       "facts_cache_hits": 0,
       "added": 159,
       "deleted": 0,
-      "exports_changed": 111,
+      "exports_changed": 110,
       "dependents_recomputed": 0,
-      "edge_files": 111,
+      "edge_files": 110,
       "tree_changed_files": 0,
       "tree_dirs_visited": 0,
       "tree_dirs_total": 62,
       "ms": 29,
+      "stages_ms": [
+        3,
+        14,
+        2,
+        6,
+        1
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          159,
+          159
+        ],
+        "symbols": [
+          747,
+          747
+        ],
+        "imports": [
+          248,
+          248
+        ],
+        "edges": [
+          298,
+          298
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 2",
@@ -37,10 +63,36 @@
       "tree_changed_files": 9,
       "tree_dirs_visited": 12,
       "tree_dirs_total": 62,
-      "ms": 15,
+      "ms": 13,
+      "stages_ms": [
+        3,
+        6,
+        1,
+        1,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          160,
+          160
+        ],
+        "symbols": [
+          909,
+          909
+        ],
+        "imports": [
+          330,
+          330
+        ],
+        "edges": [
+          413,
+          413
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 3",
@@ -57,10 +109,36 @@
       "tree_changed_files": 12,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 63,
-      "ms": 16,
+      "ms": 15,
+      "stages_ms": [
+        2,
+        6,
+        2,
+        2,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          168,
+          168
+        ],
+        "symbols": [
+          1016,
+          1016
+        ],
+        "imports": [
+          469,
+          469
+        ],
+        "edges": [
+          584,
+          584
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 4",
@@ -77,10 +155,36 @@
       "tree_changed_files": 31,
       "tree_dirs_visited": 5,
       "tree_dirs_total": 68,
-      "ms": 14,
+      "ms": 12,
+      "stages_ms": [
+        4,
+        2,
+        1,
+        2,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          196,
+          196
+        ],
+        "symbols": [
+          1047,
+          1047
+        ],
+        "imports": [
+          488,
+          488
+        ],
+        "edges": [
+          621,
+          621
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 5",
@@ -97,10 +201,36 @@
       "tree_changed_files": 7,
       "tree_dirs_visited": 9,
       "tree_dirs_total": 68,
-      "ms": 16,
+      "ms": 18,
+      "stages_ms": [
+        4,
+        6,
+        0,
+        6,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          196,
+          196
+        ],
+        "symbols": [
+          1057,
+          1057
+        ],
+        "imports": [
+          488,
+          488
+        ],
+        "edges": [
+          632,
+          632
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 6",
@@ -117,10 +247,36 @@
       "tree_changed_files": 9,
       "tree_dirs_visited": 9,
       "tree_dirs_total": 68,
-      "ms": 18,
+      "ms": 16,
+      "stages_ms": [
+        4,
+        6,
+        1,
+        3,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          198,
+          198
+        ],
+        "symbols": [
+          1076,
+          1076
+        ],
+        "imports": [
+          516,
+          516
+        ],
+        "edges": [
+          655,
+          655
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 7",
@@ -137,10 +293,36 @@
       "tree_changed_files": 1,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 68,
-      "ms": 7,
+      "ms": 6,
+      "stages_ms": [
+        3,
+        1,
+        0,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          198,
+          198
+        ],
+        "symbols": [
+          1076,
+          1076
+        ],
+        "imports": [
+          516,
+          516
+        ],
+        "edges": [
+          655,
+          655
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 8",
@@ -157,7 +339,14 @@
       "tree_changed_files": 11,
       "tree_dirs_visited": 11,
       "tree_dirs_total": 68,
-      "ms": 13,
+      "ms": 11,
+      "stages_ms": [
+        3,
+        5,
+        0,
+        1,
+        0
+      ],
       "exact": true,
       "mismatch": [],
       "verified": {
@@ -167,12 +356,12 @@
           198
         ],
         "symbols": [
-          1164,
-          1164
+          1076,
+          1076
         ],
         "imports": [
-          519,
-          519
+          516,
+          516
         ],
         "edges": [
           655,
@@ -196,10 +385,36 @@
       "tree_changed_files": 61,
       "tree_dirs_visited": 5,
       "tree_dirs_total": 77,
-      "ms": 28,
+      "ms": 26,
+      "stages_ms": [
+        3,
+        13,
+        3,
+        4,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          259,
+          259
+        ],
+        "symbols": [
+          1738,
+          1738
+        ],
+        "imports": [
+          747,
+          747
+        ],
+        "edges": [
+          950,
+          950
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 10",
@@ -216,10 +431,36 @@
       "tree_changed_files": 5,
       "tree_dirs_visited": 10,
       "tree_dirs_total": 77,
-      "ms": 14,
+      "ms": 10,
+      "stages_ms": [
+        2,
+        5,
+        0,
+        1,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          259,
+          259
+        ],
+        "symbols": [
+          1738,
+          1738
+        ],
+        "imports": [
+          747,
+          747
+        ],
+        "edges": [
+          950,
+          950
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 11",
@@ -237,9 +478,35 @@
       "tree_dirs_visited": 9,
       "tree_dirs_total": 77,
       "ms": 13,
+      "stages_ms": [
+        4,
+        3,
+        1,
+        1,
+        3
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          261,
+          261
+        ],
+        "symbols": [
+          1755,
+          1755
+        ],
+        "imports": [
+          769,
+          769
+        ],
+        "edges": [
+          972,
+          972
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 12",
@@ -256,10 +523,36 @@
       "tree_changed_files": 79,
       "tree_dirs_visited": 8,
       "tree_dirs_total": 131,
-      "ms": 50,
+      "ms": 47,
+      "stages_ms": [
+        4,
+        32,
+        3,
+        4,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          331,
+          331
+        ],
+        "symbols": [
+          2033,
+          2033
+        ],
+        "imports": [
+          1002,
+          1002
+        ],
+        "edges": [
+          1287,
+          1287
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 13",
@@ -276,10 +569,36 @@
       "tree_changed_files": 32,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 138,
-      "ms": 28,
+      "ms": 26,
+      "stages_ms": [
+        4,
+        10,
+        3,
+        5,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          362,
+          362
+        ],
+        "symbols": [
+          2479,
+          2479
+        ],
+        "imports": [
+          1339,
+          1339
+        ],
+        "edges": [
+          1882,
+          1882
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 14",
@@ -296,10 +615,36 @@
       "tree_changed_files": 1,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 138,
-      "ms": 12,
+      "ms": 10,
+      "stages_ms": [
+        6,
+        2,
+        0,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          362,
+          362
+        ],
+        "symbols": [
+          2480,
+          2480
+        ],
+        "imports": [
+          1339,
+          1339
+        ],
+        "edges": [
+          1883,
+          1883
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 15",
@@ -316,10 +661,36 @@
       "tree_changed_files": 7,
       "tree_dirs_visited": 8,
       "tree_dirs_total": 138,
-      "ms": 22,
+      "ms": 21,
+      "stages_ms": [
+        4,
+        9,
+        2,
+        3,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          364,
+          364
+        ],
+        "symbols": [
+          2493,
+          2493
+        ],
+        "imports": [
+          1383,
+          1383
+        ],
+        "edges": [
+          1920,
+          1920
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 16",
@@ -336,7 +707,14 @@
       "tree_changed_files": 7,
       "tree_dirs_visited": 13,
       "tree_dirs_total": 138,
-      "ms": 19,
+      "ms": 17,
+      "stages_ms": [
+        5,
+        7,
+        1,
+        2,
+        0
+      ],
       "exact": true,
       "mismatch": [],
       "verified": {
@@ -346,12 +724,12 @@
           364
         ],
         "symbols": [
-          2584,
-          2584
+          2496,
+          2496
         ],
         "imports": [
-          1386,
-          1386
+          1383,
+          1383
         ],
         "edges": [
           1921,
@@ -375,10 +753,36 @@
       "tree_changed_files": 62,
       "tree_dirs_visited": 12,
       "tree_dirs_total": 172,
-      "ms": 31,
+      "ms": 30,
+      "stages_ms": [
+        6,
+        11,
+        4,
+        6,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          421,
+          421
+        ],
+        "symbols": [
+          2827,
+          2827
+        ],
+        "imports": [
+          1570,
+          1570
+        ],
+        "edges": [
+          2402,
+          2402
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 18",
@@ -395,10 +799,36 @@
       "tree_changed_files": 5,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 172,
-      "ms": 13,
+      "ms": 7,
+      "stages_ms": [
+        3,
+        0,
+        2,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          426,
+          426
+        ],
+        "symbols": [
+          2827,
+          2827
+        ],
+        "imports": [
+          1570,
+          1570
+        ],
+        "edges": [
+          2402,
+          2402
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 19",
@@ -415,10 +845,36 @@
       "tree_changed_files": 3,
       "tree_dirs_visited": 7,
       "tree_dirs_total": 173,
-      "ms": 16,
+      "ms": 12,
+      "stages_ms": [
+        5,
+        2,
+        2,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          427,
+          427
+        ],
+        "symbols": [
+          2829,
+          2829
+        ],
+        "imports": [
+          1570,
+          1570
+        ],
+        "edges": [
+          2404,
+          2404
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 20",
@@ -435,10 +891,36 @@
       "tree_changed_files": 2,
       "tree_dirs_visited": 1,
       "tree_dirs_total": 173,
-      "ms": 13,
+      "ms": 11,
+      "stages_ms": [
+        4,
+        0,
+        2,
+        0,
+        4
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          428,
+          428
+        ],
+        "symbols": [
+          2829,
+          2829
+        ],
+        "imports": [
+          1570,
+          1570
+        ],
+        "edges": [
+          2404,
+          2404
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 21",
@@ -455,10 +937,36 @@
       "tree_changed_files": 2,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 173,
-      "ms": 16,
+      "ms": 11,
+      "stages_ms": [
+        6,
+        2,
+        2,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          429,
+          429
+        ],
+        "symbols": [
+          2829,
+          2829
+        ],
+        "imports": [
+          1570,
+          1570
+        ],
+        "edges": [
+          2404,
+          2404
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 22",
@@ -475,10 +983,36 @@
       "tree_changed_files": 1,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 173,
-      "ms": 17,
+      "ms": 14,
+      "stages_ms": [
+        6,
+        5,
+        0,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          429,
+          429
+        ],
+        "symbols": [
+          2833,
+          2833
+        ],
+        "imports": [
+          1571,
+          1571
+        ],
+        "edges": [
+          2407,
+          2407
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 23",
@@ -495,10 +1029,36 @@
       "tree_changed_files": 1,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 173,
-      "ms": 18,
+      "ms": 13,
+      "stages_ms": [
+        5,
+        5,
+        0,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          429,
+          429
+        ],
+        "symbols": [
+          2833,
+          2833
+        ],
+        "imports": [
+          1571,
+          1571
+        ],
+        "edges": [
+          2407,
+          2407
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 24",
@@ -515,7 +1075,14 @@
       "tree_changed_files": 1,
       "tree_dirs_visited": 2,
       "tree_dirs_total": 173,
-      "ms": 13,
+      "ms": 8,
+      "stages_ms": [
+        5,
+        0,
+        1,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
       "verified": {
@@ -525,12 +1092,12 @@
           430
         ],
         "symbols": [
-          2921,
-          2921
+          2833,
+          2833
         ],
         "imports": [
-          1574,
-          1574
+          1571,
+          1571
         ],
         "edges": [
           2407,
@@ -554,10 +1121,36 @@
       "tree_changed_files": 41,
       "tree_dirs_visited": 13,
       "tree_dirs_total": 173,
-      "ms": 29,
+      "ms": 25,
+      "stages_ms": [
+        5,
+        11,
+        3,
+        3,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          432,
+          432
+        ],
+        "symbols": [
+          2867,
+          2867
+        ],
+        "imports": [
+          1573,
+          1573
+        ],
+        "edges": [
+          2414,
+          2414
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 26",
@@ -574,10 +1167,36 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 173,
-      "ms": 10,
+      "ms": 7,
+      "stages_ms": [
+        5,
+        0,
+        0,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          432,
+          432
+        ],
+        "symbols": [
+          2867,
+          2867
+        ],
+        "imports": [
+          1573,
+          1573
+        ],
+        "edges": [
+          2414,
+          2414
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 27",
@@ -594,10 +1213,36 @@
       "tree_changed_files": 23,
       "tree_dirs_visited": 10,
       "tree_dirs_total": 185,
-      "ms": 30,
+      "ms": 31,
+      "stages_ms": [
+        5,
+        16,
+        4,
+        3,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          450,
+          450
+        ],
+        "symbols": [
+          2995,
+          2995
+        ],
+        "imports": [
+          1663,
+          1663
+        ],
+        "edges": [
+          2593,
+          2593
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 28",
@@ -614,10 +1259,36 @@
       "tree_changed_files": 1,
       "tree_dirs_visited": 4,
       "tree_dirs_total": 185,
-      "ms": 14,
+      "ms": 7,
+      "stages_ms": [
+        4,
+        1,
+        0,
+        0,
+        0
+      ],
       "exact": true,
       "mismatch": [],
-      "verified": null
+      "verified": {
+        "equal": true,
+        "files": [
+          450,
+          450
+        ],
+        "symbols": [
+          2995,
+          2995
+        ],
+        "imports": [
+          1663,
+          1663
+        ],
+        "edges": [
+          2593,
+          2593
+        ],
+        "diffs": []
+      }
     },
     {
       "label": "forward 29",
@@ -634,47 +1305,14 @@
       "tree_changed_files": 14,
       "tree_dirs_visited": 17,
       "tree_dirs_total": 186,
-      "ms": 30,
-      "exact": true,
-      "mismatch": [],
-      "verified": null
-    },
-    {
-      "label": "jump back to oldest",
-      "commit": "fc683827d798",
-      "git_changed": 341,
-      "hashed": 44,
-      "parsed": 0,
-      "facts_cache_hits": 36,
-      "added": 0,
-      "deleted": 297,
-      "exports_changed": 23,
-      "dependents_recomputed": 2,
-      "edge_files": 38,
-      "tree_changed_files": 341,
-      "tree_dirs_visited": 34,
-      "tree_dirs_total": 62,
-      "ms": 24,
-      "exact": true,
-      "mismatch": [],
-      "verified": null
-    },
-    {
-      "label": "jump forward to newest",
-      "commit": "582097e2d9b4",
-      "git_changed": 341,
-      "hashed": 341,
-      "parsed": 0,
-      "facts_cache_hits": 218,
-      "added": 297,
-      "deleted": 0,
-      "exports_changed": 205,
-      "dependents_recomputed": 2,
-      "edge_files": 220,
-      "tree_changed_files": 341,
-      "tree_dirs_visited": 34,
-      "tree_dirs_total": 186,
-      "ms": 66,
+      "ms": 25,
+      "stages_ms": [
+        5,
+        8,
+        2,
+        6,
+        0
+      ],
       "exact": true,
       "mismatch": [],
       "verified": {
@@ -684,12 +1322,12 @@
           456
         ],
         "symbols": [
-          3109,
-          3109
+          3021,
+          3021
         ],
         "imports": [
-          1676,
-          1676
+          1673,
+          1673
         ],
         "edges": [
           2618,
@@ -697,13 +1335,335 @@
         ],
         "diffs": []
       }
+    },
+    {
+      "label": "forward 30",
+      "commit": "7039684a271f",
+      "git_changed": 6,
+      "hashed": 6,
+      "parsed": 4,
+      "facts_cache_hits": 0,
+      "added": 3,
+      "deleted": 0,
+      "exports_changed": 1,
+      "dependents_recomputed": 0,
+      "edge_files": 4,
+      "tree_changed_files": 6,
+      "tree_dirs_visited": 8,
+      "tree_dirs_total": 186,
+      "ms": 18,
+      "stages_ms": [
+        5,
+        6,
+        2,
+        2,
+        0
+      ],
+      "exact": true,
+      "mismatch": [],
+      "verified": {
+        "equal": true,
+        "files": [
+          459,
+          459
+        ],
+        "symbols": [
+          3032,
+          3032
+        ],
+        "imports": [
+          1685,
+          1685
+        ],
+        "edges": [
+          2638,
+          2638
+        ],
+        "diffs": []
+      }
+    },
+    {
+      "label": "forward 31",
+      "commit": "9a09664af5dd",
+      "git_changed": 12,
+      "hashed": 12,
+      "parsed": 10,
+      "facts_cache_hits": 0,
+      "added": 2,
+      "deleted": 0,
+      "exports_changed": 6,
+      "dependents_recomputed": 14,
+      "edge_files": 24,
+      "tree_changed_files": 12,
+      "tree_dirs_visited": 17,
+      "tree_dirs_total": 186,
+      "ms": 27,
+      "stages_ms": [
+        5,
+        12,
+        2,
+        4,
+        0
+      ],
+      "exact": true,
+      "mismatch": [],
+      "verified": {
+        "equal": true,
+        "files": [
+          461,
+          461
+        ],
+        "symbols": [
+          3046,
+          3046
+        ],
+        "imports": [
+          1686,
+          1686
+        ],
+        "edges": [
+          2646,
+          2646
+        ],
+        "diffs": []
+      }
+    },
+    {
+      "label": "forward 32",
+      "commit": "49a6b8c9303a",
+      "git_changed": 61,
+      "hashed": 61,
+      "parsed": 29,
+      "facts_cache_hits": 0,
+      "added": 20,
+      "deleted": 0,
+      "exports_changed": 15,
+      "dependents_recomputed": 0,
+      "edge_files": 29,
+      "tree_changed_files": 61,
+      "tree_dirs_visited": 21,
+      "tree_dirs_total": 189,
+      "ms": 29,
+      "stages_ms": [
+        4,
+        14,
+        3,
+        4,
+        0
+      ],
+      "exact": true,
+      "mismatch": [],
+      "verified": {
+        "equal": true,
+        "files": [
+          481,
+          481
+        ],
+        "symbols": [
+          3269,
+          3269
+        ],
+        "imports": [
+          1731,
+          1731
+        ],
+        "edges": [
+          2774,
+          2774
+        ],
+        "diffs": []
+      }
+    },
+    {
+      "label": "forward 33",
+      "commit": "c85b2536055a",
+      "git_changed": 4,
+      "hashed": 4,
+      "parsed": 0,
+      "facts_cache_hits": 0,
+      "added": 0,
+      "deleted": 0,
+      "exports_changed": 0,
+      "dependents_recomputed": 0,
+      "edge_files": 0,
+      "tree_changed_files": 4,
+      "tree_dirs_visited": 4,
+      "tree_dirs_total": 189,
+      "ms": 7,
+      "stages_ms": [
+        5,
+        0,
+        0,
+        0,
+        0
+      ],
+      "exact": true,
+      "mismatch": [],
+      "verified": {
+        "equal": true,
+        "files": [
+          481,
+          481
+        ],
+        "symbols": [
+          3269,
+          3269
+        ],
+        "imports": [
+          1731,
+          1731
+        ],
+        "edges": [
+          2774,
+          2774
+        ],
+        "diffs": []
+      }
+    },
+    {
+      "label": "forward 34",
+      "commit": "f062a728884d",
+      "git_changed": 6,
+      "hashed": 6,
+      "parsed": 4,
+      "facts_cache_hits": 0,
+      "added": 1,
+      "deleted": 0,
+      "exports_changed": 2,
+      "dependents_recomputed": 4,
+      "edge_files": 8,
+      "tree_changed_files": 6,
+      "tree_dirs_visited": 13,
+      "tree_dirs_total": 189,
+      "ms": 18,
+      "stages_ms": [
+        5,
+        6,
+        2,
+        2,
+        0
+      ],
+      "exact": true,
+      "mismatch": [],
+      "verified": {
+        "equal": true,
+        "files": [
+          482,
+          482
+        ],
+        "symbols": [
+          3271,
+          3271
+        ],
+        "imports": [
+          1731,
+          1731
+        ],
+        "edges": [
+          2775,
+          2775
+        ],
+        "diffs": []
+      }
+    },
+    {
+      "label": "jump back to oldest",
+      "commit": "fc683827d798",
+      "git_changed": 370,
+      "hashed": 47,
+      "parsed": 0,
+      "facts_cache_hits": 37,
+      "added": 0,
+      "deleted": 323,
+      "exports_changed": 25,
+      "dependents_recomputed": 2,
+      "edge_files": 39,
+      "tree_changed_files": 370,
+      "tree_dirs_visited": 41,
+      "tree_dirs_total": 62,
+      "ms": 28,
+      "stages_ms": [
+        2,
+        15,
+        2,
+        4,
+        1
+      ],
+      "exact": true,
+      "mismatch": [],
+      "verified": {
+        "equal": true,
+        "files": [
+          159,
+          159
+        ],
+        "symbols": [
+          747,
+          747
+        ],
+        "imports": [
+          248,
+          248
+        ],
+        "edges": [
+          298,
+          298
+        ],
+        "diffs": []
+      }
+    },
+    {
+      "label": "jump forward to newest",
+      "commit": "f062a728884d",
+      "git_changed": 370,
+      "hashed": 370,
+      "parsed": 0,
+      "facts_cache_hits": 229,
+      "added": 323,
+      "deleted": 0,
+      "exports_changed": 217,
+      "dependents_recomputed": 2,
+      "edge_files": 231,
+      "tree_changed_files": 370,
+      "tree_dirs_visited": 41,
+      "tree_dirs_total": 189,
+      "ms": 71,
+      "stages_ms": [
+        5,
+        25,
+        14,
+        22,
+        2
+      ],
+      "exact": true,
+      "mismatch": [],
+      "verified": {
+        "equal": true,
+        "files": [
+          482,
+          482
+        ],
+        "symbols": [
+          3271,
+          3271
+        ],
+        "imports": [
+          1731,
+          1731
+        ],
+        "edges": [
+          2775,
+          2775
+        ],
+        "diffs": []
+      }
     }
   ],
-  "exact_steps": 31,
-  "verified_equal": 4,
-  "verified_total": 4,
-  "total_git_changed": 1121,
-  "total_parsed": 280,
-  "total_hashed": 824,
-  "median_step_ms": 16
+  "exact_steps": 36,
+  "verified_equal": 36,
+  "verified_total": 36,
+  "total_git_changed": 1268,
+  "total_parsed": 327,
+  "total_hashed": 945,
+  "median_step_ms": 15
 }

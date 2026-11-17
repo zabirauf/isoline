@@ -7,23 +7,23 @@
       "commit": "648924a9b314",
       "git_changed": 0,
       "hashed": 64199,
-      "parsed": 55797,
+      "parsed": 55787,
       "facts_cache_hits": 72,
       "added": 64199,
       "deleted": 0,
-      "exports_changed": 55869,
+      "exports_changed": 55859,
       "dependents_recomputed": 0,
-      "edge_files": 55869,
+      "edge_files": 55859,
       "tree_changed_files": 0,
       "tree_dirs_visited": 0,
       "tree_dirs_total": 2148,
-      "ms": 42121,
+      "ms": 41328,
       "stages_ms": [
-        84,
-        28911,
-        1893,
-        10279,
-        657
+        83,
+        28279,
+        1881,
+        10131,
+        663
       ],
       "exact": true,
       "mismatch": [],
@@ -44,13 +44,13 @@
       "tree_changed_files": 6,
       "tree_dirs_visited": 8,
       "tree_dirs_total": 2148,
-      "ms": 675,
+      "ms": 388,
       "stages_ms": [
         83,
         9,
-        364,
+        95,
         22,
-        27
+        30
       ],
       "exact": true,
       "mismatch": [],
@@ -71,13 +71,13 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 2148,
-      "ms": 348,
+      "ms": 346,
       "stages_ms": [
-        85,
+        82,
         9,
-        78,
-        7,
-        25
+        77,
+        8,
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -98,11 +98,11 @@
       "tree_changed_files": 0,
       "tree_dirs_visited": 0,
       "tree_dirs_total": 0,
-      "ms": 285,
+      "ms": 276,
       "stages_ms": [
-        82,
+        83,
         0,
-        51,
+        50,
         0,
         3
       ],
@@ -125,13 +125,13 @@
       "tree_changed_files": 11,
       "tree_dirs_visited": 8,
       "tree_dirs_total": 2148,
-      "ms": 333,
+      "ms": 341,
       "stages_ms": [
-        84,
+        81,
         10,
-        60,
-        4,
-        29
+        67,
+        5,
+        33
       ],
       "exact": true,
       "mismatch": [],
@@ -155,10 +155,10 @@
       "ms": 353,
       "stages_ms": [
         83,
-        29,
+        30,
         61,
-        3,
-        31
+        2,
+        33
       ],
       "exact": true,
       "mismatch": [],
@@ -179,13 +179,13 @@
       "tree_changed_files": 8,
       "tree_dirs_visited": 7,
       "tree_dirs_total": 2148,
-      "ms": 368,
+      "ms": 361,
       "stages_ms": [
         83,
-        24,
-        60,
-        27,
-        25
+        23,
+        59,
+        23,
+        28
       ],
       "exact": true,
       "mismatch": [],
@@ -206,13 +206,13 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 7,
       "tree_dirs_total": 2148,
-      "ms": 617,
+      "ms": 335,
       "stages_ms": [
         83,
         3,
-        338,
+        65,
         1,
-        28
+        30
       ],
       "exact": true,
       "mismatch": [],
@@ -233,13 +233,13 @@
       "tree_changed_files": 28,
       "tree_dirs_visited": 27,
       "tree_dirs_total": 2148,
-      "ms": 633,
+      "ms": 372,
       "stages_ms": [
-        83,
-        33,
-        329,
+        81,
+        35,
+        67,
         7,
-        31
+        34
       ],
       "exact": true,
       "mismatch": [],
@@ -262,11 +262,11 @@
       "tree_dirs_total": 2148,
       "ms": 462,
       "stages_ms": [
-        81,
-        58,
-        71,
-        74,
-        32
+        88,
+        55,
+        63,
+        77,
+        34
       ],
       "exact": true,
       "mismatch": [],
@@ -277,16 +277,16 @@
           64203
         ],
         "symbols": [
-          297079,
-          297079
+          296790,
+          296790
         ],
         "imports": [
-          473237,
-          473237
+          473232,
+          473232
         ],
         "edges": [
-          639884,
-          639884
+          639865,
+          639865
         ],
         "diffs": []
       }
@@ -306,11 +306,11 @@
       "tree_changed_files": 0,
       "tree_dirs_visited": 0,
       "tree_dirs_total": 0,
-      "ms": 288,
+      "ms": 287,
       "stages_ms": [
-        83,
+        84,
         0,
-        52,
+        51,
         0,
         4
       ],
@@ -333,13 +333,13 @@
       "tree_changed_files": 3,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 2148,
-      "ms": 613,
+      "ms": 339,
       "stages_ms": [
-        86,
-        7,
-        335,
+        83,
+        6,
+        63,
         8,
-        26
+        28
       ],
       "exact": true,
       "mismatch": [],
@@ -360,13 +360,13 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 8,
       "tree_dirs_total": 2148,
-      "ms": 591,
+      "ms": 334,
       "stages_ms": [
-        82,
+        84,
         3,
-        327,
+        62,
         1,
-        28
+        30
       ],
       "exact": true,
       "mismatch": [],
@@ -387,13 +387,13 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 7,
       "tree_dirs_total": 2148,
-      "ms": 623,
+      "ms": 361,
       "stages_ms": [
-        85,
-        5,
-        342,
+        84,
+        22,
+        62,
         15,
-        27
+        29
       ],
       "exact": true,
       "mismatch": [],
@@ -414,13 +414,13 @@
       "tree_changed_files": 3,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 2148,
-      "ms": 594,
+      "ms": 350,
       "stages_ms": [
-        83,
+        84,
         4,
-        326,
-        6,
-        25
+        62,
+        23,
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -441,13 +441,13 @@
       "tree_changed_files": 5,
       "tree_dirs_visited": 13,
       "tree_dirs_total": 2148,
-      "ms": 611,
+      "ms": 338,
       "stages_ms": [
-        82,
+        83,
         3,
-        344,
+        62,
         6,
-        25
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -468,13 +468,13 @@
       "tree_changed_files": 5,
       "tree_dirs_visited": 10,
       "tree_dirs_total": 2148,
-      "ms": 316,
+      "ms": 315,
       "stages_ms": [
-        82,
+        84,
         2,
-        58,
+        57,
         0,
-        24
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -495,13 +495,13 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 9,
       "tree_dirs_total": 2148,
-      "ms": 321,
+      "ms": 325,
       "stages_ms": [
-        83,
+        85,
         7,
-        59,
+        58,
         2,
-        25
+        29
       ],
       "exact": true,
       "mismatch": [],
@@ -522,13 +522,13 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 8,
       "tree_dirs_total": 2148,
-      "ms": 779,
+      "ms": 524,
       "stages_ms": [
-        83,
+        85,
         4,
-        326,
-        188,
-        28
+        82,
+        174,
+        31
       ],
       "exact": true,
       "mismatch": [],
@@ -549,13 +549,13 @@
       "tree_changed_files": 4,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 2148,
-      "ms": 596,
+      "ms": 334,
       "stages_ms": [
-        83,
+        84,
         4,
-        327,
-        7,
-        25
+        62,
+        6,
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -566,16 +566,16 @@
           64212
         ],
         "symbols": [
-          297083,
-          297083
+          296794,
+          296794
         ],
         "imports": [
-          473289,
-          473289
+          473284,
+          473284
         ],
         "edges": [
-          639887,
-          639887
+          639868,
+          639868
         ],
         "diffs": []
       }
@@ -595,13 +595,13 @@
       "tree_changed_files": 5,
       "tree_dirs_visited": 10,
       "tree_dirs_total": 2148,
-      "ms": 605,
+      "ms": 344,
       "stages_ms": [
-        83,
+        85,
         5,
-        327,
+        63,
         2,
-        29
+        31
       ],
       "exact": true,
       "mismatch": [],
@@ -622,13 +622,13 @@
       "tree_changed_files": 3,
       "tree_dirs_visited": 7,
       "tree_dirs_total": 2148,
-      "ms": 601,
+      "ms": 338,
       "stages_ms": [
-        82,
+        83,
         3,
-        341,
+        76,
         0,
-        24
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -649,13 +649,13 @@
       "tree_changed_files": 41,
       "tree_dirs_visited": 18,
       "tree_dirs_total": 2148,
-      "ms": 797,
+      "ms": 537,
       "stages_ms": [
         82,
-        50,
-        331,
-        152,
-        32
+        51,
+        69,
+        153,
+        34
       ],
       "exact": true,
       "mismatch": [],
@@ -676,13 +676,13 @@
       "tree_changed_files": 9,
       "tree_dirs_visited": 13,
       "tree_dirs_total": 2148,
-      "ms": 604,
+      "ms": 342,
       "stages_ms": [
-        83,
+        82,
         9,
-        328,
+        64,
         7,
-        27
+        29
       ],
       "exact": true,
       "mismatch": [],
@@ -703,13 +703,13 @@
       "tree_changed_files": 2,
       "tree_dirs_visited": 7,
       "tree_dirs_total": 2148,
-      "ms": 334,
+      "ms": 340,
       "stages_ms": [
-        82,
-        21,
-        59,
+        83,
+        20,
+        58,
         0,
-        25
+        29
       ],
       "exact": true,
       "mismatch": [],
@@ -730,13 +730,13 @@
       "tree_changed_files": 13,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 2148,
-      "ms": 633,
+      "ms": 375,
       "stages_ms": [
-        84,
-        12,
-        330,
-        29,
-        27
+        83,
+        13,
+        68,
+        30,
+        30
       ],
       "exact": true,
       "mismatch": [],
@@ -757,13 +757,13 @@
       "tree_changed_files": 6,
       "tree_dirs_visited": 9,
       "tree_dirs_total": 2148,
-      "ms": 596,
+      "ms": 334,
       "stages_ms": [
-        83,
+        82,
         6,
-        327,
+        62,
         3,
-        26
+        30
       ],
       "exact": true,
       "mismatch": [],
@@ -784,13 +784,13 @@
       "tree_changed_files": 3,
       "tree_dirs_visited": 7,
       "tree_dirs_total": 2148,
-      "ms": 323,
+      "ms": 322,
       "stages_ms": [
-        84,
+        83,
         6,
-        60,
-        2,
-        26
+        58,
+        1,
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -811,13 +811,13 @@
       "tree_changed_files": 2,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 2148,
-      "ms": 332,
+      "ms": 327,
       "stages_ms": [
-        83,
+        84,
         6,
         59,
-        7,
-        25
+        6,
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -838,13 +838,13 @@
       "tree_changed_files": 3,
       "tree_dirs_visited": 6,
       "tree_dirs_total": 2148,
-      "ms": 625,
+      "ms": 360,
       "stages_ms": [
-        83,
+        85,
         24,
-        327,
+        66,
         3,
-        34
+        27
       ],
       "exact": true,
       "mismatch": [],
@@ -855,16 +855,16 @@
           64228
         ],
         "symbols": [
-          297145,
-          297145
+          296856,
+          296856
         ],
         "imports": [
-          473405,
-          473405
+          473400,
+          473400
         ],
         "edges": [
-          640013,
-          640013
+          639994,
+          639994
         ],
         "diffs": []
       }
@@ -884,12 +884,12 @@
       "tree_changed_files": 229,
       "tree_dirs_visited": 98,
       "tree_dirs_total": 2148,
-      "ms": 1146,
+      "ms": 884,
       "stages_ms": [
         83,
-        145,
-        367,
-        347,
+        146,
+        103,
+        351,
         49
       ],
       "exact": true,
@@ -911,12 +911,12 @@
       "tree_changed_files": 229,
       "tree_dirs_visited": 98,
       "tree_dirs_total": 2148,
-      "ms": 1142,
+      "ms": 876,
       "stages_ms": [
-        84,
-        147,
-        358,
-        352,
+        81,
+        144,
+        99,
+        348,
         51
       ],
       "exact": true,
@@ -928,16 +928,16 @@
           64228
         ],
         "symbols": [
-          297145,
-          297145
+          296856,
+          296856
         ],
         "imports": [
-          473405,
-          473405
+          473400,
+          473400
         ],
         "edges": [
-          640013,
-          640013
+          639994,
+          639994
         ],
         "diffs": []
       }
@@ -949,5 +949,5 @@
   "total_git_changed": 687,
   "total_parsed": 210,
   "total_hashed": 658,
-  "median_step_ms": 596
+  "median_step_ms": 342
 }

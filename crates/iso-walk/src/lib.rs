@@ -177,11 +177,20 @@ pub fn count_lines(s: &str) -> u32 {
 
 /// Merkle tree over the repo: a file's hash is its content hash; a directory's is the hash of
 /// its children's names and hashes, sorted by name.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default)]
 pub struct MerkleTree {
     /// path → node. The root directory is "".
     pub nodes: HashMap<String, MerkleNode>,
+    /// directory → child paths, so an update never scans the whole tree.
+    kids: HashMap<String, std::collections::BTreeSet<String>>,
 }
+
+impl PartialEq for MerkleTree {
+    fn eq(&self, other: &Self) -> bool {
+        self.nodes == other.nodes
+    }
+}
+impl Eq for MerkleTree {}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MerkleNode {
@@ -273,7 +282,23 @@ impl MerkleTree {
                 },
             );
         }
-        MerkleTree { nodes }
+        MerkleTree::from_nodes(nodes)
+    }
+
+    /// A tree from stored nodes (for example rows loaded from the index).
+    pub fn from_nodes(nodes: HashMap<String, MerkleNode>) -> MerkleTree {
+        let mut kids: HashMap<String, std::collections::BTreeSet<String>> = HashMap::new();
+        for (p, n) in &nodes {
+            if let Some(par) = &n.parent {
+                kids.entry(par.clone()).or_default().insert(p.clone());
+            }
+        }
+        MerkleTree { nodes, kids }
+    }
+
+    /// Number of directories that have children (the root included).
+    pub fn dir_count(&self) -> usize {
+        self.kids.len()
     }
 
     /// Apply file changes in place: `(path, Some(content hash))` for added or modified files,
@@ -293,11 +318,18 @@ impl MerkleTree {
                         parent: Some(parent.clone()),
                     });
                     n.hash = h.clone();
+                    self.kids
+                        .entry(parent.clone())
+                        .or_default()
+                        .insert(path.clone());
                     out.upserts.insert(path.clone());
                 }
                 None => {
                     if self.nodes.remove(path).is_some() {
                         out.removed.insert(path.clone());
+                        if let Some(k) = self.kids.get_mut(&parent) {
+                            k.remove(path);
+                        }
                     }
                 }
             }
@@ -311,6 +343,9 @@ impl MerkleTree {
                     } else {
                         Some(parent_of(&d))
                     };
+                    if let Some(pp) = &p {
+                        self.kids.entry(pp.clone()).or_default().insert(d.clone());
+                    }
                     self.nodes.insert(
                         d.clone(),
                         MerkleNode {
@@ -326,14 +361,15 @@ impl MerkleTree {
                 d = parent_of(&d);
             }
         }
-        // Children of the affected directories only.
+        // Children of the affected directories, from the index.
         let mut kids: HashMap<String, Vec<(String, String)>> = HashMap::new();
-        for (p, n) in &self.nodes {
-            if let Some(par) = &n.parent
-                && affected.contains(par)
-            {
-                let name = p.rsplit('/').next().unwrap_or(p).to_string();
-                kids.entry(par.clone()).or_default().push((name, p.clone()));
+        for d in &affected {
+            if let Some(ch) = self.kids.get(d) {
+                let v = ch
+                    .iter()
+                    .map(|p| (p.rsplit('/').next().unwrap_or(p).to_string(), p.clone()))
+                    .collect();
+                kids.insert(d.clone(), v);
             }
         }
         let mut dirs: Vec<String> = affected.into_iter().collect();
@@ -351,6 +387,10 @@ impl MerkleTree {
                 if self.nodes.remove(&d).is_some() {
                     out.removed.insert(d.clone());
                     out.upserts.remove(&d);
+                }
+                self.kids.remove(&d);
+                if let Some(k) = self.kids.get_mut(&parent_of(&d)) {
+                    k.remove(&d);
                 }
                 if let Some(par) = Some(parent_of(&d))
                     && let Some(v) = kids.get_mut(&par)
@@ -552,6 +592,10 @@ mod tests {
             ("new/deep/d.go", "6"),
         ]);
         assert_eq!(t, rebuilt);
+        assert_eq!(
+            t.kids, rebuilt.kids,
+            "the child index stays in step with the nodes"
+        );
         assert!(
             ch.removed.contains("x/y/z.rs")
                 && ch.removed.contains("x/y")

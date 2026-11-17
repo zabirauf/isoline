@@ -263,3 +263,24 @@ fn precise_index_corrects_a_wrong_heuristic_edge() {
         iso_core::Confidence::Exact
     );
 }
+
+/// Regression (found by `iso-cli history`): adding a Rust integration test together with
+/// `tests/common/mod.rs` must resolve `mod common;` exactly as a cold index does, because
+/// files under `tests/` are crate roots the resolver precomputes.
+#[test]
+fn adding_rust_crate_roots_matches_a_cold_index() {
+    let src = tempfile::tempdir().unwrap();
+    let r = src.path();
+    write(r, "Cargo.toml", "[package]\nname = \"demo\"\nversion = \"0.1.0\"\n");
+    write(r, "src/lib.rs", "pub fn f() {}\n");
+    let data = tempfile::tempdir().unwrap();
+    let e = open(r, data.path());
+    e.index().unwrap();
+    write(r, "tests/common/mod.rs", "pub fn setup() {}\n");
+    write(r, "tests/it.rs", "mod common;\n\n#[test]\nfn t() {\n    common::setup();\n}\n");
+    let rep = e.index().unwrap();
+    assert_eq!(rep.added, 2);
+    let view = e.file_view("tests/it.rs").unwrap();
+    let m = view.modules.iter().find(|m| m.id == "common").expect("mod common");
+    assert_eq!(m.resolved.as_deref(), Some("tests/common/mod.rs"));
+}

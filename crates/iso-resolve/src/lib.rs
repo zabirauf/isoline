@@ -106,6 +106,7 @@ impl Resolvers {
                 | "__init__.py"
                 | "__init__.pyi"
         ) || (name.starts_with("tsconfig") && name.ends_with(".json"))
+            || is_rust_crate_root(rel)
     }
 
     /// Apply added and removed files without rebuilding. Callers rebuild instead when any of
@@ -135,6 +136,21 @@ impl Resolvers {
             _ => generic_relative(from_rel, &import.specifier, &self.html.repo),
         }
     }
+}
+
+/// Rust files that are crate roots by position (`src/lib.rs`, `src/main.rs`, `build.rs`, and
+/// files directly in `src/bin`, `tests`, `examples`, `benches`). The Rust resolver precomputes
+/// them, so adding or removing one needs a rebuild.
+fn is_rust_crate_root(rel: &str) -> bool {
+    if !rel.ends_with(".rs") {
+        return false;
+    }
+    let name = rel.rsplit('/').next().unwrap_or(rel);
+    let dir = parent_dir(rel);
+    matches!(name, "lib.rs" | "main.rs" | "build.rs")
+        || ["src/bin", "tests", "examples", "benches"]
+            .iter()
+            .any(|d| dir == *d || dir.ends_with(&format!("/{d}")))
 }
 
 /// Fallback for tier-2 languages: a relative specifier that names a repo file resolves to it,
@@ -177,6 +193,16 @@ pub fn join_rel(dir: &str, rel: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn manifests_include_rust_crate_roots() {
+        assert!(Resolvers::is_manifest("crates/a/tests/acceptance.rs"));
+        assert!(Resolvers::is_manifest("crates/a/src/bin/tool.rs"));
+        assert!(Resolvers::is_manifest("src/lib.rs"));
+        assert!(!Resolvers::is_manifest("crates/a/tests/common/mod.rs"));
+        assert!(!Resolvers::is_manifest("crates/a/src/util.rs"));
+        assert!(Resolvers::is_manifest("pkg/package.json"));
+    }
+
     #[test]
     fn joins() {
         assert_eq!(join_rel("src/a", "../b/c.ts"), "src/b/c.ts");

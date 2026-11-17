@@ -1,0 +1,44 @@
+  <div class="pane-right" id="right">
+    <div class="rbar">
+      <div class="tabs" role="tablist" aria-label="Graph views">
+        <button role="tab" id="tab-map" aria-selected="true">Dependency map</button>
+        <button role="tab" id="tab-flow" aria-selected="false" disabled title="Select a function first">Call flow</button>
+      </div>
+      <div class="gctl" id="gctl">
+        <button class="btn" id="g-ext" aria-pressed="true">External imports</button>
+        <button class="btn" id="g-types" aria-pressed="false">Type-only imports</button>
+        <button class="btn" id="g-trans" aria-pressed="false" title="Follow dependencies and dependents all the way, for impact analysis">Transitive</button>
+        <button class="btn" id="g-out" aria-label="Zoom out">−</button><button class="btn" id="g-in" aria-label="Zoom in">+</button><button class="btn" id="g-fit">Fit</button>
+      </div>
+      <div class="fctl" id="fctl" hidden>
+        <button class="btn" id="f-replay" title="Play the call sequence again">Replay</button>
+        <button class="btn" id="f-prev" aria-label="Previous call">◀</button>
+        <span class="fpos" id="f-pos">0 / 0</span>
+        <button class="btn" id="f-next" aria-label="Next call">▶</button>
+        <button class="btn" id="f-builtins" aria-pressed="false" title="Show calls like Date.now() and Object.hasOwn()">Built-ins</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <svg id="svg" aria-label="Dependency graph">
+        <defs>
+          <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--muted); opacity: .5"/></marker>
+          <marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--ext); opacity: .4"/></marker>
+          <marker id="ad" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--accent)"/></marker>
+          <marker id="au" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--user)"/></marker>
+        </defs>
+        <g id="vp"></g>
+      </svg>
+      <div class="legend" id="mlegend">
+        <div class="row"><span><i style="background: var(--accent)"></i>depends on</span><span><i style="background: var(--user)"></i>used by</span><span><i style="background: var(--ext)"></i>external import</span></div>
+        <div>Entry points on the left; arrows run from caller to callee. Click a function to play its call flow.</div>
+      </div>
+      <section class="flowpane" id="flowpane" hidden aria-label="Call flow">
+        <nav class="crumbs" id="crumbs" aria-label="Drill-down path"></nav>
+        <div class="fscroll" id="fscroll"><div class="fbody" id="fbody"></div></div>
+        <div class="legend flegend" id="flegend"></div>
+      </section>
+      <div class="tip" id="tip"></div>
+    </div>
+  </div>
+</div>
+

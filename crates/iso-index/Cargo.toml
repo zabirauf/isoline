@@ -1,0 +1,16 @@
+[package]
+name = "iso-index"
+description = "SQLite index: schema, migrations, typed queries."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+iso-core = { workspace = true, default-features = false }
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,0 +1,10 @@
+[package]
+name = "iso-graph"
+description = "Layers, cycles, clusters and impact over the dependency graph."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+iso-core = { workspace = true, default-features = false }
+serde.workspace = true

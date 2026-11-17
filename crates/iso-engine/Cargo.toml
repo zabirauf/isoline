@@ -1,0 +1,27 @@
+[package]
+name = "iso-engine"
+description = "Wires the crates into the operations iso-cli and the Tauri app expose."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+iso-core.workspace = true
+iso-index.workspace = true
+iso-walk.workspace = true
+iso-parse.workspace = true
+iso-resolve.workspace = true
+iso-graph.workspace = true
+iso-cache.workspace = true
+iso-jobs.workspace = true
+iso-ai.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+rayon.workspace = true
+parking_lot.workspace = true
+crossbeam-channel.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+pretty_assertions.workspace = true

@@ -1,0 +1,56 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-17T05:10:48Z"
+ },
+ "title": "Isoline",
+ "namespace": "Isoline",
+ "libraries": [],
+ "sections": {},
+ "groups": [
+  "Reference"
+ ],
+ "assetGroups": {
+  "Reference": {
+   "name": "Reference",
+   "tile": "l",
+   "order": [
+    "prototype-map-light.png",
+    "prototype-flow-light.png",
+    "prototype-flow-dark.png"
+   ],
+   "files": {
+    "prototype-map-light.png": {
+     "name": "prototype-map-light.png",
+     "blob": "f2bc1e536d3d5f03a47d9a5cd1c5f0e6",
+     "size": 322844,
+     "type": "image/png"
+    },
+    "prototype-flow-light.png": {
+     "name": "prototype-flow-light.png",
+     "blob": "c9d88133b31bcf77ff93c2515cc37b50",
+     "size": 315827,
+     "type": "image/png"
+    },
+    "prototype-flow-dark.png": {
+     "name": "prototype-flow-dark.png",
+     "blob": "58899aa7398402d5974c9c3b3540c098",
+     "size": 316787,
+     "type": "image/png"
+    }
+   }
+  }
+ },
+ "blobs": {},
+ "docs": {
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Zohaib",
+  "at": "2026-11-17T05:10:48Z",
+  "via": "Claude",
+  "note": "First version, derived from the prototype code map."
+ }
+}

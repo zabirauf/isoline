@@ -1,0 +1,16 @@
+[package]
+name = "iso-core"
+description = "Isoline shared types. No IO."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+blake3.workspace = true
+ts-rs = { workspace = true, optional = true }
+
+[features]
+default = ["ts"]
+ts = ["dep:ts-rs"]

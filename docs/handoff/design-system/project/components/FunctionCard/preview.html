@@ -1,0 +1,13 @@
+<!-- @dsCard group="Code" height=400 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"></head>
+<body class="iso-root">
+<article class="iso-card iso-card-exported iso-card-sel">
+<div class="iso-card-h"><span class="iso-lvl">L3</span><code class="iso-fname">runAgentHarnessLifecycleAttempt</code><span class="iso-pill">export</span><span class="iso-lines">L357–423</span></div>
+<p class="iso-desc">Entry point: runs one harness attempt inside full diagnostics, then classifies and normalizes the result.</p>
+<ol class="iso-algo"><li>Create lifecycle diagnostics (opens the harness span).</li><li>Phase prepare: assert context-engine support, then start the child run span.</li><li>Phase send: run execute(params) in the run trace.</li><li>On a throw: fail() emits the error events, then rethrow. Always unsubscribe.</li></ol>
+<div class="iso-note"><span class="iso-note-ic" aria-hidden="true">i</span><span>Completion events fire after the finally block, so a throwing emitter cannot double-report.</span></div>
+<dl class="iso-deps"><dt>Calls</dt><dd><button class="iso-chip">createAgentHarnessLifecycleDiagnostics</button><button class="iso-chip">agentRunCompletion</button></dd><dt>Imports used</dt><dd><button class="iso-chip iso-chip-ext">copyCoreTtsAttemptResultProvenance</button><button class="iso-chip iso-chip-ext">harness.runAttempt</button></dd></dl>
+<button class="iso-btn-reveal" aria-expanded="false">Show code · 67 lines</button>
+</article>
+</body></html>

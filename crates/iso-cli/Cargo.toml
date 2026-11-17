@@ -1,0 +1,19 @@
+[package]
+name = "iso-cli"
+description = "Headless commands: index, file, flow, impact, bench, eval."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "iso-cli"
+path = "src/main.rs"
+
+[dependencies]
+iso-core.workspace = true
+iso-engine.workspace = true
+iso-parse.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true

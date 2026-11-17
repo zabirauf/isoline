@@ -1,0 +1,6 @@
+{
+  "name": "isoline-analyze-reference",
+  "private": true,
+  "description": "Reference call-flow analyzer from the prototype, used only to generate TS golden files.",
+  "dependencies": { "typescript": "5.6.3" }
+}

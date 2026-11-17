@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Harness Lifecycle Code Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a split workbench. Left: layered reading list (summary first, code on demand). Right: the same layers as a pannable dependency graph. Selection is shared. */
+:root {
+  --bg: #f3f4f7;
+  --surface: #ffffff;
+  --ink: #17202c;
+  --muted: #5b6676;
+  --line: #dce0e7;
+  --accent: #2753c4;
+  --accent-soft: #e5ebfa;
+  --user: #b06800;
+  --user-soft: #fbefdc;
+  --ext: #6a4ea6;
+  --ext-soft: #efe9f8;
+  --warn: #b3401c;
+  --warn-soft: #fbe9e3;
+  --code-bg: #f7f8fa;
+  --tok-kw: #9c2f74;
+  --tok-str: #2c7a4b;
+  --tok-num: #a95500;
+  --tok-com: #87909d;
+  --tok-type: #1c6a86;
+  --grid: #e7eaef;
+  --method: #0b7285; --method-soft: #e3f4f6; --cond: #b0417a; --cond-soft: #fbeaf2;
+  --loop: #2f7d32; --loop-soft: #e7f4e7; --try: #56627a; --try-soft: #eef0f4;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --left: 42%;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151b; --surface: #191e26; --ink: #e3e7ed; --muted: #98a2b1; --line: #2a313c;
+    --accent: #7f9ff2; --accent-soft: #1e2944; --user: #e4a548; --user-soft: #392b13;
+    --ext: #b49be8; --ext-soft: #29223e; --warn: #f08a68; --warn-soft: #3a211a;
+    --code-bg: #141920; --tok-kw: #e58ac4; --tok-str: #8ecf9d; --tok-num: #efb070;
+    --tok-com: #6b7584; --tok-type: #6cc0d6; --grid: #1d232c;
+    --method: #5cc4d4; --method-soft: #14303a; --cond: #ec8fbf; --cond-soft: #36202c;
+    --loop: #7fcf82; --loop-soft: #1b3320; --try: #a7b2c6; --try-soft: #20252f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151b; --surface: #191e26; --ink: #e3e7ed; --muted: #98a2b1; --line: #2a313c;
+  --accent: #7f9ff2; --accent-soft: #1e2944; --user: #e4a548; --user-soft: #392b13;
+  --ext: #b49be8; --ext-soft: #29223e; --warn: #f08a68; --warn-soft: #3a211a;
+  --code-bg: #141920; --tok-kw: #e58ac4; --tok-str: #8ecf9d; --tok-num: #efb070;
+  --tok-com: #6b7584; --tok-type: #6cc0d6; --grid: #1d232c;
+    --method: #5cc4d4; --method-soft: #14303a; --cond: #ec8fbf; --cond-soft: #36202c;
+    --loop: #7fcf82; --loop-soft: #1b3320; --try: #a7b2c6; --try-soft: #20252f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); display: flex; flex-direction: column; overflow: hidden; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, .mono { font-family: var(--font-mono); }
+
+/* header */
+.top { display: flex; align-items: center; gap: 16px 24px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.top h1 { font: 600 19px/1.2 var(--font-display); margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.top .file { color: var(--muted); font-size: 12.5px; }
+.stats { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.stat { font-size: 12px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stat b { color: var(--ink); font-weight: 600; }
+
+/* split */
+.main { flex: 1; min-height: 0; display: grid; grid-template-columns: var(--left) 6px 1fr; }
+.pane-left { overflow: auto; min-width: 0; position: relative; }
+.splitter { cursor: col-resize; background: var(--line); position: relative; }
+.splitter::after { content: ""; position: absolute; inset: 0 -4px; }
+.splitter:hover, .splitter.drag { background: var(--accent); }
+.pane-right { position: relative; min-width: 0; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; }
+[hidden] { display: none !important; }
+
+/* left column content */
+.inner { padding: 18px 20px 60px; display: flex; flex-direction: column; gap: 14px; max-width: 920px; }
+.overview { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.eyebrow { font: 600 11px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.overview p { margin: 0; max-width: 68ch; }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font-size: 12px; }
+.flow .lab { width: 74px; color: var(--muted); font-size: 12px; }
+.ev { font-family: var(--font-mono); font-size: 11.5px; background: var(--accent-soft); color: var(--accent); padding: 1px 7px; border-radius: 4px; }
+.ev.err { background: var(--warn-soft); color: var(--warn); }
+.ph { font-size: 11px; border: 1px dashed var(--muted); color: var(--muted); padding: 0 6px; border-radius: 999px; }
+.sep { color: var(--muted); }
+
+.toolbar { position: sticky; top: 0; z-index: 3; background: var(--bg); padding: 8px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--line); }
+.search { flex: 1 1 200px; min-width: 160px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: inherit; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 10px; font-size: 12.5px; cursor: pointer; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.btn { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 6px 10px; font-size: 12.5px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.focusbar { display: none; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); width: 100%; }
+.focusbar.on { display: flex; }
+.focusbar code { color: var(--ink); }
+
+.group { display: flex; flex-direction: column; gap: 10px; }
+.group-h { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; }
+.group-h h2 { font: 600 15px/1.2 var(--font-display); margin: 0; }
+.group-h span { color: var(--muted); font-size: 12.5px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 9px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; transition: opacity .15s, border-color .15s; scroll-margin-top: 64px; }
+.card.exported { border-left-color: var(--accent); }
+.card.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.card.dep { border-left-color: var(--accent); background: linear-gradient(90deg, var(--accent-soft), var(--surface) 30%); }
+.card.user { border-left-color: var(--user); background: linear-gradient(90deg, var(--user-soft), var(--surface) 30%); }
+.card.dim { opacity: .42; }
+.card.hide { display: none; }
+.card-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; cursor: pointer; border-radius: 4px; }
+.lvl { font: 600 11px/1 var(--font-mono); padding: 3px 5px; border-radius: 4px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.fname { font-weight: 600; font-size: 13.5px; word-break: break-all; }
+.pill { font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+.lines { margin-left: auto; color: var(--muted); font: 12px var(--font-mono); font-variant-numeric: tabular-nums; }
+.desc { margin: 0; max-width: 72ch; }
+.algo { margin: 0; padding-left: 22px; color: var(--ink); font-size: 13px; display: flex; flex-direction: column; gap: 2px; max-width: 76ch; }
+.algo li::marker { color: var(--muted); font: 12px var(--font-mono); }
+body.brief .algo, body.brief .notes { display: none; }
+.notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.note { display: flex; gap: 8px; align-items: flex-start; padding: 5px 8px; border-radius: 6px; background: var(--bg); color: var(--muted); }
+.note .ic { flex: none; width: 16px; height: 16px; border-radius: 50%; font: 700 10.5px/16px var(--font-mono); text-align: center; background: var(--line); color: var(--ink); margin-top: 1px; }
+.note.warn { background: var(--warn-soft); color: var(--ink); }
+.note.warn .ic { background: var(--warn); color: var(--surface); border-radius: 3px; }
+.deps { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; font-size: 12px; align-items: baseline; }
+.deps dt { color: var(--muted); }
+.deps dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font: 11.5px var(--font-mono); padding: 1px 7px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.chip.fn:hover { border-color: var(--accent); color: var(--accent); }
+.chip.x { color: var(--ext); background: var(--ext-soft); border-color: transparent; }
+.chip.x:hover { border-color: var(--ext); }
+.chip.t { opacity: .75; font-style: italic; }
+.none { color: var(--muted); font-style: italic; }
+.code-toggle { align-self: flex-start; border: 1px dashed var(--line); background: none; padding: 4px 10px; border-radius: 6px; font-size: 12.5px; cursor: pointer; color: var(--accent); }
+.code-toggle:hover { border-style: solid; border-color: var(--accent); }
+.code { overflow-x: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 7px; }
+.code pre { margin: 0; padding: 8px 0; font: 12px/1.6 var(--font-mono); counter-reset: none; min-width: max-content; }
+.code .row { display: flex; padding-right: 14px; }
+.code .row:hover { background: var(--accent-soft); }
+.code .n { flex: none; width: 46px; padding-right: 12px; text-align: right; color: var(--tok-com); user-select: none; font-variant-numeric: tabular-nums; }
+.tk-kw { color: var(--tok-kw); }
+.tk-str { color: var(--tok-str); }
+.tk-num { color: var(--tok-num); }
+.tk-com { color: var(--tok-com); font-style: italic; }
+.tk-type { color: var(--tok-type); }
+.tk-def { font-weight: 600; }
+.tk-fn { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; cursor: pointer; }
+.tk-x { color: var(--ext); text-decoration: underline dotted; text-underline-offset: 2px; cursor: pointer; }
+details.misc { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 10px 14px; }
+details.misc summary { cursor: pointer; font: 600 14px var(--font-display); }
+details.misc summary span { font: 400 12.5px var(--font-body); color: var(--muted); margin-left: 6px; }
+.tlist { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.tlist p { margin: 0 0 4px; font-size: 13px; }
+
+/* graph */
+#svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+#svg.panning { cursor: grabbing; }
+#vp { transform-origin: 0 0; }
+#vp.anim { transition: transform .35s ease; }
+.colhead { font: 600 11px var(--font-display); letter-spacing: .08em; text-transform: uppercase; fill: var(--muted); }
+.colrule { stroke: var(--grid); stroke-width: 1; }
+.edge { fill: none; stroke: var(--muted); stroke-opacity: .32; stroke-width: 1.2; marker-end: url(#ar); transition: stroke-opacity .15s; }
+.edge.ext { stroke: var(--ext); stroke-opacity: .2; marker-end: url(#ax); }
+.edge.type { stroke-dasharray: 3 3; }
+.focus .edge { stroke-opacity: .06; }
+.focus .edge.dep { stroke: var(--accent); stroke-opacity: .95; stroke-width: 1.8; marker-end: url(#ad); }
+.focus .edge.user { stroke: var(--user); stroke-opacity: .95; stroke-width: 1.8; marker-end: url(#au); }
+.node { cursor: pointer; }
+.node rect.box { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.node .stripe { fill: var(--accent); }
+.node text.nm { font: 600 12px var(--font-mono); fill: var(--ink); }
+.node text.cap { font: 10.5px var(--font-body); fill: var(--muted); }
+.node:hover rect.box { stroke: var(--accent); }
+.mod rect.box { fill: var(--surface); stroke: var(--line); }
+.mod rect.hd { fill: var(--ext-soft); }
+.mod text.mp { font: 500 10.5px var(--font-mono); fill: var(--ext); }
+.sym { cursor: pointer; }
+.sym rect { fill: transparent; }
+.sym:hover rect { fill: var(--ext-soft); }
+.sym text { font: 11px var(--font-mono); fill: var(--ink); }
+.sym.typeonly text { fill: var(--muted); font-style: italic; }
+.sym circle { fill: var(--ext); }
+.focus .node, .focus .mod { opacity: .25; transition: opacity .15s; }
+.focus .node.sel, .focus .node.dep, .focus .node.user, .focus .mod.lit { opacity: 1; }
+.focus .sym { opacity: .35; }
+.focus .sym.dep, .focus .sym.sel { opacity: 1; }
+.focus .sym.dep text, .focus .sym.sel text { font-weight: 600; fill: var(--accent); }
+.focus .sym.sel text { fill: var(--user); }
+.node.sel rect.box { stroke: var(--ink); stroke-width: 2; }
+.node.dep rect.box { stroke: var(--accent); stroke-width: 1.6; fill: var(--accent-soft); }
+.node.user rect.box { stroke: var(--user); stroke-width: 1.6; fill: var(--user-soft); }
+.node.nomatch, .mod.nomatch { opacity: .15; }
+
+.rbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.tabs button { border: 0; background: none; padding: 6px 12px; font-size: 12.5px; cursor: pointer; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.tabs button:disabled { cursor: not-allowed; opacity: .5; }
+.gctl, .fctl { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; align-items: center; }
+.gctl .btn[aria-pressed="true"], .fctl .btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.fpos { font: 12px var(--font-mono); color: var(--muted); min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+.stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+#svg { transition: opacity .2s; }
+.stage.flowmode #svg { opacity: 0; pointer-events: none; }
+.stage.flowmode #mlegend { display: none; }
+.gctl .btn { padding: 5px 9px; }
+.gctl .btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.legend { position: absolute; left: 12px; bottom: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 11.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; max-width: calc(100% - 24px); }
+.legend .row { display: flex; gap: 12px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 16px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px; padding: 7px 9px; border-radius: 6px; max-width: 300px; opacity: 0; transition: opacity .1s; z-index: 5; }
+.tip.on { opacity: 1; }
+.tip b { font-family: var(--font-mono); font-weight: 600; display: block; margin-bottom: 2px; }
+
+/* call flow */
+.flowpane { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 18px 0; font-size: 12.5px; color: var(--muted); }
+.crumb { font: 12px var(--font-mono); border: 0; background: none; padding: 2px 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.crumb.cur { color: var(--ink); font-weight: 600; text-decoration: none; cursor: default; }
+.fscroll { flex: 1; min-height: 0; overflow: auto; padding: 4px 18px 40px; }
+.fbody { position: relative; max-width: 780px; }
+.fentry { display: flex; flex-direction: column; gap: 6px; padding: 8px 0 12px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.fentry .sig { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.fentry .sig code { font-size: 15px; font-weight: 600; word-break: break-all; }
+.fentry .kw { font: 600 11px var(--font-mono); color: var(--tok-kw); }
+.fentry .mt { color: var(--muted); font-size: 12px; }
+.fentry p { margin: 0; max-width: 68ch; }
+.fsum { display: flex; flex-wrap: wrap; gap: 6px; }
+.spine { position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none; overflow: visible; }
+.seg { fill: none; stroke: var(--muted); stroke-opacity: .55; stroke-width: 1.5; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .14s ease-out; }
+.seg.on { stroke-dashoffset: 0; }
+.st { position: relative; z-index: 2; display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center; margin: 5px 0; padding: 6px 10px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--kc); border-radius: 8px; cursor: pointer; transition: opacity .16s, transform .16s ease-out, box-shadow .15s; }
+.st:hover { box-shadow: 0 0 0 1px var(--kc); }
+.st.cur { box-shadow: 0 0 0 2px var(--kc); }
+.st.fly { z-index: 6; box-shadow: 0 8px 20px rgba(0, 0, 0, .18); }
+.st .num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 600 11px var(--font-mono); background: var(--kc); color: var(--surface); font-variant-numeric: tabular-nums; }
+.st .cl { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.st .cl code { font-weight: 600; font-size: 12.5px; word-break: break-all; }
+.st .mt { flex-basis: 100%; color: var(--muted); font-size: 11.5px; }
+.aw { font: 600 10px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--tok-kw); border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
+.drill { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; color: var(--accent); white-space: nowrap; }
+.drill:hover { border-color: var(--accent); }
+.chip.drill { padding: 1px 7px; font: 11.5px var(--font-mono); }
+.k-fn { --kc: var(--accent); }
+.k-ext { --kc: var(--ext); }
+.k-method { --kc: var(--method); }
+.k-param { --kc: var(--muted); }
+.inner { margin-left: 34px; }
+.blk { position: relative; margin: 8px 0; padding: 4px 10px 6px; border: 1px solid var(--bc); border-radius: 10px; background: var(--bs); transition: border-color .15s, background-color .15s; }
+.blk.off { border-color: transparent; background: transparent; }
+.blk.off > .bl { opacity: 0; }
+.bl { position: relative; z-index: 2; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 2px 0; font-size: 12px; transition: opacity .15s; cursor: pointer; }
+.bl .kw { font: 600 10.5px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; background: var(--bc); color: var(--surface); }
+.bl code { color: var(--muted); font-size: 11.5px; word-break: break-word; }
+.b-cond { --bc: var(--cond); --bs: var(--cond-soft); }
+.b-try { --bc: var(--try); --bs: var(--try-soft); }
+.b-catch { --bc: var(--warn); --bs: var(--warn-soft); }
+.b-finally { --bc: var(--try); --bs: transparent; border-style: dashed; }
+.b-loop { --bc: var(--loop); --bs: var(--loop-soft); }
+.b-callback, .b-inline { --bc: var(--accent); --bs: transparent; border-style: dashed; }
+.b-deferred { --bc: var(--muted); --bs: transparent; border-style: dotted; }
+.nocall { position: relative; z-index: 2; color: var(--muted); font-style: italic; font-size: 12px; padding: 3px 2px; transition: opacity .15s; }
+.ex { position: relative; z-index: 2; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin: 5px 0; font-size: 12px; transition: opacity .15s, transform .15s ease-out; cursor: pointer; }
+.ex .kw { font: 600 10.5px var(--font-mono); text-transform: uppercase; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--muted); color: var(--muted); background: var(--surface); }
+.ex code { color: var(--muted); font-size: 11.5px; }
+.ex.early .kw { border-color: var(--cond); color: var(--cond); }
+.ex.x-throw .kw { border-color: var(--warn); color: var(--warn); background: var(--warn-soft); }
+.mchips { display: flex; flex-wrap: wrap; gap: 4px; }
+.hid { opacity: 0; transform: translateY(6px); }
+.flegend { position: static; border-radius: 0; border-width: 1px 0 0; max-width: none; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; border: 1.5px solid var(--c); background: var(--s, transparent); }
+.code .row.hl { background: var(--user-soft); box-shadow: inset 3px 0 0 var(--user); }
+
+@media (max-width: 900px) {
+  body { overflow: auto; }
+  .main { display: flex; flex-direction: column; }
+  .splitter { display: none; }
+  .pane-right { order: -1; height: 520px; flex: none; border-bottom: 1px solid var(--line); }
+  .pane-left { overflow: visible; }
+  .toolbar { top: 0; }
+  .stats { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { #vp.anim, .card, .edge, #svg, .st, .blk, .bl, .ex, .seg, .nocall { transition: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Agent harness lifecycle</h1>
+    <div class="file" id="fileinfo"></div>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="main" id="main">
+  <div class="pane-left" id="left">
+    <div class="inner">
+      <section class="overview" aria-labelledby="ov-h">
+        <div class="eyebrow" id="ov-h">What this module does</div>
+        <p>Wraps every agent-harness execution in diagnostics. Each run gets an outer <code>harness.run</code> span and, for any harness other than <code>openclaw</code>, a child <code>run</code> span. Along the way it normalizes harness results to the canonical terminal-outcome contract and applies the harness's own classification. Prompt and answer text only leave through the private-data channel, and only when the content-capture policy allows it.</p>
+        <div class="flow"><span class="lab">Start at</span><span id="entries"></span></div>
+        <div class="flow"><span class="lab">Happy path</span>
+          <span class="ev">harness.run.started</span><span class="ph">prepare</span><span class="sep">›</span><span class="ev">run.started</span><span class="ph">send</span><span class="ph">resolve</span><span class="sep">›</span><span class="ev">run.completed</span><span class="sep">›</span><span class="ev">harness.run.completed</span>
+        </div>
+        <div class="flow"><span class="lab">On throw</span>
+          <span class="ev err">harness.run.error</span><span class="ph">tagged with phase</span><span class="sep">›</span><span class="ev err">run.completed · error</span><span class="sep">›</span><span class="ph">rethrow</span>
+        </div>
+      </section>
+
+      <div class="toolbar" role="toolbar" aria-label="List controls">
+        <input class="search" id="q" type="search" placeholder="Filter functions, steps, symbols   ( / )" aria-label="Filter functions">
+        <div class="seg" role="group" aria-label="Order">
+          <button id="ord-deps" aria-pressed="false" title="Topological order: every function appears after what it calls">Leaves first</button>
+          <button id="ord-entry" aria-pressed="true" title="Reverse topological order: entry points first">Entry points first</button>
+        </div>
+        <div class="seg" role="group" aria-label="Detail">
+          <button id="det-brief" aria-pressed="false">Summary</button>
+          <button id="det-full" aria-pressed="true">+ Algorithm</button>
+        </div>
+        <button class="btn" id="allcode">Expand all code</button>
+        <div class="focusbar" id="focusbar"><span>Focused on <code id="focusname"></code>. Blue: what it depends on. Amber: what depends on it.</span><button class="btn" id="clear">Clear (Esc)</button></div>
+      </div>
+
+      <div id="list"></div>
+
+      <details class="misc"><summary>Local types<span id="tcount"></span></summary><div class="tlist" id="types"></div></details>
+      <details class="misc"><summary>Imports<span>lines 1–43</span></summary><div class="tlist" id="imports"></div></details>
+    </div>
+  </div>
+
+  <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Resize panes" tabindex="0"></div>
+
+  <div class="pane-right" id="right">
+    <div class="rbar">
+      <div class="tabs" role="tablist" aria-label="Graph views">
+        <button role="tab" id="tab-map" aria-selected="true">Dependency map</button>
+        <button role="tab" id="tab-flow" aria-selected="false" disabled title="Select a function first">Call flow</button>
+      </div>
+      <div class="gctl" id="gctl">
+        <button class="btn" id="g-ext" aria-pressed="true">External imports</button>
+        <button class="btn" id="g-types" aria-pressed="false">Type-only imports</button>
+        <button class="btn" id="g-trans" aria-pressed="false" title="Follow dependencies and dependents all the way, for impact analysis">Transitive</button>
+        <button class="btn" id="g-out" aria-label="Zoom out">−</button><button class="btn" id="g-in" aria-label="Zoom in">+</button><button class="btn" id="g-fit">Fit</button>
+      </div>
+      <div class="fctl" id="fctl" hidden>
+        <button class="btn" id="f-replay" title="Play the call sequence again">Replay</button>
+        <button class="btn" id="f-prev" aria-label="Previous call">◀</button>
+        <span class="fpos" id="f-pos">0 / 0</span>
+        <button class="btn" id="f-next" aria-label="Next call">▶</button>
+        <button class="btn" id="f-builtins" aria-pressed="false" title="Show calls like Date.now() and Object.hasOwn()">Built-ins</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <svg id="svg" aria-label="Dependency graph">
+        <defs>
+          <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--muted); opacity: .5"/></marker>
+          <marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--ext); opacity: .4"/></marker>
+          <marker id="ad" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--accent)"/></marker>
+          <marker id="au" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill: var(--user)"/></marker>
+        </defs>
+        <g id="vp"></g>
+      </svg>
+      <div class="legend" id="mlegend">
+        <div class="row"><span><i style="background: var(--accent)"></i>depends on</span><span><i style="background: var(--user)"></i>used by</span><span><i style="background: var(--ext)"></i>external import</span></div>
+        <div>Entry points on the left; arrows run from caller to callee. Click a function to play its call flow.</div>
+      </div>
+      <section class="flowpane" id="flowpane" hidden aria-label="Call flow">
+        <nav class="crumbs" id="crumbs" aria-label="Drill-down path"></nav>
+        <div class="fscroll" id="fscroll"><div class="fbody" id="fbody"></div></div>
+        <div class="legend flegend" id="flegend"></div>
+      </section>
+      <div class="tip" id="tip"></div>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  const D = JSON.parse(document.getElementById("data").textContent);
+  const fns = D.functions;
+  const byId = Object.fromEntries(fns.map(f => [f.name, f]));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const $ = id => document.getElementById(id);
+
+  // ---------- analysis: layers by longest call path, topo order ----------
+  const lvl = {};
+  const L = n => {
+    if (n in lvl) return lvl[n];
+    lvl[n] = 0;
+    const f = byId[n];
+    return (lvl[n] = f.calls.length ? 1 + Math.max(...f.calls.map(L)) : 0);
+  };
+  fns.forEach(f => { f.level = L(f.name); f.calledBy = []; });
+  fns.forEach(f => f.calls.forEach(c => byId[c].calledBy.push(f.name)));
+  const maxL = Math.max(...fns.map(f => f.level));
+  const topo = fns.slice().sort((a, b) => a.level - b.level || a.start - b.start);
+  const symMod = {};
+  D.modules.forEach(m => m.symbols.forEach(s => { symMod[s.name] = { m, s }; }));
+  const allSyms = D.modules.reduce((n, m) => n + m.symbols.length, 0);
+
+  const state = { sel: null, hover: null, transitive: false, showTypes: false, showExt: true, order: "entry", q: "" };
+
+  // ---------- header ----------
+  $("fileinfo").textContent = `${D.file.name} · ${D.file.lang} · ${D.file.lines} lines`;
+  const realMods = D.modules.filter(m => !m.runtime).length;
+  $("stats").innerHTML = [
+    [fns.length, "functions"], [fns.filter(f => f.exported).length, "exported"], [maxL + 1, "layers"],
+    [D.types.length, "local types"], [realMods, "imported modules"], [allSyms, "external symbols"]
+  ].map(([n, l]) => `<span class="stat"><b>${n}</b> ${l}</span>`).join("");
+  $("entries").innerHTML = fns.filter(f => f.exported).map(f => `<button class="chip fn" data-fn="${f.name}">${f.name}</button>`).join(" ");
+
+  // ---------- code highlighter ----------
+  const KW = new Set("import export from type function const let var return if else async await try catch finally throw new typeof instanceof in of as true false null undefined void unknown string number boolean interface extends keyof".split(" "));
+  const TOK = /(\/\/.*$|\/\*.*?\*\/|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\b\d+(?:\.\d+)?\b|[A-Za-z_$][\w$]*|\s+|.)/g;
+  function hlLine(line, self) {
+    let out = "", prev = [], m;
+    TOK.lastIndex = 0;
+    while ((m = TOK.exec(line)) && m[0] !== "") {
+      const t = m[0], e = esc(t);
+      let cls = "";
+      if (t.startsWith("//") || t.startsWith("/*")) cls = "tk-com";
+      else if (/^["'`]/.test(t)) cls = "tk-str";
+      else if (/^\d/.test(t)) cls = "tk-num";
+      else if (/^[A-Za-z_$]/.test(t)) {
+        const afterDot = prev[0] === ".";
+        if (afterDot && prev[1] === "harness" && (t === "runAttempt" || t === "classify")) { out += `<span class="tk-x" data-sym="${t}" title="AgentHarness method (runtime)">${e}</span>`; prev = [t, ...prev].slice(0, 3); continue; }
+        if (!afterDot && t === self) cls = "tk-def";
+        else if (!afterDot && byId[t]) { out += `<span class="tk-fn" data-fn="${t}" title="Jump to ${t}">${e}</span>`; prev = [t, ...prev].slice(0, 3); continue; }
+        else if (!afterDot && symMod[t] && !symMod[t].s.member) { out += `<span class="tk-x" data-sym="${t}" title="from ${esc(symMod[t].m.path)}">${e}</span>`; prev = [t, ...prev].slice(0, 3); continue; }
+        else if (KW.has(t)) cls = "tk-kw";
+        else if (/^[A-Z]/.test(t)) cls = "tk-type";
+      }
+      out += cls ? `<span class="${cls}">${e}</span>` : e;
+      if (!/^\s+$/.test(t)) prev = [t, ...prev].slice(0, 3);
+    }
+    return out;
+  }
+  function codeBlock(code, start, self) {
+    return "<pre>" + code.split("\n").map((ln, i) => `<div class="row"><span class="n">${start + i}</span><span>${hlLine(ln, self) || " "}</span></div>`).join("") + "</pre>";
+  }
+
+  // ---------- list ----------
+  const chipsFn = arr => arr.length ? arr.map(n => `<button class="chip fn" data-fn="${n}">${n}</button>`).join("") : `<span class="none">none</span>`;
+  const chipsX = (arr, t) => arr.map(n => `<button class="chip x${t ? " t" : ""}" data-sym="${n}" title="${esc(symMod[n] ? symMod[n].m.path : "")}">${symMod[n] && symMod[n].s.member ? "harness." : ""}${n}</button>`).join("");
+  const cards = {};
+  topo.forEach(f => {
+    const el = document.createElement("article");
+    el.className = "card" + (f.exported ? " exported" : "");
+    el.id = "card-" + f.name;
+    el.dataset.id = f.name;
+    const nLines = f.end - f.start + 1;
+    el.innerHTML = `
+      <div class="card-h" tabindex="0" role="button" aria-label="Focus ${f.name} in graph">
+        <span class="lvl" title="Layer ${f.level}: longest call path to a leaf">L${f.level}</span>
+        <code class="fname">${f.name}</code>${f.exported ? `<span class="pill">export</span>` : ""}
+        <span class="lines">L${f.start}–${f.end}</span>
+      </div>
+      <p class="desc">${esc(f.desc)}</p>
+      <ol class="algo">${f.algo.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+      ${f.notes.length ? `<ul class="notes">${f.notes.map(n => `<li class="note ${n.kind}"><span class="ic" aria-hidden="true">${n.kind === "warn" ? "!" : "i"}</span><span>${esc(n.text)}</span></li>`).join("")}</ul>` : ""}
+      <dl class="deps">
+        <dt>Calls</dt><dd>${chipsFn(f.calls)}</dd>
+        <dt>Imports used</dt><dd>${f.uses.length || f.typeUses.length ? chipsX(f.uses) + chipsX(f.typeUses, true) : `<span class="none">none</span>`}</dd>
+        <dt>Called by</dt><dd>${f.calledBy.length ? chipsFn(f.calledBy) : `<span class="none">${f.exported ? "external callers (exported)" : "none"}</span>`}</dd>
+      </dl>
+      <button class="code-toggle" aria-expanded="false">Show code · ${nLines} lines</button>
+      <div class="code" hidden></div>`;
+    cards[f.name] = el;
+    f.search = [f.name, f.desc, ...f.algo, ...f.notes.map(n => n.text), ...f.uses, ...f.typeUses, ...f.calls].join(" ").toLowerCase();
+  });
+  const groupInfo = l => l === 0 ? ["Layer 0", "leaf helpers: call nothing else in this file"]
+    : l === maxL ? [`Layer ${l}`, "entry points and orchestration"]
+    : [`Layer ${l}`, `build on layer ${l - 1} and below`];
+  function renderList() {
+    const list = $("list");
+    list.innerHTML = "";
+    const levels = [...Array(maxL + 1).keys()];
+    if (state.order === "entry") levels.reverse();
+    levels.forEach(l => {
+      const g = document.createElement("section");
+      g.className = "group";
+      const [t, s] = groupInfo(l);
+      const members = topo.filter(f => f.level === l);
+      g.innerHTML = `<div class="group-h"><h2>${t}</h2><span>${s} · ${members.length}</span></div>`;
+      members.forEach(f => g.appendChild(cards[f.name]));
+      list.appendChild(g);
+    });
+  }
+  renderList();
+
+  $("tcount").textContent = `${D.types.length} declarations`;
+  $("types").innerHTML = D.types.map(t => `<div><p><code class="fname">${t.name}</code> <span class="lines">L${t.start}${t.end > t.start ? "–" + t.end : ""}</span><br>${esc(t.desc)}</p><div class="code">${codeBlock(t.code, t.start)}</div></div>`).join("");
+  $("imports").innerHTML = `<div class="code">${codeBlock(D.imports.code, D.imports.start)}</div>`;
+
+  function toggleCode(card, open) {
+    const btn = card.querySelector(".code-toggle"), box = card.querySelector(".code");
+    const f = byId[card.dataset.id];
+    open = open === undefined ? box.hidden : open;
+    if (open && !box.innerHTML) box.innerHTML = codeBlock(f.code, f.start, f.name);
+    box.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+    btn.textContent = (open ? "Hide code" : "Show code") + ` · ${f.end - f.start + 1} lines`;
+  }
+
+  // ---------- graph layout ----------
+  const svgNS = "http://www.w3.org/2000/svg";
+  const vp = $("vp"), svg = $("svg");
+  let G = null;
+  const cap = f => `${f.exported ? "export · " : ""}${f.end - f.start + 1} lines · ${f.calls.length} calls · ${f.uses.length} imports`;
+  const shortPath = p => p.replace(/^(\.\.\/)+/, "").replace(/^\.\//, "./");
+
+  function layout() {
+    const mods = state.showExt ? D.modules.map(m => ({ m, vis: m.symbols.filter(s => state.showTypes || !s.typeOnly) })).filter(x => x.vis.length) : [];
+    const cols = [];
+    for (let l = maxL; l >= 0; l--) cols.push(topo.filter(f => f.level === l).map(f => ({ kind: "fn", id: f.name, f })));
+    if (mods.length) cols.push(mods.map(x => ({ kind: "mod", id: x.m.id, m: x.m, vis: x.vis })));
+    const nodes = {};
+    cols.flat().forEach(n => {
+      if (n.kind === "fn") { n.cap = cap(n.f); n.w = Math.max(190, n.f.name.length * 7.3 + 30, n.cap.length * 5.9 + 28); n.h = 50; }
+      else { n.w = Math.max(160, shortPath(n.m.path).length * 6.5 + 22, ...n.vis.map(s => (s.name.length + (s.member ? 8 : 0)) * 6.8 + 34)); n.h = 26 + n.vis.length * 19 + 6; }
+      nodes[(n.kind === "fn" ? "f:" : "m:") + n.id] = n;
+    });
+    const visSym = new Set(mods.flatMap(x => x.vis.map(s => s.name)));
+    const symsOf = f => f.uses.concat(state.showTypes ? f.typeUses : []).filter(s => visSym.has(s));
+    // neighbours for barycentre ordering
+    const nb = n => {
+      if (n.kind === "fn") {
+        const out = n.f.calls.concat(n.f.calledBy).map(c => nodes["f:" + c]);
+        symsOf(n.f).forEach(s => out.push(nodes["m:" + symMod[s].m.id]));
+        return out.filter(Boolean);
+      }
+      return fns.filter(f => symsOf(f).some(s => symMod[s].m.id === n.id)).map(f => nodes["f:" + f.name]);
+    };
+    let x = 0;
+    const GAP = 92;
+    const colMeta = cols.map((c, i) => { const w = Math.max(...c.map(n => n.w)); const meta = { x, w, kind: c[0].kind, level: c[0].kind === "fn" ? c[0].f.level : -1 }; c.forEach(n => { n.x = n.kind === "mod" ? x : x + (w - n.w) / 2; }); x += w + GAP; return meta; });
+    const stack = c => { const gap = c[0].kind === "fn" ? 22 : 12; let y = 0; c.forEach(n => { n.y = y; y += n.h + gap; }); return y - gap; };
+    const recenter = () => { const hs = cols.map(stack); const H = Math.max(...hs); cols.forEach((c, i) => c.forEach(n => { n.y += (H - hs[i]) / 2; })); return H; };
+    let H = recenter();
+    for (let it = 0; it < 8; it++) {
+      const seq = it % 2 ? cols.slice().reverse() : cols;
+      seq.forEach(c => {
+        c.forEach(n => { const ns = nb(n); n.bary = ns.length ? ns.reduce((a, m) => a + m.y + m.h / 2, 0) / ns.length : n.y + n.h / 2; });
+        c.sort((a, b) => a.bary - b.bary);
+      });
+      H = recenter();
+    }
+    // symbol anchors
+    const symPos = {};
+    mods.forEach(x => { const n = nodes["m:" + x.m.id]; x.vis.forEach((s, i) => { symPos[s.name] = { x: n.x, y: n.y + 26 + i * 19 + 9.5 }; }); });
+    // edges
+    const edges = [];
+    fns.forEach(f => {
+      if (!nodes["f:" + f.name]) return;
+      f.calls.forEach(c => edges.push({ from: f.name, to: c, kind: "call" }));
+      if (state.showExt) {
+        f.uses.forEach(s => visSym.has(s) && edges.push({ from: f.name, to: "s:" + s, kind: "ext" }));
+        if (state.showTypes) f.typeUses.forEach(s => visSym.has(s) && edges.push({ from: f.name, to: "s:" + s, kind: "type" }));
+      }
+    });
+    const tgt = e => e.to.startsWith("s:") ? symPos[e.to.slice(2)] : (n => ({ x: n.x, y: n.y + n.h / 2 }))(nodes["f:" + e.to]);
+    // spread ports
+    const byFrom = {}, byTo = {};
+    edges.forEach(e => { e.t = tgt(e); (byFrom[e.from] = byFrom[e.from] || []).push(e); if (!e.to.startsWith("s:")) (byTo[e.to] = byTo[e.to] || []).push(e); });
+    Object.entries(byFrom).forEach(([k, es]) => { const n = nodes["f:" + k]; es.sort((a, b) => a.t.y - b.t.y); const step = Math.min(4, 36 / Math.max(1, es.length)); es.forEach((e, i) => { e.s = { x: n.x + n.w, y: n.y + n.h / 2 + (i - (es.length - 1) / 2) * step }; }); });
+    Object.entries(byTo).forEach(([k, es]) => { const n = nodes["f:" + k]; es.sort((a, b) => a.s.y - b.s.y); const step = Math.min(6, 34 / Math.max(1, es.length)); es.forEach((e, i) => { e.t = { x: n.x, y: n.y + n.h / 2 + (i - (es.length - 1) / 2) * step }; }); });
+    return { cols, colMeta, nodes, edges, H, W: x - GAP, mods };
+  }
+
+  function renderGraph() {
+    G = layout();
+    let h = "";
+    G.colMeta.forEach(c => {
+      const label = c.kind === "mod" ? "External imports" : c.level === 0 ? "Layer 0 · leaves" : c.level === maxL ? `Layer ${c.level} · entry points` : `Layer ${c.level}`;
+      h += `<text class="colhead" x="${c.x}" y="-30">${label}</text><line class="colrule" x1="${c.x}" x2="${c.x + c.w}" y1="-20" y2="-20"/>`;
+    });
+    G.edges.forEach(e => {
+      const dx = Math.max(40, (e.t.x - e.s.x) * 0.45);
+      h += `<path class="edge${e.kind === "call" ? "" : " ext"}${e.kind === "type" ? " type" : ""}" data-from="${e.from}" data-to="${e.to}" d="M${e.s.x},${e.s.y} C${e.s.x + dx},${e.s.y} ${e.t.x - dx},${e.t.y} ${e.t.x - 2},${e.t.y}"/>`;
+    });
+    G.cols.flat().forEach(n => {
+      if (n.kind === "fn") {
+        const f = n.f, ext = f.uses.length;
+        h += `<g class="node" data-fn="${f.name}" transform="translate(${n.x},${n.y})" tabindex="0" role="button" aria-label="${f.name}">
+          <rect class="box" width="${n.w}" height="${n.h}" rx="7"/>${f.exported ? `<rect class="stripe" width="4" height="${n.h}" rx="2"/>` : ""}
+          <text class="nm" x="14" y="21">${f.name}</text>
+          <text class="cap" x="14" y="38">${n.cap}</text></g>`;
+      } else {
+        h += `<g class="mod" data-mod="${esc(n.id)}" transform="translate(${n.x},${n.y})">
+          <rect class="box" width="${n.w}" height="${n.h}" rx="7"/><rect class="hd" width="${n.w}" height="22" rx="7"/><rect class="hd" y="12" width="${n.w}" height="10"/>
+          <text class="mp" x="10" y="15">${esc(shortPath(n.m.path))}</text>
+          ${n.vis.map((s, i) => `<g class="sym${s.typeOnly ? " typeonly" : ""}" data-sym="${s.name}" transform="translate(0,${26 + i * 19})"><rect width="${n.w}" height="19"/><text x="14" y="13">${s.member ? "." : ""}${s.name}${s.typeOnly ? " (type)" : ""}</text><circle cx="0" cy="9.5" r="2.5"/></g>`).join("")}
+        </g>`;
+      }
+    });
+    vp.innerHTML = h;
+    applyFocus();
+    applyFilter();
+  }
+
+  // ---------- pan / zoom ----------
+  const T = { k: 1, x: 0, y: 0 };
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function applyT(anim) {
+    vp.classList.toggle("anim", !!anim && !reduce);
+    vp.style.transform = `translate(${T.x}px, ${T.y}px) scale(${T.k})`;
+  }
+  function fit(anim) {
+    const r = svg.getBoundingClientRect();
+    if (!r.width || !G) return;
+    const bw = G.W + 40, bh = G.H + 70;
+    T.k = Math.min(1.1, Math.min(r.width / bw, (r.height - 70) / bh) * 0.95);
+    T.x = (r.width - G.W * T.k) / 2;
+    T.y = Math.max(46, (r.height - 60 - G.H * T.k) / 2 + 30);
+    applyT(anim);
+  }
+  function centerOn(fnName) {
+    const n = G && G.nodes["f:" + fnName];
+    if (!n) return;
+    const r = svg.getBoundingClientRect();
+    const cx = (n.x + n.w / 2) * T.k + T.x, cy = (n.y + n.h / 2) * T.k + T.y;
+    if (T.k >= 0.85 && cx > 40 && cx < r.width - 40 && cy > 60 && cy < r.height - 90) return;
+    T.k = Math.max(T.k, 0.95);
+    T.x = r.width / 2 - (n.x + n.w / 2) * T.k;
+    T.y = r.height / 2 - (n.y + n.h / 2) * T.k;
+    applyT(true);
+  }
+  svg.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = svg.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    const k = Math.min(3, Math.max(0.15, T.k * Math.exp(-e.deltaY * 0.0015)));
+    T.x = mx - (mx - T.x) * (k / T.k); T.y = my - (my - T.y) * (k / T.k); T.k = k;
+    applyT(false);
+  }, { passive: false });
+  let drag = null;
+  svg.addEventListener("pointerdown", e => {
+    if (e.target.closest(".node, .sym")) return;
+    drag = { x: e.clientX, y: e.clientY, tx: T.x, ty: T.y, moved: false };
+    svg.setPointerCapture(e.pointerId);
+    svg.classList.add("panning");
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    T.x = drag.tx + dx; T.y = drag.ty + dy; applyT(false);
+  });
+  svg.addEventListener("pointerup", () => {
+    if (drag && !drag.moved) select(null);
+    drag = null; svg.classList.remove("panning");
+  });
+
+  // ---------- focus ----------
+  function focusSets(t) {
+    const deps = new Set(), users = new Set(), syms = new Set();
+    const symsOf = f => f.uses.concat(state.showTypes ? f.typeUses : []);
+    const up = n => byId[n].calledBy.forEach(c => { if (!users.has(c)) { users.add(c); if (state.transitive) up(c); } });
+    if (t.kind === "fn") {
+      const down = n => { const f = byId[n]; symsOf(f).forEach(s => syms.add(s)); f.calls.forEach(c => { if (!deps.has(c)) { deps.add(c); if (state.transitive) down(c); } }); };
+      down(t.id); up(t.id);
+    } else {
+      fns.forEach(f => { if (f.uses.includes(t.id) || f.typeUses.includes(t.id)) users.add(f.name); });
+      if (state.transitive) [...users].forEach(up);
+    }
+    return { deps, users, syms };
+  }
+  function applyFocus() {
+    const t = state.hover || state.sel;
+    const root = vp;
+    root.classList.toggle("focus", !!t);
+    const S = t ? focusSets(t) : null;
+    root.querySelectorAll(".node").forEach(g => {
+      const id = g.dataset.fn;
+      g.classList.toggle("sel", !!t && t.kind === "fn" && t.id === id);
+      g.classList.toggle("dep", !!S && S.deps.has(id));
+      g.classList.toggle("user", !!S && S.users.has(id));
+    });
+    root.querySelectorAll(".sym").forEach(g => {
+      const id = g.dataset.sym;
+      g.classList.toggle("sel", !!t && t.kind === "sym" && t.id === id);
+      g.classList.toggle("dep", !!S && S.syms.has(id));
+    });
+    root.querySelectorAll(".mod").forEach(g => g.classList.toggle("lit", !!g.querySelector(".sym.sel, .sym.dep")));
+    root.querySelectorAll(".edge").forEach(p => {
+      let dep = false, user = false;
+      if (S) {
+        const fr = p.dataset.from, to = p.dataset.to, isSym = to.startsWith("s:"), tid = isSym ? to.slice(2) : to;
+        if (t.kind === "fn") {
+          dep = (fr === t.id || (state.transitive && S.deps.has(fr))) && (isSym ? S.syms.has(tid) : S.deps.has(tid));
+          user = S.users.has(fr) && (tid === t.id || (state.transitive && S.users.has(tid)));
+        } else {
+          user = S.users.has(fr) && ((isSym && tid === t.id) || (state.transitive && !isSym && S.users.has(tid)));
+        }
+      }
+      p.classList.toggle("dep", dep); p.classList.toggle("user", user);
+    });
+    // bring highlighted edges above others but below nodes
+    if (S) { const firstNode = root.querySelector(".node, .mod"); root.querySelectorAll(".edge.dep, .edge.user").forEach(p => root.insertBefore(p, firstNode)); }
+    // list sync uses the committed selection only
+    const s = state.sel, SS = s ? focusSets(s) : null;
+    fns.forEach(f => {
+      const c = cards[f.name];
+      c.classList.toggle("sel", !!s && s.kind === "fn" && s.id === f.name);
+      c.classList.toggle("dep", !!SS && SS.deps.has(f.name));
+      c.classList.toggle("user", !!SS && SS.users.has(f.name));
+      c.classList.toggle("dim", !!SS && !(s.kind === "fn" && s.id === f.name) && !SS.deps.has(f.name) && !SS.users.has(f.name));
+    });
+    $("focusbar").classList.toggle("on", !!s);
+    if (s) $("focusname").textContent = s.kind === "sym" && symMod[s.id] && symMod[s.id].s.member ? "harness." + s.id : s.id;
+  }
+  function scrollCard(id) {
+    const c = cards[id];
+    c.style.scrollMarginTop = (document.querySelector(".toolbar").offsetHeight + 12) + "px";
+    c.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+  function zoomBy(f) {
+    const r = svg.getBoundingClientRect(), mx = r.width / 2, my = r.height / 2;
+    const k = Math.min(3, Math.max(0.15, T.k * f));
+    T.x = mx - (mx - T.x) * (k / T.k); T.y = my - (my - T.y) * (k / T.k); T.k = k; applyT(true);
+  }
+  function select(t, from) {
+    if (t && state.sel && state.sel.kind === t.kind && state.sel.id === t.id && from === "graph") t = null;
+    state.sel = t;
+    state.hover = null;
+    hideTip();
+    applyFocus();
+    if (!t) { if (view.mode === "flow") showView("map"); return; }
+    if (t.kind === "fn") {
+      openFlow(t.id);
+      if (from !== "list") scrollCard(t.id);
+      if (from !== "graph") centerOn(t.id);
+    } else {
+      if (view.mode === "flow") showView("map");
+      const first = topo.find(f => f.uses.includes(t.id) || f.typeUses.includes(t.id));
+      if (first && from !== "list") scrollCard(first.name);
+    }
+  }
+
+  // ---------- tooltip ----------
+  const tip = $("tip");
+  function showTip(e, html) {
+    tip.innerHTML = html; tip.classList.add("on");
+    const r = $("stage").getBoundingClientRect();
+    let x = e.clientX - r.left + 14, y = e.clientY - r.top + 14;
+    if (x + 310 > r.width) x = Math.max(8, e.clientX - r.left - 314);
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  function hideTip() { tip.classList.remove("on"); }
+
+  // ---------- events ----------
+  vp.addEventListener("click", e => {
+    const n = e.target.closest(".node"), s = e.target.closest(".sym");
+    if (n) select({ kind: "fn", id: n.dataset.fn }, "graph");
+    else if (s) select({ kind: "sym", id: s.dataset.sym }, "graph");
+  });
+  vp.addEventListener("keydown", e => {
+    const n = e.target.closest(".node");
+    if (n && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select({ kind: "fn", id: n.dataset.fn }, "graph"); }
+  });
+  vp.addEventListener("pointerover", e => {
+    const n = e.target.closest(".node"), s = e.target.closest(".sym");
+    const t = n ? { kind: "fn", id: n.dataset.fn } : s ? { kind: "sym", id: s.dataset.sym } : null;
+    if (!t || (state.hover && state.hover.id === t.id)) return;
+    state.hover = t; applyFocus();
+  });
+  vp.addEventListener("pointermove", e => {
+    const n = e.target.closest(".node"), s = e.target.closest(".sym");
+    if (n) { const f = byId[n.dataset.fn]; showTip(e, `<b>${f.name}</b>${esc(f.desc)}`); }
+    else if (s) { const m = symMod[s.dataset.sym]; const users = fns.filter(f => f.uses.includes(s.dataset.sym) || f.typeUses.includes(s.dataset.sym)).length; showTip(e, `<b>${m.s.member ? "harness." : ""}${s.dataset.sym}</b>from ${esc(m.m.path)}<br>used by ${users} function${users === 1 ? "" : "s"}`); }
+    else hideTip();
+  });
+  vp.addEventListener("pointerout", e => {
+    if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".node, .sym")) return;
+    hideTip();
+    if (state.hover) { state.hover = null; applyFocus(); }
+  });
+
+  document.addEventListener("click", e => {
+    const left = e.target.closest(".pane-left, .overview");
+    if (!left) return;
+    const fnEl = e.target.closest("[data-fn]"), symEl = e.target.closest("[data-sym]");
+    if (fnEl) { e.preventDefault(); select({ kind: "fn", id: fnEl.dataset.fn }, "chip"); return; }
+    if (symEl) { e.preventDefault(); select({ kind: "sym", id: symEl.dataset.sym }, "chip"); return; }
+    const tog = e.target.closest(".code-toggle");
+    if (tog) { toggleCode(tog.closest(".card")); return; }
+    const hd = e.target.closest(".card-h");
+    if (hd) { const id = hd.closest(".card").dataset.id; select(state.sel && state.sel.id === id ? null : { kind: "fn", id }, "list"); }
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { select(null); return; }
+    if (view.mode === "flow" && (e.key === "ArrowRight" || e.key === "ArrowLeft") && !e.target.closest("input, .splitter")) {
+      e.preventDefault(); (e.key === "ArrowRight" ? $("f-next") : $("f-prev")).click(); return;
+    }
+    if (e.key === "/" && document.activeElement !== $("q")) { e.preventDefault(); $("q").focus(); return; }
+    const hd = e.target.closest && e.target.closest(".card-h");
+    if (hd && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); hd.click(); }
+  });
+  $("clear").addEventListener("click", () => select(null));
+
+  function applyFilter() {
+    const q = state.q.trim().toLowerCase();
+    fns.forEach(f => {
+      const hit = !q || f.search.includes(q);
+      cards[f.name].classList.toggle("hide", !hit);
+      const g = vp.querySelector(`.node[data-fn="${f.name}"]`);
+      if (g) g.classList.toggle("nomatch", !hit);
+    });
+    vp.querySelectorAll(".mod").forEach(g => {
+      const any = !q || [...g.querySelectorAll(".sym")].some(s => s.dataset.sym.toLowerCase().includes(q)) || g.dataset.mod.toLowerCase().includes(q);
+      g.classList.toggle("nomatch", !any);
+    });
+  }
+  $("q").addEventListener("input", e => { state.q = e.target.value; applyFilter(); });
+
+  const seg = (a, b, on) => { $(a).setAttribute("aria-pressed", String(on)); $(b).setAttribute("aria-pressed", String(!on)); };
+  $("ord-deps").addEventListener("click", () => { state.order = "deps"; seg("ord-deps", "ord-entry", true); renderList(); });
+  $("ord-entry").addEventListener("click", () => { state.order = "entry"; seg("ord-deps", "ord-entry", false); renderList(); });
+  $("det-brief").addEventListener("click", () => { document.body.classList.add("brief"); seg("det-brief", "det-full", true); });
+  $("det-full").addEventListener("click", () => { document.body.classList.remove("brief"); seg("det-brief", "det-full", false); });
+  let allOpen = false;
+  $("allcode").addEventListener("click", () => { allOpen = !allOpen; Object.values(cards).forEach(c => toggleCode(c, allOpen)); $("allcode").textContent = allOpen ? "Collapse all code" : "Expand all code"; });
+  const flip = (id, key, rerender) => $(id).addEventListener("click", () => {
+    state[key] = !state[key]; $(id).setAttribute("aria-pressed", String(state[key]));
+    if (rerender) { renderGraph(); fit(true); } else applyFocus();
+  });
+  flip("g-ext", "showExt", true);
+  flip("g-types", "showTypes", true);
+  flip("g-trans", "transitive", false);
+  $("g-fit").addEventListener("click", () => fit(true));
+  $("g-in").addEventListener("click", () => zoomBy(1.25));
+  $("g-out").addEventListener("click", () => zoomBy(0.8));
+
+  // splitter
+  const sp = $("splitter");
+  sp.addEventListener("pointerdown", e => {
+    sp.setPointerCapture(e.pointerId); sp.classList.add("drag");
+    const mv = ev => { const r = $("main").getBoundingClientRect(); const pct = Math.min(75, Math.max(25, (ev.clientX - r.left) / r.width * 100)); document.documentElement.style.setProperty("--left", pct + "%"); };
+    const upf = () => { sp.classList.remove("drag"); sp.removeEventListener("pointermove", mv); sp.removeEventListener("pointerup", upf); fit(false); };
+    sp.addEventListener("pointermove", mv); sp.addEventListener("pointerup", upf);
+  });
+  sp.addEventListener("keydown", e => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--left")) || 46;
+    document.documentElement.style.setProperty("--left", Math.min(75, Math.max(25, cur + (e.key === "ArrowLeft" ? -3 : 3))) + "%");
+    fit(false);
+  });
+
+  // ---------- call flow ----------
+  const FL = D.flows;
+  const METHOD_DESC = D.methodDescs || {};
+  const view = { mode: "map", stack: [], cur: -1, builtins: false, gen: 0, timers: [] };
+  const stage = $("stage");
+  const KIND = { fn: "k-fn", ext: "k-ext", method: "k-method", local: "k-method", param: "k-param", builtin: "k-param", other: "k-param" };
+  const hasLoops = Object.values(FL).some(u => JSON.stringify(u.tree).includes('"kind":"loop"'));
+  $("flegend").innerHTML = `
+    <div class="row"><span><span class="sw" style="--c: var(--accent)"></span>this file</span><span><span class="sw" style="--c: var(--ext)"></span>external import</span><span><span class="sw" style="--c: var(--method)"></span>controller method or local helper</span><span><span class="sw" style="--c: var(--muted)"></span>parameter or built-in</span></div>
+    <div class="row"><span><span class="sw" style="--c: var(--cond); --s: var(--cond-soft)"></span>conditional</span><span><span class="sw" style="--c: var(--try); --s: var(--try-soft)"></span>try</span><span><span class="sw" style="--c: var(--warn); --s: var(--warn-soft)"></span>catch</span><span><span class="sw" style="--c: var(--loop); --s: var(--loop-soft)"></span>loop${hasLoops ? "" : " (none in this file)"}</span><span><span class="sw" style="--c: var(--accent); border-style: dashed"></span>runs inside the call above</span></div>
+    <div>Numbers are execution order: arguments run before the call that receives them. Click a call to see its line in the code; Open › drills in.</div>`;
+
+  const unitTitle = id => { const u = FL[id]; return u.method ? `${u.method}()` : u.id; };
+  function metaFor(it) {
+    const t = it.target, bits = [];
+    if (t.kind === "fn") bits.push("this file");
+    else if (t.kind === "ext") bits.push(t.module === "harness" ? "AgentHarness method" : shortPath(t.module));
+    else if (t.kind === "method") bits.push(t.unit ? "controller method" : (t.note || "method"));
+    else if (t.kind === "local") bits.push("local helper");
+    else if (t.kind === "param") bits.push("parameter");
+    else if (t.kind === "builtin") bits.push("built-in");
+    if (it.argOf) bits.push(it.argOf === "(condition)" ? "evaluated in the condition" : `argument to ${it.argOf}()`);
+    if (it.optional) bits.push("optional call");
+    bits.push("L" + it.line);
+    return bits.join(" · ");
+  }
+  const drillOf = it => it.target.kind === "fn" ? it.target.id : it.target.kind === "method" && it.target.unit ? it.target.unit : null;
+  const keyOf = t => t.kind === "fn" ? "f:" + t.id : t.kind === "ext" ? "s:" + t.id : t.kind === "method" && t.of ? "f:" + t.of : "";
+  let stepNo = 0;
+  function renderItems(items) {
+    return items.map(it => {
+      if (it.t === "call") {
+        const innerOf = () => it.inner && it.inner.length ? `<div class="inner">${renderItems(it.inner)}</div>` : "";
+        if (!view.builtins && it.target.kind === "builtin") return innerOf();
+        const n = ++stepNo, d = drillOf(it), inner = innerOf();
+        return `<div class="st ${KIND[it.target.kind]}" data-line="${it.line}" data-key="${keyOf(it.target)}" tabindex="0">
+          <span class="num">${n}</span>
+          <span class="cl"><code>${esc(it.label)}()</code>${it.await ? '<span class="aw">await</span>' : ""}<span class="mt">${esc(metaFor(it))}</span></span>
+          ${d ? `<button class="drill" data-unit="${d}" title="Show the calls inside ${esc(it.label)}()">Open ›</button>` : "<span></span>"}
+        </div>${inner}`;
+      }
+      if (it.t === "block") {
+        const body = it.children.length ? renderItems(it.children) : `<div class="nocall">no calls</div>`;
+        return `<div class="blk b-${it.kind}" data-line="${it.line}"><div class="bl"><span class="kw">${esc(it.kw)}</span>${it.label ? `<code>${esc(it.label)}</code>` : ""}</div><div class="bc">${body || '<div class="nocall">no calls</div>'}</div></div>`;
+      }
+      if (it.t === "exit") {
+        const kw = it.kind === "throw" ? "throw" : it.early ? "early return" : "return";
+        const methods = it.methods ? `<span class="mchips">${it.methods.map(m => m.unit
+          ? `<button class="chip fn drill" data-unit="${m.unit}">.${m.name}()</button>`
+          : `<span class="chip" title="${m.from ? "function returned by " + m.from + "()" : ""}">.${m.name}()</span>`).join("")}</span>` : "";
+        return `<div class="ex x-${it.kind}${it.early ? " early" : ""}" data-line="${it.line}"><span class="kw">${kw}</span>${it.label ? `<code>${esc(it.label)}</code>` : ""}${methods}</div>`;
+      }
+      return "";
+    }).join("");
+  }
+  function flowStats(items, s = { calls: 0, branches: 0, tries: 0, loops: 0, callbacks: 0, awaits: 0 }) {
+    items.forEach(it => {
+      if (it.t === "call") { if (view.builtins || it.target.kind !== "builtin") s.calls++; if (it.await) s.awaits++; flowStats(it.inner || [], s); }
+      else if (it.t === "block") {
+        if (it.kind === "cond" && it.kw !== "else") s.branches++;
+        if (it.kind === "try") s.tries++;
+        if (it.kind === "loop") s.loops++;
+        if (it.kind === "callback") s.callbacks++;
+        flowStats(it.children, s);
+      }
+    });
+    return s;
+  }
+  function renderCrumbs() {
+    $("crumbs").innerHTML = view.stack.map((id, i) => (i ? '<span class="sep">›</span>' : "") +
+      (i === view.stack.length - 1 ? `<span class="crumb cur">${esc(unitTitle(id))}</span>` : `<button class="crumb" data-depth="${i}">${esc(unitTitle(id))}</button>`)).join("");
+  }
+  function drawSpine() {
+    const body = $("fbody"), sp = $("spine");
+    if (!sp) return;
+    const br = body.getBoundingClientRect();
+    sp.setAttribute("width", body.scrollWidth);
+    sp.setAttribute("height", body.scrollHeight);
+    const pts = [...body.querySelectorAll(".st .num")].map(n => { const r = n.getBoundingClientRect(); return { x: r.left - br.left + r.width / 2, y1: r.top - br.top, y2: r.bottom - br.top }; });
+    let h = "";
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], ym = b.y1 - 7;
+      h += `<path class="seg" data-i="${i}" pathLength="1" d="M${a.x},${a.y2} L${a.x},${ym} L${b.x},${ym} L${b.x},${b.y1}"/>`;
+    }
+    sp.innerHTML = h;
+  }
+  function stopPlay() { view.gen++; view.timers.forEach(clearTimeout); view.timers = []; }
+  function revealAll() {
+    stopPlay();
+    $("fbody").querySelectorAll(".hid, .off, .fly").forEach(e => { e.classList.remove("hid", "off", "fly"); e.style.transform = ""; e.style.transition = ""; });
+    $("fbody").querySelectorAll(".seg").forEach(x => x.classList.add("on"));
+  }
+  function play(src) {
+    stopPlay();
+    const body = $("fbody"), sc = $("fscroll");
+    const els = [...body.querySelectorAll(".ftree .st, .ftree .blk, .ftree .ex, .ftree .nocall")];
+    if (reduce) { revealAll(); return; }
+    els.forEach(e => e.classList.add(e.classList.contains("blk") ? "off" : "hid"));
+    const gen = view.gen;
+    // Whole sequence lands in about 0.8s: the stagger shrinks as the list grows.
+    const steps = els.filter(e => e.classList.contains("st")).length || 1;
+    const gap = Math.max(12, Math.min(40, 480 / steps));
+    let t = 30, step = 0;
+    els.forEach(e => {
+      const isStep = e.classList.contains("st"), my = isStep ? ++step : 0;
+      const from = src && isStep && e.dataset.key ? src.get(e.dataset.key) : null;
+      view.timers.push(setTimeout(() => {
+        if (gen !== view.gen) return;
+        if (e.classList.contains("blk")) { e.classList.remove("off"); return; }
+        if (from) {
+          e.style.transition = "none";
+          e.style.transform = "none";
+          e.classList.remove("hid");
+          const d = e.getBoundingClientRect();
+          e.style.transform = `translate(${from.left - d.left}px, ${from.top - d.top}px)`;
+          e.classList.add("fly");
+          e.getBoundingClientRect();
+          e.style.transition = "transform .38s cubic-bezier(.2,.8,.2,1), box-shadow .2s";
+          e.style.transform = "";
+          view.timers.push(setTimeout(() => e.classList.remove("fly"), 400));
+        } else e.classList.remove("hid");
+        if (my > 1) { const seg = body.querySelector(`.seg[data-i="${my - 1}"]`); if (seg) seg.classList.add("on"); }
+      }, t));
+      t += isStep ? gap : gap / 3;
+    });
+    view.timers.push(setTimeout(() => { if (gen === view.gen) view.timers = []; }, t + 420));
+  }
+  function renderFlow(src, animate = true) {
+    const id = view.stack[view.stack.length - 1], u = FL[id], f = byId[u.owner];
+    const desc = u.method ? (METHOD_DESC[u.method] || "") : f.desc;
+    stepNo = 0;
+    const tree = renderItems(u.tree);
+    const s = flowStats(u.tree);
+    $("fbody").innerHTML = `
+      <header class="fentry">
+        <div class="sig"><span class="kw">${u.async ? "async " : ""}${u.method ? "method" : "function"}</span><code>${esc(u.method || u.id)}(${esc(u.params.join(", "))})</code><span class="lines">L${u.start}–${u.end}</span></div>
+        ${u.method ? `<div class="mt">on the controller returned by <button class="chip fn drill" data-unit="${u.owner}">${u.owner}</button></div>` : ""}
+        <p>${esc(desc)}</p>
+        <div class="fsum">${[[s.calls, "call"], [s.branches, "conditional"], [s.tries, "try block"], [s.loops, "loop"], [s.callbacks, "callback"], [s.awaits, "await"]].map(([n, l]) => `<span class="stat"><b>${n}</b> ${l}${n === 1 ? "" : "s"}</span>`).join("")}</div>
+      </header>
+      <div class="ftree">${tree || '<div class="nocall">This function makes no calls.</div>'}</div>
+      <svg class="spine" id="spine" aria-hidden="true"></svg>`;
+    renderCrumbs();
+    view.cur = -1;
+    $("f-pos").textContent = `– / ${stepNo}`;
+    $("fscroll").scrollTop = 0;
+    drawSpine();
+    if (animate) play(src); else revealAll();
+  }
+  function captureMap() {
+    const m = new Map();
+    vp.querySelectorAll(".node").forEach(g => m.set("f:" + g.dataset.fn, g.querySelector("rect.box").getBoundingClientRect()));
+    vp.querySelectorAll(".sym").forEach(g => m.set("s:" + g.dataset.sym, g.getBoundingClientRect()));
+    return m;
+  }
+  function showView(mode) {
+    view.mode = mode;
+    stage.classList.toggle("flowmode", mode === "flow");
+    $("flowpane").hidden = mode !== "flow";
+    $("gctl").hidden = mode === "flow";
+    $("fctl").hidden = mode !== "flow";
+    $("tab-map").setAttribute("aria-selected", String(mode === "map"));
+    $("tab-flow").setAttribute("aria-selected", String(mode === "flow"));
+    if (mode === "map") { stopPlay(); hideTip(); }
+  }
+  function openFlow(id) {
+    const src = view.mode === "map" ? captureMap() : null;
+    view.stack = [id];
+    $("tab-flow").disabled = false;
+    $("tab-flow").title = "";
+    showView("flow");
+    renderFlow(src);
+  }
+  function drill(unitId) {
+    const at = view.stack.indexOf(unitId);
+    if (at >= 0) view.stack = view.stack.slice(0, at + 1); else view.stack.push(unitId);
+    const owner = FL[unitId].owner;
+    state.sel = { kind: "fn", id: owner };
+    applyFocus();
+    scrollCard(owner);
+    renderFlow(null);
+  }
+  function syncCode(line) {
+    const u = FL[view.stack[view.stack.length - 1]], card = cards[u.owner];
+    toggleCode(card, true);
+    document.querySelectorAll(".code .row.hl").forEach(r => r.classList.remove("hl"));
+    const row = [...card.querySelectorAll(".code .row")].find(r => +r.firstChild.textContent === line);
+    if (row) { row.classList.add("hl"); row.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" }); }
+  }
+  function setCur(i) {
+    const steps = [...$("fbody").querySelectorAll(".st")];
+    if (!steps.length) return;
+    if (view.timers.length) revealAll();
+    i = Math.max(0, Math.min(steps.length - 1, i));
+    view.cur = i;
+    steps.forEach((s, j) => s.classList.toggle("cur", j === i));
+    steps[i].scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    steps[i].focus({ preventScroll: true });
+    $("f-pos").textContent = `${i + 1} / ${steps.length}`;
+    syncCode(+steps[i].dataset.line);
+  }
+
+  $("fbody").addEventListener("click", e => {
+    const dr = e.target.closest(".drill");
+    if (dr) { drill(dr.dataset.unit); return; }
+    const st = e.target.closest(".st");
+    if (st) { setCur([...$("fbody").querySelectorAll(".st")].indexOf(st)); return; }
+    const other = e.target.closest(".bl, .ex");
+    if (other) { if (view.timers.length) revealAll(); syncCode(+other.closest("[data-line]").dataset.line); }
+  });
+  $("fbody").addEventListener("keydown", e => {
+    const st = e.target.closest(".st");
+    if (st && e.key === "Enter") { const d = st.querySelector(".drill"); if (d) drill(d.dataset.unit); else st.click(); }
+  });
+  $("crumbs").addEventListener("click", e => {
+    const c = e.target.closest("button.crumb");
+    if (!c) return;
+    view.stack = view.stack.slice(0, +c.dataset.depth + 1);
+    const owner = FL[view.stack[view.stack.length - 1]].owner;
+    state.sel = { kind: "fn", id: owner };
+    applyFocus();
+    scrollCard(owner);
+    renderFlow(null);
+  });
+  $("f-replay").addEventListener("click", () => renderFlow(null));
+  $("f-prev").addEventListener("click", () => setCur(view.cur < 0 ? 0 : view.cur - 1));
+  $("f-next").addEventListener("click", () => setCur(view.cur + 1));
+  $("f-builtins").addEventListener("click", () => {
+    view.builtins = !view.builtins;
+    $("f-builtins").setAttribute("aria-pressed", String(view.builtins));
+    renderFlow(null, false);
+  });
+  $("tab-map").addEventListener("click", () => showView("map"));
+  $("tab-flow").addEventListener("click", () => {
+    if (!view.stack.length || view.mode === "flow") return;
+    const src = captureMap();
+    showView("flow");
+    renderFlow(src);
+  });
+
+  renderGraph();
+  requestAnimationFrame(() => fit(false));
+  let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { fit(false); if (view.mode === "flow") { drawSpine(); if (!view.timers.length) $("fbody").querySelectorAll(".seg").forEach(x => x.classList.add("on")); } }, 120); });
+})();
+</script>
+</body>
+</html>

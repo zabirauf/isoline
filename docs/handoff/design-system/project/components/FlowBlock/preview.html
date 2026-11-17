@@ -1,0 +1,16 @@
+<!-- @dsCard group="Call flow" height=470 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"></head>
+<body class="iso-root">
+<div class="iso-flow">
+<div class="iso-blk iso-b-try"><div class="iso-blk-h"><span class="iso-kw">try</span></div>
+ <div class="iso-step iso-k-fn"><span class="iso-step-num">1</span><span class="iso-step-body"><code>assertAgentHarnessContextEngineSupport()</code><span class="iso-step-meta">this file · L367</span></span><span></span></div>
+ <div class="iso-blk iso-b-cond"><div class="iso-blk-h"><span class="iso-kw">if</span><code>(!harness.classify)</code></div><div class="iso-nocall">no calls</div></div>
+ <div class="iso-blk iso-b-cond"><div class="iso-blk-h"><span class="iso-kw">else</span></div><div class="iso-step iso-k-ext"><span class="iso-step-num">2</span><span class="iso-step-body"><code>harness.classify()</code><span class="iso-step-meta">AgentHarness method · L385</span></span><span></span></div></div>
+</div>
+<div class="iso-blk iso-b-catch"><div class="iso-blk-h"><span class="iso-kw">catch</span><code>(error)</code></div><div class="iso-step iso-k-method"><span class="iso-step-num">3</span><span class="iso-step-body"><code>diagnostics.fail()</code><span class="iso-step-meta">controller method · L402</span></span><span></span></div><div class="iso-exit iso-exit-throw"><span class="iso-kw">throw</span><code>error</code></div></div>
+<div class="iso-blk iso-b-finally"><div class="iso-blk-h"><span class="iso-kw">finally</span><code>always runs</code></div><div class="iso-step iso-k-method"><span class="iso-step-num">4</span><span class="iso-step-body"><code>diagnostics.unsubscribe()</code><span class="iso-step-meta">function returned by subscribeAgentCommentaryDiagnostics() · L405</span></span><span></span></div></div>
+<div class="iso-blk iso-b-loop"><div class="iso-blk-h"><span class="iso-kw">loop</span><code>each item of .map()</code></div><div class="iso-nocall">calls made once per item go here</div></div>
+<div class="iso-exit"><span class="iso-kw">return</span><code>result</code></div>
+</div>
+</body></html>

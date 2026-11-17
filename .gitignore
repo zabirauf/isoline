@@ -1,0 +1,10 @@
+/target
+node_modules/
+/app/ui/dist
+/app/src-tauri/target
+/app/src-tauri/gen
+/sidecar/copilot/bin
+/eval/work
+/eval/results/*.tmp
+.DS_Store
+*.log

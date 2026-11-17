@@ -1,0 +1,18 @@
+[package]
+name = "iso-ai"
+description = "AI orchestration: skeletons, Provider trait, budget, cache-first passes."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+iso-core = { workspace = true, default-features = false }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
+rusqlite.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,0 +1,12 @@
+.rbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.tabs button { border: 0; background: none; padding: 6px 12px; font-size: 12.5px; cursor: pointer; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.tabs button:disabled { cursor: not-allowed; opacity: .5; }
+.gctl, .fctl { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; align-items: center; }
+.gctl .btn[aria-pressed="true"], .fctl .btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.fpos { font: 12px var(--font-mono); color: var(--muted); min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+.stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+#svg { transition: opacity .2s; }
+.stage.flowmode #svg { opacity: 0; pointer-events: none; }
+.stage.flowmode #mlegend { display: none; }

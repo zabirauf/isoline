@@ -1,0 +1,82 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/iso-core",
+  "crates/iso-index",
+  "crates/iso-walk",
+  "crates/iso-parse",
+  "crates/iso-resolve",
+  "crates/iso-graph",
+  "crates/iso-cache",
+  "crates/iso-jobs",
+  "crates/iso-ai",
+  "crates/iso-engine",
+  "crates/iso-cli",
+]
+default-members = [
+  "crates/iso-core",
+  "crates/iso-index",
+  "crates/iso-walk",
+  "crates/iso-parse",
+  "crates/iso-resolve",
+  "crates/iso-graph",
+  "crates/iso-cache",
+  "crates/iso-jobs",
+  "crates/iso-ai",
+  "crates/iso-engine",
+  "crates/iso-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[workspace.dependencies]
+iso-core = { path = "crates/iso-core" }
+iso-index = { path = "crates/iso-index" }
+iso-walk = { path = "crates/iso-walk" }
+iso-parse = { path = "crates/iso-parse" }
+iso-resolve = { path = "crates/iso-resolve" }
+iso-graph = { path = "crates/iso-graph" }
+iso-cache = { path = "crates/iso-cache" }
+iso-jobs = { path = "crates/iso-jobs" }
+iso-ai = { path = "crates/iso-ai" }
+iso-engine = { path = "crates/iso-engine" }
+
+# Versions checked against crates.io on 2026-11-16.
+anyhow = "1.0.104"
+thiserror = "2.0.21"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+blake3 = "1.8.7"
+rayon = "1.12.0"
+parking_lot = "0.13.0"
+crossbeam-channel = "0.5.17"
+lru = "0.19.0"
+clap = { version = "4.6.8", features = ["derive"] }
+ts-rs = "12.0.1"
+rusqlite = { version = "0.43.0", features = ["bundled"] }
+ignore = "0.4.34"
+notify = "8.2.2"
+tree-sitter = "0.27.2"
+tree-sitter-tags = "0.27.2"
+tree-sitter-typescript = "0.23.2"
+tree-sitter-javascript = "0.25.0"
+tree-sitter-python = "0.25.0"
+tree-sitter-rust = "0.24.2"
+tree-sitter-html = "0.23.2"
+tree-sitter-css = "0.25.0"
+tree-sitter-go = "0.25.0"
+tree-sitter-java = "0.23.5"
+tree-sitter-c-sharp = "0.23.5"
+oxc_resolver = "11.24.3"
+tempfile = "3"
+pretty_assertions = "1"
+
+[profile.release]
+debug = 1
+lto = "thin"
+
+[profile.dev.package."*"]
+opt-level = 2

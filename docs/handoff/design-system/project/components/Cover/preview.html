@@ -1,0 +1,31 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; }
+.cover { position: relative; width: 960px; height: 288px; background: var(--bg); overflow: hidden; }
+.cover svg { position: absolute; inset: 0; }
+.ink { fill: var(--ink); } .accent { fill: var(--accent); } .ext { fill: var(--ext); } .user { fill: var(--user); } .method { fill: var(--method); }
+.r10 { rx: var(--radius-10); }
+.contour { fill: none; stroke: var(--bg); stroke-width: 2; }
+.name { position: absolute; left: 40px; bottom: 74px; margin: 0; font: 600 96px/.9 var(--font-display); color: var(--ink); letter-spacing: -0.01em; }
+.tag { position: absolute; left: 42px; bottom: 30px; margin: 0; max-width: 440px; font: 13px/1.4 var(--font-body); color: var(--muted); }
+</style></head>
+<body><div class="cover">
+<!--
+blocks: ink 112x240, accent 200x152, ext 128x96, user 128x44, method 340x76; corners radius-10
+arrangement: a flush modular grid with space-12 gaps, like graph layers, bleeding off the right edge
+pattern: literal motif. Isolines are contour lines, so five concentric rings in the ground color cut through the blocks from one summit
+steps and radii: space-12 gaps, space-12 and space-14 insets, ring pitch 24 (2 x space-12), radius-10
+-->
+<svg viewBox="0 0 960 288" width="960" height="288" aria-hidden="true">
+<rect class="ink r10" x="496" y="24" width="112" height="240"/>
+<rect class="accent r10" x="620" y="24" width="200" height="152"/>
+<rect class="ext r10" x="832" y="24" width="140" height="96"/>
+<rect class="user r10" x="832" y="132" width="140" height="44"/>
+<rect class="method r10" x="620" y="188" width="352" height="76"/>
+<circle class="contour" cx="760" cy="150" r="36"/><circle class="contour" cx="760" cy="150" r="60"/><circle class="contour" cx="760" cy="150" r="84"/><circle class="contour" cx="760" cy="150" r="108"/><circle class="contour" cx="760" cy="150" r="132"/>
+</svg>
+<p class="name">Isoline</p>
+<p class="tag">Read the shape of a codebase, then drill into the code.</p>
+</div></body></html>

@@ -2,8 +2,47 @@
 //!
 //! Contract (frozen in phase 0): `Provider`, `CompletionRequest`, `Completion`, `ModelInfo`.
 //! Owned by workstream I (with the sidecar, workstream F).
+//!
+//! The rest of the crate is built around those types:
+//!
+//! - [`skeleton`] turns file facts, source and call flow into compact per-symbol skeletons.
+//! - [`AiCache`] keeps every answer in the shared `ai_cache` table, keyed by content hash,
+//!   [`PROMPT_VERSION`], model and kind.
+//! - [`AiEngine`] plans, estimates and runs the leaf, cluster and repo passes, cache first,
+//!   within a budget.
+//! - [`SidecarProvider`] talks to the Go Copilot sidecar over JSON-RPC on stdio.
+//!
+//! See `crates/iso-ai/README.md` for the engine-facing API.
 
 use serde::{Deserialize, Serialize};
+
+pub mod cache;
+pub mod engine;
+pub mod mock;
+pub mod palette;
+pub mod parse;
+pub mod pricing;
+pub mod prompts;
+pub mod sidecar;
+pub mod skeleton;
+pub mod tokens;
+
+mod cluster;
+mod leaf;
+
+pub use cache::AiCache;
+pub use engine::{
+    AiEngine, AiSettings, CachedFile, ClusterReport, Estimate, FileInput, FullReport, ItemError,
+    ModuleInput, ModuleSummary, Pass, PassEstimate, Progress, RepoLayer, RepoOverview, RepoReport,
+    RunReport,
+};
+pub use mock::MockProvider;
+pub use palette::{ModuleColor, PALETTE};
+pub use pricing::{PricingTable, default_models};
+pub use prompts::PROMPT_VERSION;
+pub use sidecar::{DeviceCode, SidecarConfig, SidecarProvider, SidecarStatus};
+pub use skeleton::{FileSkeleton, SkeletonOptions, SymbolSkeleton, build_skeleton};
+pub use tokens::estimate_tokens;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -53,4 +92,13 @@ pub enum AiError {
 pub trait Provider: Send + Sync {
     fn list_models(&self) -> Result<Vec<ModelInfo>, AiError>;
     fn complete(&self, req: &CompletionRequest) -> Result<Completion, AiError>;
+}
+
+impl<P: Provider + ?Sized> Provider for std::sync::Arc<P> {
+    fn list_models(&self) -> Result<Vec<ModelInfo>, AiError> {
+        (**self).list_models()
+    }
+    fn complete(&self, req: &CompletionRequest) -> Result<Completion, AiError> {
+        (**self).complete(req)
+    }
 }

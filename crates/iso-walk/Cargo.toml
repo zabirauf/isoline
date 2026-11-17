@@ -10,7 +10,6 @@ iso-core = { workspace = true, default-features = false }
 ignore.workspace = true
 notify.workspace = true
 blake3.workspace = true
-rayon.workspace = true
 crossbeam-channel.workspace = true
 serde.workspace = true
 anyhow.workspace = true

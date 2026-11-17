@@ -1,10 +1,18 @@
 # iso-cli: index a repo and query it from the terminal (index, file, flow, impact, bench, ...).
-{ lib, rustPlatform }:
+{
+  lib,
+  rustPlatform,
+  pkg-config,
+  sqlite,
+}:
 rustPlatform.buildRustPackage {
   pname = "iso-cli";
   version = "0.1.0";
   src = import ./source.nix { inherit lib; };
   cargoLock.lockFile = ../Cargo.lock;
+  # rusqlite bundles SQLite, but the link line still names libsqlite3 under Nix's cc wrapper.
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ sqlite ];
   cargoBuildFlags = [
     "-p"
     "iso-cli"

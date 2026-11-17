@@ -14,6 +14,7 @@
   libsoup_3,
   librsvg,
   openssl,
+  sqlite,
   copilot-sidecar,
 }:
 rustPlatform.buildRustPackage {
@@ -35,7 +36,7 @@ rustPlatform.buildRustPackage {
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [ wrapGAppsHook3 ];
 
-  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+  buildInputs = [ sqlite ] ++ lib.optionals stdenv.hostPlatform.isLinux [
     webkitgtk_4_1
     gtk3
     glib-networking

@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@acme/core": ["packages/core/src/index.ts"],
+      "@acme/core/*": ["packages/core/src/*"]
+    }
+  }
+}

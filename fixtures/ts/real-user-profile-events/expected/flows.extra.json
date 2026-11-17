@@ -1,0 +1,44 @@
+{
+  "UserProfileMutationUnsettledError.constructor": {
+    "id": "UserProfileMutationUnsettledError.constructor",
+    "owner": "UserProfileMutationUnsettledError",
+    "method": "constructor",
+    "start": 31,
+    "end": 38,
+    "async": false,
+    "params": ["kind"],
+    "tree": [
+      {
+        "t": "call",
+        "label": "super",
+        "target": { "kind": "other" },
+        "line": 32,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+      }
+    ]
+  },
+  "mutationKey": {
+    "id": "mutationKey",
+    "owner": "mutationKey",
+    "method": null,
+    "start": 278,
+    "end": 279,
+    "async": false,
+    "params": ["kind", "id"],
+    "tree": [
+      {
+        "t": "call",
+        "label": "JSON.stringify",
+        "target": { "kind": "builtin", "id": "JSON.stringify" },
+        "line": 279,
+        "await": false,
+        "optional": false,
+        "argOf": null,
+        "inner": []
+      }
+    ]
+  }
+}

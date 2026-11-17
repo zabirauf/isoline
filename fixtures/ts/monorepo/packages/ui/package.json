@@ -1,0 +1,9 @@
+{
+  "name": "@acme/ui",
+  "version": "1.0.0",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "source": "./src/index.ts" },
+    "./card": "./src/card.tsx",
+    "./button/*": "./src/button/*.tsx"
+  }
+}

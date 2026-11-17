@@ -12,6 +12,7 @@ pub mod html;
 pub mod js;
 pub mod python;
 pub mod rust;
+pub mod scip;
 
 /// Outcome of resolving one import.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

@@ -17,10 +17,12 @@ use parking_lot::{Mutex, RwLock};
 mod edges;
 mod indexer;
 mod modules;
+mod precise;
 mod view;
 mod watch;
 
 pub use indexer::IndexReport;
+pub use precise::PreciseReport;
 pub use view::AiHook;
 
 /// Events the engine emits. The Tauri shell forwards them to the UI; the CLI prints them.

@@ -25,3 +25,5 @@ crossbeam-channel.workspace = true
 [dev-dependencies]
 tempfile.workspace = true
 pretty_assertions.workspace = true
+scip = "0.10.0"
+protobuf = "3"

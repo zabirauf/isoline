@@ -196,3 +196,70 @@ fn cross_file_view_and_impact() {
     let hits = e.search("hand", 10).unwrap();
     assert_eq!(hits[0].name, "handle");
 }
+
+#[test]
+fn precise_index_corrects_a_wrong_heuristic_edge() {
+    use protobuf::Message;
+    use scip::types::{Document, Index, Occurrence, SymbolRole};
+    let src = tempfile::tempdir().unwrap();
+    let r = src.path();
+    // `thing` is a default import; the name heuristic matches the unrelated export `thing`.
+    write(
+        r,
+        "src/b.ts",
+        "export default function create() {\n  return 1;\n}\n\nexport function thing() {\n  return 2;\n}\n",
+    );
+    write(
+        r,
+        "src/a.ts",
+        "import thing from \"./b\";\n\nexport function main() {\n  return thing();\n}\n",
+    );
+    let data = tempfile::tempdir().unwrap();
+    let e = open(r, data.path());
+    e.index().unwrap();
+    let main = e
+        .file_view("src/a.ts")
+        .unwrap()
+        .functions
+        .into_iter()
+        .find(|f| f.name == "main")
+        .unwrap();
+    let before = e.impact(main.id, false).unwrap();
+    assert_eq!(
+        before.dependencies[0].name, "thing",
+        "heuristic edge goes to the wrong export"
+    );
+    assert_eq!(
+        before.dependencies[0].confidence,
+        iso_core::Confidence::Heuristic
+    );
+
+    let sym = "scip-typescript npm demo 1.0.0 src/`b.ts`/create().";
+    let occ = |line: i32, def: bool| {
+        let mut o = Occurrence::new();
+        o.range = vec![line, 9, 15];
+        o.symbol = sym.into();
+        o.symbol_roles = if def {
+            SymbolRole::Definition as i32
+        } else {
+            0
+        };
+        o
+    };
+    let mut a = Document::new();
+    a.relative_path = "src/a.ts".into();
+    a.occurrences = vec![occ(3, false)];
+    let mut b = Document::new();
+    b.relative_path = "src/b.ts".into();
+    b.occurrences = vec![occ(0, true)];
+    let mut idx = Index::new();
+    idx.documents = vec![a, b];
+    let rep = e.import_scip(&idx.write_to_bytes().unwrap()).unwrap();
+    assert_eq!(rep.corrected, 1, "{rep:?}");
+    let after = e.impact(main.id, false).unwrap();
+    assert_eq!(after.dependencies[0].name, "create");
+    assert_eq!(
+        after.dependencies[0].confidence,
+        iso_core::Confidence::Exact
+    );
+}

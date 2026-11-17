@@ -798,6 +798,30 @@ pub fn search_paths(conn: &Connection, q: &str, limit: usize) -> Result<Vec<Stri
     Ok(rows)
 }
 
+/// Outgoing edges of every symbol in a file.
+pub fn edges_from_file(conn: &Connection, file: FileId) -> Result<Vec<EdgeRow>> {
+    let mut st = conn.prepare_cached(&format!(
+        "SELECT {EDGE_COLS} FROM edges WHERE from_file = ?1"
+    ))?;
+    Ok(st
+        .query_map([file.as_i64()], edge_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
+/// Point an edge at a (possibly different) target and set its confidence.
+pub fn retarget_edge(
+    conn: &Connection,
+    from: SymbolId,
+    old_to: SymbolId,
+    new_to: SymbolId,
+    line: u32,
+    c: Confidence,
+) -> Result<usize> {
+    Ok(conn
+        .prepare_cached("UPDATE edges SET to_symbol = ?3, confidence = ?5 WHERE from_symbol = ?1 AND to_symbol = ?2 AND line = ?4")?
+        .execute(params![from.as_i64(), old_to.as_i64(), new_to.as_i64(), line, c.as_str()])?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -22,7 +22,8 @@ github:zabirauf/isoline#iso-cli -- --help` gives the command line. The flake als
 
 These builds are not code-signed yet.
 
-- **macOS:** the first time, right-click Isoline and choose Open, or run
+- **macOS:** the app is ad-hoc signed, not notarized. The first time, right-click Isoline
+  and choose Open (on recent macOS: System Settings, Privacy & Security, Open Anyway), or run
   `xattr -dr com.apple.quarantine /Applications/Isoline.app`.
 - **Windows:** SmartScreen warns about an unknown publisher; choose More info, then Run anyway.
 

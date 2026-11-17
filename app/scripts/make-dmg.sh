@@ -18,5 +18,10 @@ case "$triple" in
 esac
 mkdir -p "$out"
 dmg="$out/Isoline_${version}_${arch}.dmg"
+# Seal the bundle with an ad-hoc signature (no identity yet). Without it only the binaries
+# carry the linker's signature, and a downloaded copy is reported as "damaged" instead of
+# from an unidentified developer.
+codesign --force --deep --sign - "$app"
+codesign --verify --deep --strict "$app"
 hdiutil create -volname Isoline -srcfolder "$app" -ov -format UDZO "$dmg" >/dev/null
 echo "$dmg"

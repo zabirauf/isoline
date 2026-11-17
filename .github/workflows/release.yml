@@ -95,6 +95,7 @@ jobs:
           dist=dist && mkdir -p "$dist"
           case "${{ runner.os }}" in
             macOS)
+              # Ad-hoc signs the bundle, then packs the DMG.
               sh app/scripts/make-dmg.sh ${{ matrix.target }}
               cp "$rel"/bundle/dmg/*.dmg "$dist/"
               # A zipped .app as well, for scripted installs (the Nix package uses it).

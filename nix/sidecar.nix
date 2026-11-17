@@ -16,7 +16,7 @@ build {
     fileset = lib.fileset.difference ../sidecar/copilot (lib.fileset.maybeMissing ../sidecar/copilot/bin);
   };
   modRoot = "live";
-  vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+  vendorHash = "sha256-seSEcMzFEWOBIWRD3saBJ/qb/R6F6GxQ+jYFlWoIRyo=";
   env.CGO_ENABLED = 0;
   ldflags = [
     "-s"

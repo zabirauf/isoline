@@ -27,6 +27,7 @@
         iso-cli = {
           type = "app";
           program = "${self.packages.${pkgs.stdenv.hostPlatform.system}.iso-cli}/bin/iso-cli";
+          meta.description = "Command-line interface to the Isoline code index";
         };
       });
 

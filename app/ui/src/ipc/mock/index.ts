@@ -361,6 +361,7 @@ function generatedFile(node: TreeNode): MockFile {
     overview: null,
     hasErrors: false,
     module,
+    targets: [] as FileView["targets"],
   };
   if (tier === "full" && (lang === "typescript" || lang === "javascript")) {
     const src = [
@@ -402,6 +403,14 @@ function generatedFile(node: TreeNode): MockFile {
       externalCallers: exported ? 1 : 0,
       summary: null,
       unit: name,
+      sig: {
+        params: name.endsWith("Init")
+          ? [{ name: "options", typeText: "Record<string, unknown>", default: "{}", rest: false, optional: true }]
+          : name.endsWith("Load")
+            ? [{ name: "options", typeText: "Record<string, unknown>", default: null, rest: false, optional: false }]
+            : [{ name: "state", typeText: "{ loadedAt: number }", default: null, rest: false, optional: false }],
+        returns: null,
+      },
     });
     const fns = [
       card(`${stem}Init`, 3, 6, 1, [`${stem}Load`, `${stem}Handle`], [], true),
@@ -417,7 +426,13 @@ function generatedFile(node: TreeNode): MockFile {
     return {
       source: src,
       flows,
-      view: { ...common, lines: src.split("\n").length - 1, layers: 2, functions: fns, outline: [], flowUnits: fns.map((f) => ({ id: f.name, owner: f.name, method: null, start: f.start, end: f.end, summary: null })) },
+      view: {
+        ...common,
+        targets: [
+          ...fns.map((f) => ({ name: f.name, origin: "local" as const, kind: "function" as const, path: node.path, start: f.start, end: f.end, module: null, doc: null, signature: f.signature })),
+          ...["Record", "string", "unknown", "number"].map((name) => ({ name, origin: "builtin" as const, kind: null, path: null, start: 0, end: 0, module: null, doc: null, signature: null })),
+        ],
+        lines: src.split("\n").length - 1, layers: 2, functions: fns, outline: [], flowUnits: fns.map((f) => ({ id: f.name, owner: f.name, method: null, start: f.start, end: f.end, summary: null })) },
     };
   }
   const src =

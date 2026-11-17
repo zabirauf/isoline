@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import type { Tier } from "../ipc/bindings/Tier";
 import { plural } from "../lib/format";
+import { usePeek } from "./Peek";
 
 export function StatPill({ n, noun, pluralForm }: { n: number; noun: string; pluralForm?: string }) {
   const text = plural(n, noun, pluralForm);
@@ -28,8 +29,10 @@ export function Seg<T extends string>({ label, value, options, onChange }: { lab
 
 /** Marks text written by a model. Model text is a suggestion, so the marker says where it came from. */
 export function AiMark({ model }: { model: string }) {
+  const peek = usePeek();
+  const bind = peek.bind(() => ({ kind: "text", title: "Written by a model", body: `${model} wrote this. It can be wrong; the code is the source of truth.` }));
   return (
-    <span className="ai-mark" title={`Written by a model (${model}). It can be wrong; the code is the source of truth.`} aria-label={`Written by a model, ${model}`}>
+    <span className="ai-mark" aria-label={`Written by a model, ${model}`} onPointerEnter={bind.onPointerEnter} onPointerLeave={bind.onPointerLeave}>
       AI
     </span>
   );
@@ -49,8 +52,10 @@ export const TIER_HELP: Record<Tier, string> = {
 };
 
 export function TierBadge({ tier }: { tier: Tier }) {
+  const peek = usePeek();
+  const bind = peek.bind(() => ({ kind: "text", title: `${TIER_WORD[tier]} tier`, body: TIER_HELP[tier] }));
   return (
-    <span className={`tier-badge tier-${tier}`} title={TIER_HELP[tier]}>
+    <span className={`tier-badge tier-${tier}`} onPointerEnter={bind.onPointerEnter} onPointerLeave={bind.onPointerLeave}>
       {TIER_WORD[tier]}
     </span>
   );

@@ -3,9 +3,12 @@
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import type { FlowUnit } from "../ipc/bindings/FlowUnit";
 import { drillOf, exitKeyword, flowStats, keyOf, KIND_CLASS, metaParts, numberFlow, spinePath, STAT_LABELS, staggerMs, unitTitle, type CallItem, type FlowNode } from "../lib/flow";
-import { lineRange } from "../lib/format";
+import { lineRange, plural } from "../lib/format";
 import { prefersReducedMotion } from "../lib/theme";
 import { StatPill } from "../components/ui";
+import type { SigInfo } from "../ipc/bindings/SigInfo";
+import type { Detail } from "../lib/prefs";
+import { Signature, type TypeLinkHandlers } from "./Signature";
 
 export interface CallFlowProps {
   unit: FlowUnit;
@@ -25,6 +28,16 @@ export interface CallFlowProps {
   onDrill(unit: string): void;
   onCrumb(depth: number): void;
   onLine(line: number): void;
+  detail: Detail;
+  /** The owning card's typed signature, for top-level units. */
+  sig: SigInfo | null;
+  links: TypeLinkHandlers;
+  /** The color key under the flow (toggled by "Key" in the toolbar). */
+  showKey: boolean;
+  /** ⌘-click on a step: go to the callee's definition. */
+  onGoToStep(it: CallItem): void;
+  /** Click on the module path in a step's meta line: open that file at the callee. */
+  onOpenStepPath(it: CallItem): void;
 }
 
 export function CallFlow(p: CallFlowProps) {
@@ -168,8 +181,18 @@ export function CallFlow(p: CallFlowProps) {
     el.focus({ preventScroll: true });
   }, [p.cur]);
 
+  const steps = numbered.steps;
   const onClick = (e: React.MouseEvent) => {
     const t = e.target as HTMLElement;
+    const mp = t.closest<HTMLElement>("[data-step-path]");
+    if (mp) {
+      p.onOpenStepPath(steps[Number(mp.dataset.stepPath)]);
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && t.closest(".iso-step")) {
+      p.onGoToStep(steps[Number(t.closest<HTMLElement>(".iso-step")!.dataset.i)]);
+      return;
+    }
     const dr = t.closest<HTMLElement>("[data-unit]");
     if (dr) {
       p.onDrill(dr.dataset.unit!);
@@ -199,6 +222,7 @@ export function CallFlow(p: CallFlowProps) {
 
   return (
     <section className="flowpane" aria-label="Call flow">
+      {p.stack.length > 1 && (
       <nav className="crumbs" aria-label="Drill-down path">
         {p.stack.map((id, i) => (
           <Fragment key={id + i}>
@@ -213,6 +237,7 @@ export function CallFlow(p: CallFlowProps) {
           </Fragment>
         ))}
       </nav>
+      )}
       <div className="fscroll" ref={scrollRef}>
         <div className="fbody" ref={bodyRef} onClick={onClick} onKeyDown={onKeyDown}>
           <header className="fentry">
@@ -222,11 +247,14 @@ export function CallFlow(p: CallFlowProps) {
                   {unit.async ? "async " : ""}
                   {unit.method ? "method" : "function"}
                 </span>{" "}
-                <code>
-                  {unit.method ?? unit.id}({unit.params.join(", ")})
-                </code>
+                {p.sig && !unit.method ? (
+                  <Signature sig={p.sig} detail={p.detail} links={p.links} inline namesOnly={p.detail !== "dig"} lead={<code className="fname">{unit.id}</code>} />
+                ) : (
+                  <code>
+                    {unit.method ?? unit.id}({unit.params.join(", ")})
+                  </code>
+                )}
               </span>
-              <span className="iso-lines">{lineRange(unit.start, unit.end)}</span>
             </div>
             {unit.method && (
               <div className="mt">
@@ -237,17 +265,30 @@ export function CallFlow(p: CallFlowProps) {
               </div>
             )}
             {p.desc && <p>{p.desc}</p>}
-            <div className="fsum">
-              {STAT_LABELS.map(([k, noun]) => (
-                <StatPill key={k} n={stats[k]} noun={noun} />
-              ))}
-            </div>
+            {p.detail === "dig" ? (
+              <div className="fsum">
+                {STAT_LABELS.map(([k, noun]) => (
+                  <StatPill key={k} n={stats[k]} noun={noun} />
+                ))}
+                <span className="iso-lines">{lineRange(unit.start, unit.end)}</span>
+              </div>
+            ) : (
+              // Glance and Read: the non-zero counts as one quiet line; the pills return at Dig.
+              <div className="fsum fsum-quiet">
+                <span>
+                  {STAT_LABELS.filter(([k]) => stats[k] > 0)
+                    .map(([k, noun]) => plural(stats[k], noun))
+                    .join(" · ")}
+                </span>
+                <span className="iso-lines">{lineRange(unit.start, unit.end)}</span>
+              </div>
+            )}
           </header>
           <FlowTree nodes={numbered.nodes} units={p.units} cur={p.cur} />
           <svg className="spine" ref={spineRef} aria-hidden="true" />
         </div>
       </div>
-      <FlowLegend hasLoops={p.hasLoops} />
+      {p.showKey && <FlowLegend hasLoops={p.hasLoops} />}
     </section>
   );
 }
@@ -269,12 +310,17 @@ function renderNodes(nodes: FlowNode[], units: ReadonlySet<string>, cur: number)
             <span className="iso-step-body">
               <code>{it.label}()</code>
               {it.await && <span className="iso-await">await</span>}
-              <StepMeta it={it} />
+              <StepMeta it={it} i={nd.n - 1} />
             </span>
             {d ? (
-              <button type="button" className="iso-btn-drill" data-unit={d} title={`Show the calls inside ${it.label}()`}>
-                Open ›
-              </button>
+              <span className="drill-slot">
+                <span className="drill-rest" aria-hidden="true">
+                  ›
+                </span>
+                <button type="button" className="iso-btn-drill" data-unit={d} aria-label={`Open the calls inside ${it.label}()`}>
+                  Open ›
+                </button>
+              </span>
             ) : (
               <span />
             )}
@@ -321,13 +367,23 @@ function renderNodes(nodes: FlowNode[], units: ReadonlySet<string>, cur: number)
   });
 }
 
-function StepMeta({ it }: { it: CallItem }) {
+function StepMeta({ it, i: stepIndex }: { it: CallItem; i: number }) {
   return (
     <span className="iso-step-meta">
       {metaParts(it).map((bit, i) => (
         <Fragment key={i}>
           {i > 0 && " · "}
-          {bit.map((p, j) => (p.mono ? <code key={j}>{p.text}</code> : <Fragment key={j}>{p.text}</Fragment>))}
+          {bit.map((p, j) =>
+            p.mono && i === 0 && it.target.kind === "ext" ? (
+              <button key={j} type="button" className="meta-path" data-step-path={stepIndex}>
+                {p.text}
+              </button>
+            ) : p.mono ? (
+              <code key={j}>{p.text}</code>
+            ) : (
+              <Fragment key={j}>{p.text}</Fragment>
+            ),
+          )}
         </Fragment>
       ))}
     </span>

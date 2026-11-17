@@ -19,19 +19,70 @@ import { AiPanel } from "./components/AiPanel";
 import { RepoOverview } from "./components/RepoOverview";
 import { StartScreen } from "./components/StartScreen";
 import { Seg } from "./components/ui";
-import { Workbench } from "./file/Workbench";
+import { Menu } from "./components/Menu";
+import { PeekProvider, usePeek } from "./components/Peek";
+import { Workbench, type WorkbenchLocation } from "./file/Workbench";
 import { PlainFile } from "./file/PlainFile";
+import { describe, EMPTY_HISTORY, goBack as historyBack, goForward as historyForward, push, type History, type Location } from "./lib/history";
 
 interface OpenFile {
   path: string;
   symbol: string | null;
   line: number | null;
   nonce: number;
+  /** Selection and scroll to restore (Back, Forward). */
+  restore?: WorkbenchLocation | null;
+}
+
+export function App() {
+  return (
+    <PeekProvider>
+      <Shell />
+    </PeekProvider>
+  );
+}
+
+/** Hold ⌘ (Ctrl elsewhere) to underline every go-to-definition target in the pane under the pointer. */
+function useCmdHold() {
+  useEffect(() => {
+    let under: Element | null = null;
+    let lit: Element | null = null;
+    const isMac = navigator.platform.toLowerCase().includes("mac");
+    const clear = () => {
+      lit?.classList.remove("cmd-links");
+      lit = null;
+    };
+    const light = () => {
+      clear();
+      lit = under?.closest(".pane-left, .pane-right, .iso-peek, .repo-page, .sidebar") ?? null;
+      lit?.classList.add("cmd-links");
+    };
+    const onMove = (e: PointerEvent) => {
+      under = e.target as Element;
+      if (lit && (e.metaKey || e.ctrlKey)) light();
+    };
+    const onDown = (e: KeyboardEvent) => {
+      if ((isMac && e.key === "Meta") || (!isMac && e.key === "Control")) light();
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if (e.key === "Meta" || e.key === "Control") clear();
+    };
+    document.addEventListener("pointermove", onMove, true);
+    document.addEventListener("keydown", onDown, true);
+    document.addEventListener("keyup", onUp, true);
+    window.addEventListener("blur", clear);
+    return () => {
+      document.removeEventListener("pointermove", onMove, true);
+      document.removeEventListener("keydown", onDown, true);
+      document.removeEventListener("keyup", onUp, true);
+      window.removeEventListener("blur", clear);
+    };
+  }, []);
 }
 
 const PHASE_TEXT = { walk: "walking", parse: "parsing", resolve: "resolving imports", graph: "building the graph", done: "done" } as const;
 
-export function App() {
+function Shell() {
   const [repo, setRepo] = useState<RepoSummary | null>(null);
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [moduleMap, setModuleMap] = useState<ModuleMap | null>(null);
@@ -39,7 +90,13 @@ export function App() {
   const [file, setFile] = useState<OpenFile | null>(null);
   const [view, setView] = useState<FileView | null>(null);
   const [viewError, setViewError] = useState<string | null>(null);
-  const [history, setHistory] = useState<OpenFile[]>([]);
+  const [history, setHistory] = useState<History>(EMPTY_HISTORY);
+  const [aiOpen, setAiOpen] = useState(0);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const locationOf = useRef<(() => WorkbenchLocation) | null>(null);
+  const pickRepoRef = useRef<() => Promise<void>>(async () => {});
+  const peek = usePeek();
+  useCmdHold();
   const [progress, setProgress] = useState<IndexProgress | null>(null);
   const [jobs, setJobs] = useState<JobsState | null>(null);
   const [ai, setAi] = useState<AiStatus | null>(null);
@@ -90,7 +147,7 @@ export function App() {
         setRepo(r);
         setFile(null);
         setView(null);
-        setHistory([]);
+        setHistory(EMPTY_HISTORY);
         invalidate();
         refreshRepoData();
         void api.getJobs().then(setJobs);
@@ -107,21 +164,63 @@ export function App() {
     const p = await api.pickFolder();
     if (p) await openRepo(p);
   }, [openRepo]);
+  pickRepoRef.current = pickRepo;
 
-  const openFile = useCallback((path: string, opts?: { line?: number | null; symbol?: string | null }) => {
-    setFile((cur) => {
-      if (cur && cur.path !== path) setHistory((h) => [...h.slice(-49), cur]);
-      return { path, symbol: opts?.symbol ?? null, line: opts?.line ?? null, nonce: (cur?.nonce ?? 0) + 1 };
-    });
+  /** Where the reader is now, as a history entry. */
+  const here = useCallback((): Location | null => {
+    const f = fileRef.current;
+    if (!f) return null;
+    const l = locationOf.current?.() ?? { selection: null, scroll: 0 };
+    return { path: f.path, symbol: f.symbol, line: f.line, selection: l.selection, scroll: l.scroll };
   }, []);
 
-  const goBack = useCallback(() => {
-    setHistory((h) => {
-      const prev = h[h.length - 1];
-      if (prev) setFile({ ...prev, nonce: prev.nonce + 1 });
-      return h.slice(0, -1);
-    });
-  }, []);
+  const pushHere = useCallback(() => {
+    const h = here();
+    if (h) setHistory((x) => push(x, h));
+  }, [here]);
+
+  /** Every file open and every go to definition records where the reader was. */
+  const openFile = useCallback(
+    (path: string, opts?: { line?: number | null; symbol?: string | null }) => {
+      pushHere();
+      peek.close();
+      setFile((cur) => ({ path, symbol: opts?.symbol ?? null, line: opts?.line ?? null, nonce: (cur?.nonce ?? 0) + 1 }));
+    },
+    [pushHere, peek],
+  );
+
+  const travel = useCallback(
+    (dir: "back" | "forward") => {
+      const cur = here();
+      if (!cur) return;
+      const r = dir === "back" ? historyBack(history, cur) : historyForward(history, cur);
+      if (!r) return;
+      setHistory(r.history);
+      peek.close();
+      setFile((f) => ({ path: r.to.path, symbol: null, line: null, nonce: (f?.nonce ?? 0) + 1, restore: { selection: r.to.selection, scroll: r.to.scroll } }));
+    },
+    [history, here, peek],
+  );
+
+  // ⌘[ and ⌘] (Ctrl elsewhere), the mouse's back and forward buttons, ⌘O to open a repo.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      if (e.key === "[") (e.preventDefault(), travel("back"));
+      else if (e.key === "]") (e.preventDefault(), travel("forward"));
+      else if (e.key === "o") (e.preventDefault(), void pickRepoRef.current());
+    };
+    const onMouse = (e: MouseEvent) => {
+      if (e.button === 3) (e.preventDefault(), travel("back"));
+      else if (e.button === 4) (e.preventDefault(), travel("forward"));
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mouseup", onMouse);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mouseup", onMouse);
+    };
+  }, [travel]);
 
   // Load the file view whenever another file opens.
   useEffect(() => {
@@ -151,84 +250,121 @@ export function App() {
   const onSearchPick = useCallback((h: SearchHit) => openFile(h.path, { line: h.line, symbol: h.kind === "symbol" ? h.name : null }), [openFile]);
 
   const showView = view && file && view.path === file.path ? view : null;
-  const indexing = progress && progress.phase !== "done";
+  const indexing = !!progress && progress.phase !== "done";
+  const justIndexed = !!progress && progress.phase === "done";
+  const jobsRunning = !!jobs && !!repo && jobs.running > 0;
+  const registerLocation = useCallback((f: (() => WorkbenchLocation) | null) => {
+    locationOf.current = f;
+  }, []);
 
   return (
     <div className="app">
       <header className="appbar">
         {/* The native window's title bar already says "Isoline"; the wordmark is for the browser. */}
         {mode !== "tauri" && (
-          <button type="button" className="wordmark" onClick={() => setFile(null)} title={repo ? "Repo overview" : undefined} disabled={!repo}>
+          <button type="button" className="wordmark" onClick={() => setFile(null)} disabled={!repo}>
             Isoline
           </button>
         )}
         {repo && (
-          <button type="button" className="reponame" onClick={() => setFile(null)} title={`${repo.root}: show the repo overview`}>
-            {repo.name}
-          </button>
-        )}
-        {repo && (
-          <button type="button" className="iso-btn" onClick={() => void pickRepo()} disabled={busy}>
-            Open repo…
-          </button>
+          <Menu
+            className="repo-menu"
+            label={<span className="reponame-label">{repo.name}</span>}
+            ariaLabel={`Repo ${repo.name}`}
+            align="left"
+            items={[
+              { kind: "action", label: "Repo overview", onSelect: () => setFile(null) },
+              { kind: "action", label: "Open repo…", hint: "⌘O", onSelect: () => void pickRepo() },
+              ...(recent.filter((r) => r !== repo.root).length ? [{ kind: "sep" as const }, { kind: "label" as const, label: "Recent repos" }] : []),
+              ...recent.filter((r) => r !== repo.root).map((r) => ({ kind: "action" as const, label: <code>{r}</code>, onSelect: () => void openRepo(r) })),
+            ]}
+          />
         )}
         {repo && (
           <button type="button" className="iso-btn" aria-pressed={sidebar} onClick={() => setSidebar(!sidebar)}>
             Files
           </button>
         )}
-        {history.length > 0 && file && (
-          <button type="button" className="iso-btn" onClick={goBack} title={`Back to ${history[history.length - 1].path}`}>
+        {history.back.length > 0 && (
+          <button type="button" className="iso-btn quiet" onClick={() => travel("back")} aria-label={`Back to ${describe(history.back[history.back.length - 1])}`} title={`Back to ${describe(history.back[history.back.length - 1])} (⌘[)`}>
             Back
+          </button>
+        )}
+        {history.forward.length > 0 && (
+          <button type="button" className="iso-btn quiet" onClick={() => travel("forward")} aria-label={`Forward to ${describe(history.forward[history.forward.length - 1])}`} title={`Forward to ${describe(history.forward[history.forward.length - 1])} (⌘])`}>
+            Forward
           </button>
         )}
         <SearchBox enabled={!!repo} onPick={onSearchPick} />
         <div className="status" aria-live="polite">
           {mode === "mock" && (
-            <span className="mock-tag" title="Running in a browser against the mock backend: the data is the prototype's sample repo.">
+            <span className="mock-tag" {...peek.bind(() => ({ kind: "text", title: "Mock data", body: "Running in a browser against the mock backend: the data is the prototype's sample repo." }))}>
               mock data
             </span>
           )}
-          {progress && (
-            <span className="indexing" title={progress.current ?? undefined}>
-              {indexing ? (
+          {(indexing || justIndexed || jobsRunning) && progress !== undefined && (
+            <span
+              className="indexing"
+              {...peek.bind(() =>
+                jobs
+                  ? {
+                      kind: "text",
+                      title: "Background work",
+                      body: (
+                        <>
+                          {jobs.running} running, {jobs.queued} queued, {jobs.failed} failed. Cache: {fmtInt(num(jobs.cacheHits))} hits, {fmtInt(num(jobs.cacheMisses))} misses ({Math.round(jobs.hitRate * 100)}%).
+                          {progress?.current ? <div className="muted">Now: {progress.current}</div> : null}
+                        </>
+                      ),
+                    }
+                  : null,
+              )}
+            >
+              {indexing && progress ? (
                 <>
                   Indexing · {PHASE_TEXT[progress.phase]} {fmtInt(progress.done)} / {fmtInt(progress.total)}
                   <span className="pbar">
                     <span style={{ width: `${(progress.done / Math.max(1, progress.total)) * 100}%` }} />
                   </span>
                 </>
-              ) : (
+              ) : justIndexed && progress ? (
                 <>
                   Indexed {plural(progress.total, "file")} in {fmtMs(num(progress.elapsedMs))}
                 </>
-              )}
-            </span>
-          )}
-          {jobs && repo && (
-            <span className="jobs" title={jobs.pendingFiles.length ? `Pending: ${jobs.pendingFiles.slice(0, 8).join(", ")}${jobs.pendingFiles.length > 8 ? "…" : ""}` : `Cache: ${fmtInt(num(jobs.cacheHits))} hits, ${fmtInt(num(jobs.cacheMisses))} misses`}>
-              {jobs.running || jobs.queued ? `Jobs · ${jobs.running} running, ${jobs.queued} queued` : `Jobs idle · ${Math.round(jobs.hitRate * 100)}% cache hits`}
-              {jobs.failed > 0 && ` · ${jobs.failed} failed`}
+              ) : null}
+              {jobsRunning && jobs && <> {indexing || justIndexed ? "· " : ""}Jobs · {jobs.running} running</>}
             </span>
           )}
         </div>
-        <AiPanel status={ai} setStatus={setAi} filePath={file?.path ?? null} progress={aiProgress} />
-        <Seg
-          label="Theme"
-          value={theme}
-          onChange={setTheme}
-          options={[
-            ["system", "System"],
-            ["light", "Light"],
-            ["dark", "Dark"],
-          ]}
-        />
+        {repo && <AiPanel status={ai} setStatus={setAi} filePath={file?.path ?? null} progress={aiProgress} openSignal={aiOpen} />}
+        <div className="theme-wrap">
+          <button type="button" className="iso-btn quiet" aria-expanded={themeOpen} onClick={() => setThemeOpen(!themeOpen)}>
+            Theme
+          </button>
+          {themeOpen && (
+            <div className="popover theme-pop" role="dialog" aria-label="Theme" onKeyDown={(e) => e.key === "Escape" && setThemeOpen(false)}>
+              <Seg
+                label="Theme"
+                value={theme}
+                onChange={(t) => {
+                  setTheme(t);
+                  setThemeOpen(false);
+                }}
+                options={[
+                  ["system", "System"],
+                  ["light", "Light"],
+                  ["dark", "Dark"],
+                ]}
+              />
+            </div>
+          )}
+        </div>
       </header>
       <div className={`body${repo && sidebar ? " with-side" : ""}`}>
         {repo && sidebar && tree && <Sidebar tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} />}
         <main className="content">
           {!repo && <StartScreen recent={recent} onOpen={(p) => void openRepo(p)} onPick={() => void pickRepo()} busy={busy} error={openError} />}
-          {repo && !file && <RepoOverview repo={repo} moduleMap={moduleMap} onModuleRenamed={refreshRepoData} />}
+          {repo && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} />}
           {repo && file && viewError && (
             <div className="start">
               <p className="err">
@@ -237,7 +373,21 @@ export function App() {
             </div>
           )}
           {repo && file && !viewError && !showView && <div className="loading muted">Opening {file.path}…</div>}
-          {showView && showView.tier === "full" && <Workbench key={showView.path} view={showView} focusName={file?.symbol} focusLine={file?.line} onOpenFile={openFile} />}
+          {showView && showView.tier === "full" && (
+            <Workbench
+              key={showView.path}
+              view={showView}
+              focusName={file?.symbol}
+              focusLine={file?.line}
+              focusNonce={file?.nonce}
+              restore={file?.restore ?? null}
+              restoreNonce={file?.restore ? file.nonce : 0}
+              onOpenFile={openFile}
+              onPushHistory={pushHere}
+              registerLocation={registerLocation}
+              onOpenAi={() => setAiOpen((n) => n + 1)}
+            />
+          )}
           {showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} />}
         </main>
       </div>

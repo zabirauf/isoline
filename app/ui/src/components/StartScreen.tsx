@@ -17,7 +17,7 @@ export function StartScreen({ recent, onOpen, onPick, busy, error }: { recent: s
             <ul className="recent">
               {recent.map((r) => (
                 <li key={r}>
-                  <button type="button" className="filelink" disabled={busy} onClick={() => onOpen(r)}>
+                  <button type="button" className="recent-row" disabled={busy} onClick={() => onOpen(r)}>
                     {r}
                   </button>
                 </li>

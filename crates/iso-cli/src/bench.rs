@@ -317,7 +317,10 @@ pub fn copy_walked(src: &Path, dst: &Path) -> Result<()> {
         if let Some(d) = to.parent() {
             std::fs::create_dir_all(d)?;
         }
-        std::fs::copy(src.join(&f.rel), &to)?;
+        // A file that vanished or is unreadable mid-copy is skipped, not fatal.
+        if let Err(e) = std::fs::copy(src.join(&f.rel), &to) {
+            eprintln!("copy skipped {}: {e}", f.rel);
+        }
     }
     if src.join(".gitignore").exists() {
         let _ = std::fs::copy(src.join(".gitignore"), dst.join(".gitignore"));

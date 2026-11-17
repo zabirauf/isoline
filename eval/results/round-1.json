@@ -1,0 +1,372 @@
+{
+  "round": "round-1",
+  "machine_cores": 12,
+  "repos": [
+    {
+      "entry": {
+        "name": "isoline",
+        "covers": "this repo: Rust workspace with several crates plus a TypeScript UI",
+        "path": "..",
+        "url": null,
+        "commit": null,
+        "approved": true
+      },
+      "ok": false,
+      "error": "Permission denied (os error 13)",
+      "report": null
+    },
+    {
+      "entry": {
+        "name": "openclaw",
+        "covers": "large TypeScript monorepo (pnpm workspaces, path aliases), over 1M lines, source of the prototype's file",
+        "path": "~/Documents/Projects/Opensource/openclaw",
+        "url": null,
+        "commit": null,
+        "approved": true
+      },
+      "ok": true,
+      "error": null,
+      "report": {
+        "repo": "~/Documents/Projects/Opensource/openclaw",
+        "files": 64228,
+        "lines": 14568311,
+        "cores": 12,
+        "cold": {
+          "files": 64228,
+          "lines": 14568311,
+          "hashed": 64228,
+          "parsed": 55818,
+          "facts_cache_hits": 72,
+          "unchanged": 0,
+          "added": 64228,
+          "deleted": 0,
+          "facts_changed": 55890,
+          "exports_changed": 55890,
+          "resolved_files": 53459,
+          "imports_resolved": 382315,
+          "imports_unresolved": 13150,
+          "edge_files": 55890,
+          "dependents_recomputed": 0,
+          "reclustered": true,
+          "root_hash": "e33b0761137aca86d2d57c953222d66e35687f38c5f3d59b07092455fe288173",
+          "ms_walk": 87,
+          "ms_parse": 33759,
+          "ms_resolve": 2046,
+          "ms_edges": 10114,
+          "ms_tree": 598,
+          "ms_total": 46840
+        },
+        "cold_lines_per_min": 18636899.898527253,
+        "reopen": {
+          "files": 64228,
+          "lines": 14568311,
+          "hashed": 0,
+          "parsed": 0,
+          "facts_cache_hits": 0,
+          "unchanged": 64228,
+          "added": 0,
+          "deleted": 0,
+          "facts_changed": 0,
+          "exports_changed": 0,
+          "resolved_files": 0,
+          "imports_resolved": 0,
+          "imports_unresolved": 0,
+          "edge_files": 0,
+          "dependents_recomputed": 0,
+          "reclustered": false,
+          "root_hash": "e33b0761137aca86d2d57c953222d66e35687f38c5f3d59b07092455fe288173",
+          "ms_walk": 84,
+          "ms_parse": 0,
+          "ms_resolve": 87,
+          "ms_edges": 0,
+          "ms_tree": 3,
+          "ms_total": 265
+        },
+        "reopen_ms": 318,
+        "reopen_hit_rate": 1.0,
+        "open_file": {
+          "n": 200,
+          "p50_ms": 1.3561249999999998,
+          "p95_ms": 4.837625,
+          "max_ms": 23.550083
+        },
+        "open_file_failures": 0,
+        "flow_trees": 1009,
+        "flow_failures": 0,
+        "empty_flow_files": 1,
+        "edit": {
+          "n": 50,
+          "p50_ms": 10.358292,
+          "p95_ms": 21.5985,
+          "max_ms": 130.39720799999998
+        },
+        "edit_reparsed_max": 1,
+        "edit_dependents_max": 0,
+        "branch_switch_files_reported": 3,
+        "unresolved_imports_pct": 2.8115249941348908,
+        "unresolved_by_lang": [
+          [
+            "css",
+            14,
+            0
+          ],
+          [
+            "html",
+            27,
+            5
+          ],
+          [
+            "javascript",
+            5679,
+            41
+          ],
+          [
+            "python",
+            773,
+            0
+          ],
+          [
+            "rust",
+            1973,
+            15
+          ],
+          [
+            "tsx",
+            17426,
+            16
+          ],
+          [
+            "typescript",
+            430195,
+            12746
+          ]
+        ],
+        "tiers": [
+          55860,
+          30,
+          8338
+        ],
+        "peak_rss_mb": 1200.53125,
+        "edges": 629477,
+        "panics": 0
+      }
+    },
+    {
+      "entry": {
+        "name": "crosspoint-reader",
+        "covers": "mostly unsupported languages (C++ firmware) with some tier-1 code",
+        "path": "~/Documents/Projects/Opensource/crosspoint-reader",
+        "url": null,
+        "commit": null,
+        "approved": true
+      },
+      "ok": true,
+      "error": null,
+      "report": {
+        "repo": "~/Documents/Projects/Opensource/crosspoint-reader",
+        "files": 857,
+        "lines": 368408,
+        "cores": 12,
+        "cold": {
+          "files": 857,
+          "lines": 368408,
+          "hashed": 857,
+          "parsed": 37,
+          "facts_cache_hits": 0,
+          "unchanged": 0,
+          "added": 857,
+          "deleted": 0,
+          "facts_changed": 37,
+          "exports_changed": 37,
+          "resolved_files": 31,
+          "imports_resolved": 3,
+          "imports_unresolved": 0,
+          "edge_files": 37,
+          "dependents_recomputed": 0,
+          "reclustered": true,
+          "root_hash": "050a46aed1a422c8f833f7eb21bb70f52b9fdc60912343a27d0a1cd00e852113",
+          "ms_walk": 10,
+          "ms_parse": 31,
+          "ms_resolve": 1,
+          "ms_edges": 3,
+          "ms_tree": 3,
+          "ms_total": 53
+        },
+        "cold_lines_per_min": 411500059.9532739,
+        "reopen": {
+          "files": 857,
+          "lines": 368408,
+          "hashed": 0,
+          "parsed": 0,
+          "facts_cache_hits": 0,
+          "unchanged": 857,
+          "added": 0,
+          "deleted": 0,
+          "facts_changed": 0,
+          "exports_changed": 0,
+          "resolved_files": 0,
+          "imports_resolved": 0,
+          "imports_unresolved": 0,
+          "edge_files": 0,
+          "dependents_recomputed": 0,
+          "reclustered": false,
+          "root_hash": "050a46aed1a422c8f833f7eb21bb70f52b9fdc60912343a27d0a1cd00e852113",
+          "ms_walk": 5,
+          "ms_parse": 0,
+          "ms_resolve": 0,
+          "ms_edges": 0,
+          "ms_tree": 0,
+          "ms_total": 7
+        },
+        "reopen_ms": 8,
+        "reopen_hit_rate": 1.0,
+        "open_file": {
+          "n": 148,
+          "p50_ms": 0.205791,
+          "p95_ms": 1.704458,
+          "max_ms": 18.85475
+        },
+        "open_file_failures": 0,
+        "flow_trees": 0,
+        "flow_failures": 0,
+        "empty_flow_files": 113,
+        "edit": {
+          "n": 50,
+          "p50_ms": 2.22625,
+          "p95_ms": 43.816416,
+          "max_ms": 45.179708999999995
+        },
+        "edit_reparsed_max": 1,
+        "edit_dependents_max": 0,
+        "branch_switch_files_reported": 3,
+        "unresolved_imports_pct": 0.0,
+        "unresolved_by_lang": [
+          [
+            "html",
+            1,
+            0
+          ],
+          [
+            "python",
+            156,
+            0
+          ]
+        ],
+        "tiers": [
+          37,
+          0,
+          820
+        ],
+        "peak_rss_mb": 1202.0,
+        "edges": 416,
+        "panics": 0
+      }
+    },
+    {
+      "entry": {
+        "name": "openclaw-atlas",
+        "covers": "tiny repo under 50 files, first-run experience",
+        "path": "~/Documents/Projects/Opensource/openclaw-atlas",
+        "url": null,
+        "commit": null,
+        "approved": true
+      },
+      "ok": true,
+      "error": null,
+      "report": {
+        "repo": "~/Documents/Projects/Opensource/openclaw-atlas",
+        "files": 21,
+        "lines": 27451,
+        "cores": 12,
+        "cold": {
+          "files": 21,
+          "lines": 27451,
+          "hashed": 21,
+          "parsed": 9,
+          "facts_cache_hits": 0,
+          "unchanged": 0,
+          "added": 21,
+          "deleted": 0,
+          "facts_changed": 9,
+          "exports_changed": 9,
+          "resolved_files": 2,
+          "imports_resolved": 0,
+          "imports_unresolved": 0,
+          "edge_files": 9,
+          "dependents_recomputed": 0,
+          "reclustered": true,
+          "root_hash": "419e78d483d76bc0a3d74721281b0ef365b655e0e4a074a4cd1e450e6a0b392f",
+          "ms_walk": 4,
+          "ms_parse": 20,
+          "ms_resolve": 0,
+          "ms_edges": 2,
+          "ms_tree": 0,
+          "ms_total": 27
+        },
+        "cold_lines_per_min": 60485296.952893324,
+        "reopen": {
+          "files": 21,
+          "lines": 27451,
+          "hashed": 0,
+          "parsed": 0,
+          "facts_cache_hits": 0,
+          "unchanged": 21,
+          "added": 0,
+          "deleted": 0,
+          "facts_changed": 0,
+          "exports_changed": 0,
+          "resolved_files": 0,
+          "imports_resolved": 0,
+          "imports_unresolved": 0,
+          "edge_files": 0,
+          "dependents_recomputed": 0,
+          "reclustered": false,
+          "root_hash": "419e78d483d76bc0a3d74721281b0ef365b655e0e4a074a4cd1e450e6a0b392f",
+          "ms_walk": 2,
+          "ms_parse": 0,
+          "ms_resolve": 0,
+          "ms_edges": 0,
+          "ms_tree": 0,
+          "ms_total": 2
+        },
+        "reopen_ms": 3,
+        "reopen_hit_rate": 1.0,
+        "open_file": {
+          "n": 36,
+          "p50_ms": 0.38608400000000004,
+          "p95_ms": 4.980167,
+          "max_ms": 7.270541000000001
+        },
+        "open_file_failures": 0,
+        "flow_trees": 111,
+        "flow_failures": 0,
+        "empty_flow_files": 15,
+        "edit": {
+          "n": 50,
+          "p50_ms": 12.034082999999999,
+          "p95_ms": 17.241334000000002,
+          "max_ms": 20.154625
+        },
+        "edit_reparsed_max": 1,
+        "edit_dependents_max": 0,
+        "branch_switch_files_reported": 3,
+        "unresolved_imports_pct": 0.0,
+        "unresolved_by_lang": [
+          [
+            "python",
+            11,
+            0
+          ]
+        ],
+        "tiers": [
+          9,
+          0,
+          12
+        ],
+        "peak_rss_mb": 1202.0,
+        "edges": 199,
+        "panics": 0
+      }
+    }
+  ]
+}

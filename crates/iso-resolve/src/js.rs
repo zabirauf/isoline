@@ -134,7 +134,14 @@ impl JsResolver {
             targets.push(key.clone());
             targets.push(format!("./src{sub}"));
         }
-        for t in targets {
+        // Built output (`dist/`, `build/`, `lib/`, `out/`) is usually absent from a checkout;
+        // a code-reading tool wants the source it was built from, so each target is followed by
+        // its source-mapped variants.
+        let with_sources: Vec<String> = targets
+            .iter()
+            .flat_map(|t| std::iter::once(t.clone()).chain(source_candidates(t)))
+            .collect();
+        for t in with_sources {
             if let Ok(r) = self.oxc.resolve(&dir_abs, &t)
                 && let Some(rel) = self.in_repo(r.path())
             {
@@ -200,6 +207,30 @@ fn package_name(spec: &str) -> &str {
         it.next()
     };
     cut.map(|(i, _)| &spec[..i]).unwrap_or(spec)
+}
+
+/// Source files a built target was probably compiled from: `./dist/x/y.d.ts` gives `./src/x/y`
+/// and `./x/y`; `./dist/src/x.js` gives `./src/x`. Extensions are left to the resolver.
+fn source_candidates(t: &str) -> Vec<String> {
+    let stem = ["d.ts", "d.mts", "d.cts", "js", "mjs", "cjs", "jsx"]
+        .iter()
+        .find_map(|e| t.strip_suffix(&format!(".{e}")))
+        .unwrap_or(t);
+    let mut out = Vec::new();
+    for build in ["dist", "build", "lib", "out"] {
+        if let Some(rest) = stem.strip_prefix(&format!("./{build}/")) {
+            if rest.starts_with("src/") {
+                out.push(format!("./{rest}"));
+            } else {
+                out.push(format!("./src/{rest}"));
+                out.push(format!("./{rest}"));
+            }
+        }
+    }
+    if out.is_empty() && stem != t {
+        out.push(stem.to_string());
+    }
+    out
 }
 
 fn dot(p: &str) -> String {
@@ -273,6 +304,19 @@ mod tests {
         assert_eq!(package_name("react-dom/client"), "react-dom");
         assert_eq!(package_name("@acme/ui"), "@acme/ui");
         assert_eq!(package_name("@acme/ui/button"), "@acme/ui");
+    }
+
+    #[test]
+    fn built_targets_map_back_to_source() {
+        assert_eq!(
+            source_candidates("./dist/plugin-sdk/core.d.ts"),
+            vec!["./src/plugin-sdk/core", "./plugin-sdk/core"]
+        );
+        assert_eq!(
+            source_candidates("./dist/src/index.js"),
+            vec!["./src/index"]
+        );
+        assert!(source_candidates("./src/index.ts").is_empty());
     }
 
     #[test]

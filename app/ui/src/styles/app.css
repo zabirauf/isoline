@@ -291,7 +291,7 @@ details.misc summary span { font: 400 12.5px var(--font-body); color: var(--mute
 .ftree .iso-blk.off { border-color: transparent; background: transparent; }
 .ftree .iso-blk.off > .iso-blk-h { opacity: 0; }
 .ftree .iso-blk-h { position: relative; z-index: 2; transition: opacity .15s; cursor: pointer; }
-.ftree .iso-blk-h code { word-break: break-word; }
+.ftree .iso-blk-h code { word-break: break-word; position: relative; background: var(--bs); padding: 0 2px; border-radius: 3px; }
 .iso-b-inline { --bc: var(--accent); --bs: var(--bg); border-style: dashed; }
 .ftree .iso-nocall { position: relative; z-index: 2; transition: opacity .15s; }
 .ftree .iso-exit { position: relative; z-index: 2; flex-wrap: wrap; transition: opacity .15s, transform .15s ease-out; cursor: pointer; }

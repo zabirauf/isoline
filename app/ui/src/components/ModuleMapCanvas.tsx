@@ -78,8 +78,10 @@ export const ModuleMapCanvas = forwardRef<ModuleMapHandle, Props>(function Modul
     const h = c.clientHeight;
     if (!w || !h) return;
     const pad = L.vertical ? 190 : 0;
-    const k = Math.min(1.2, Math.min(w / (L.W + 80 + pad), (h - 40) / (L.H + 80)));
-    T.current = { k, x: (w - (L.W - pad) * k) / 2, y: (h - L.H * k) / 2 + 14 };
+    // Leave room at the bottom for the legend that sits over the canvas.
+    const legend = 84;
+    const k = Math.min(1.2, Math.min(w / (L.W + 80 + pad), (h - 40 - legend) / (L.H + 60)));
+    T.current = { k, x: (w - (L.W - pad) * k) / 2, y: (h - legend - L.H * k) / 2 + 14 };
     request();
   };
 

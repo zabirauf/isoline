@@ -59,6 +59,14 @@ pub fn parse(
     old: Option<&tree_sitter::Tree>,
 ) -> Option<tree_sitter::Tree> {
     let g = grammar(lang)?;
+    let masked;
+    let source =
+        if matches!(lang, Language::TypeScript | Language::Tsx) && source.contains("import(") {
+            masked = mask_type_imports(source);
+            masked.as_str()
+        } else {
+            source
+        };
     PARSERS.with(|cell| {
         let mut map = cell.borrow_mut();
         let parser = map.entry(lang).or_insert_with(|| {
@@ -98,4 +106,78 @@ pub fn flow_units(path: &Path, lang: Language, source: &str) -> Vec<FlowUnit> {
         return Vec::new();
     };
     ex.flow_units(path, source, &tree)
+}
+
+/// Replace `import("path")` with an identifier of the same byte length where it is a type
+/// (`import("x").T`, `typeof import("x")`), leaving dynamic `import()` calls untouched.
+/// tree-sitter-typescript cannot parse those type imports, and its error recovery then loses
+/// the declarations that follow.
+pub fn mask_type_imports(src: &str) -> String {
+    let b = src.as_bytes();
+    let mut out = b.to_vec();
+    let mut i = 0;
+    while let Some(off) = src[i..].find("import(") {
+        let start = i + off;
+        i = start + 7;
+        if start > 0 {
+            let p = b[start - 1];
+            if p.is_ascii_alphanumeric() || p == b'_' || p == b'$' || p == b'.' {
+                continue;
+            }
+        }
+        let mut j = start + 7;
+        while j < b.len() && b[j].is_ascii_whitespace() {
+            j += 1;
+        }
+        let Some(&q) = b.get(j) else { break };
+        if !matches!(q, b'"' | b'\'' | b'`') {
+            continue;
+        }
+        let Some(qe) = src[j + 1..].find(q as char).map(|k| j + 1 + k) else {
+            break;
+        };
+        let mut k = qe + 1;
+        while k < b.len() && b[k].is_ascii_whitespace() {
+            k += 1;
+        }
+        if b.get(k) != Some(&b')') {
+            continue;
+        }
+        let end = k + 1;
+        let after_typeof = src[..start].trim_end().ends_with("typeof");
+        let member_type = b.get(end) == Some(&b'.') && {
+            let rest = &src[end + 1..];
+            let ident: String = rest
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '$')
+                .collect();
+            !ident.is_empty()
+                && ident != "then"
+                && !rest[ident.len()..].trim_start().starts_with('(')
+        };
+        if (after_typeof || member_type) && !src[start..end].contains('\n') {
+            out[start..end].fill(b'_');
+            i = end;
+        }
+    }
+    String::from_utf8(out).unwrap_or_else(|_| src.to_string())
+}
+
+#[cfg(test)]
+mod mask_tests {
+    use super::*;
+
+    #[test]
+    fn masks_type_imports_only() {
+        let src = "type A = { c?: import(\"../x.js\").ChatType; d: readonly import('y').K[] };\nconst m = await import(\"./m.js\");\nimport(\"./n\").then(f);\nlet t: typeof import(\"z\");";
+        let m = mask_type_imports(src);
+        assert_eq!(m.len(), src.len());
+        assert!(m.contains(&format!("c?: {}.ChatType", "_".repeat(17))));
+        assert!(m.contains(&format!("readonly {}.K[]", "_".repeat(11))));
+        assert!(m.contains("await import(\"./m.js\")"));
+        assert!(m.contains("import(\"./n\").then(f)"));
+        assert!(m.contains(&format!("typeof {};", "_".repeat(11))));
+        let tree = parse(Language::TypeScript, src, None).unwrap();
+        assert!(!tree.root_node().has_error());
+    }
 }

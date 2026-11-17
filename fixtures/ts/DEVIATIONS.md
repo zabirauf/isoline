@@ -112,3 +112,14 @@ This section describes resolver policy where plain tsc or Node behavior would gi
   `fs` are the same module.
 - **Inside the repo only.** A result counts as a repo `File` only if the walker saw it and it
   is not under `node_modules`.
+
+## Type-position `import("x")` (fixed in the parser front end)
+
+tree-sitter-typescript 0.23.2 cannot parse `import("x").T` or `typeof import("x")` in type
+positions, and its error recovery then loses the declarations that follow (openclaw's
+`src/agents/harness/types.ts` lost `AgentHarness` this way). `iso_parse::parse` now masks
+those spans with an identifier of the same byte length before parsing, so every node keeps
+its position in the original source; dynamic `import()` calls are left alone. With it, a
+fresh 600-file openclaw sample matches analyze.js on all 2,026 units (the
+`vi.importActual<typeof import("x")>` misparses above are gone). Top-level ERROR nodes are
+also flattened so declarations after any other recovery are still extracted.

@@ -106,6 +106,8 @@ ipc! {
         pub overview: Option<AiText>,
         pub has_errors: bool,
         pub module: Option<ModuleRef>,
+        /// Definition targets for names used in this file (see `SymbolTarget`).
+        pub targets: Vec<SymbolTarget>,
     }
 
     pub struct LineRange {
@@ -151,6 +153,45 @@ ipc! {
         pub summary: Option<Summary>,
         /// Flow unit id for this card (same as `name` for top-level functions).
         pub unit: Option<String>,
+        /// Parameters and return type parsed from the declaration.
+        pub sig: SigInfo,
+    }
+
+    /// A declaration's parameter list and return type, as written.
+    pub struct SigInfo {
+        pub params: Vec<ParamInfo>,
+        /// Return type text, whitespace collapsed (`Promise<Result>`, `-> io::Result<()>` gives `io::Result<()>`).
+        pub returns: Option<String>,
+    }
+
+    pub struct ParamInfo {
+        /// Name as written: `harness`, `self`, `{ a, b }`, `*args`.
+        pub name: String,
+        /// Type annotation text, whitespace collapsed, if any.
+        pub type_text: Option<String>,
+        /// Default value text, if any.
+        pub default: Option<String>,
+        /// Rest or variadic parameter (`...xs`, `*args`, `**kw`).
+        pub rest: bool,
+        /// Optional parameter (`x?: T` or has a default).
+        pub optional: bool,
+    }
+
+    /// Where a name used in this file is defined: drives type colors, hover definitions and
+    /// click-to-jump. Every identifier that appears in a card signature, every import binding
+    /// and every top-level symbol of the file has one.
+    pub struct SymbolTarget {
+        pub name: String,
+        pub origin: SymbolOrigin,
+        pub kind: Option<SymbolKind>,
+        /// Repo-relative file of the definition; `None` for external and builtin names.
+        pub path: Option<String>,
+        pub start: u32,
+        pub end: u32,
+        /// Module specifier for imported and external names.
+        pub module: Option<String>,
+        pub doc: Option<String>,
+        pub signature: Option<String>,
     }
 
     /// Model output for one symbol, always shown with an AI marker.
@@ -386,6 +427,7 @@ ipc_enum! {
     pub enum SearchKind { File, Symbol }
     pub enum SidecarState { Off, Starting, Ready, Failed }
     pub enum AiScope { File, Module, Repo }
+    pub enum SymbolOrigin { Local, Imported, External, Builtin }
 }
 
 #[cfg(all(test, feature = "ts"))]

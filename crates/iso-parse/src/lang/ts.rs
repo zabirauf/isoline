@@ -77,7 +77,18 @@ fn facts(jf: &'static JsFlow, src: &str, tree: &tree_sitter::Tree) -> FileFacts 
         top: true,
         ..Cx::default()
     };
-    for st in children(root) {
+    // Error recovery can wrap a run of statements in an ERROR node; the declarations inside are
+    // still top-level, so flatten top-level ERROR nodes instead of losing them.
+    let mut stack: Vec<tree_sitter::Node> = children(root)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+    while let Some(st) = stack.pop() {
+        if st.is_error() {
+            stack.extend(children(st).collect::<Vec<_>>().into_iter().rev());
+            continue;
+        }
         ex.visit(st, &cx);
     }
     // `export { a, b as c }`, `export default a` and CommonJS `module.exports = { a }` mark

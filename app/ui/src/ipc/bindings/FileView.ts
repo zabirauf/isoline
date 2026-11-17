@@ -8,6 +8,7 @@ import type { Language } from "./Language";
 import type { LineRange } from "./LineRange";
 import type { ModuleRef } from "./ModuleRef";
 import type { OutlineItem } from "./OutlineItem";
+import type { SymbolTarget } from "./SymbolTarget";
 import type { Tier } from "./Tier";
 import type { TypeDecl } from "./TypeDecl";
 
@@ -38,4 +39,8 @@ importers: Array<FileRef>,
 /**
  * Model-written overview of the file, if cached.
  */
-overview: AiText | null, hasErrors: boolean, module: ModuleRef | null, };
+overview: AiText | null, hasErrors: boolean, module: ModuleRef | null, 
+/**
+ * Definition targets for names used in this file (see `SymbolTarget`).
+ */
+targets: Array<SymbolTarget>, };

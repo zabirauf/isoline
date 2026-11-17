@@ -294,6 +294,15 @@ impl Engine {
                 } else {
                     None
                 },
+                sig: {
+                    let head = crate::sig::declaration_head(&src_lines, s.start_line, s.end_line);
+                    let parsed = crate::sig::parse(&head);
+                    if parsed.params.is_empty() && parsed.returns.is_none() {
+                        crate::sig::parse(&s.signature)
+                    } else {
+                        parsed
+                    }
+                },
             });
         }
 
@@ -486,6 +495,7 @@ impl Engine {
             })
         })?;
         let name = row.path.rsplit('/').next().unwrap_or(&row.path).to_string();
+        let targets = self.symbol_targets(&row, &facts, &functions, &binds);
         let flow_unit_refs: Vec<FlowUnitRef> = flow_units
             .iter()
             .map(|u| FlowUnitRef {
@@ -526,7 +536,145 @@ impl Engine {
             overview: cached.overview.clone(),
             has_errors: row.has_errors,
             module,
+            targets,
         })
+    }
+
+    /// Definition targets for the names a file's view can show: every identifier in a card
+    /// signature, every import binding and every top-level symbol of the file.
+    fn symbol_targets(
+        &self,
+        row: &FileRow,
+        facts: &FileFacts,
+        cards: &[FnCard],
+        binds: &HashMap<String, Binding>,
+    ) -> Vec<SymbolTarget> {
+        let mut wanted: Vec<String> = Vec::new();
+        let mut want = |n: &str| {
+            if !n.is_empty() && !wanted.iter().any(|w| w == n) {
+                wanted.push(n.to_string());
+            }
+        };
+        for c in cards {
+            for p in &c.sig.params {
+                if let Some(t) = &p.type_text {
+                    crate::sig::type_names(t).iter().for_each(|n| want(n));
+                }
+            }
+            if let Some(r) = &c.sig.returns {
+                crate::sig::type_names(r).iter().for_each(|n| want(n));
+            }
+        }
+        binds.keys().for_each(|k| want(k));
+        facts
+            .symbols
+            .iter()
+            .filter(|s| s.parent.is_none())
+            .for_each(|s| want(&s.name));
+        let table = crate::edges::ExportTable::lazy(self);
+        let mut out = Vec::new();
+        for name in wanted {
+            if let Some(s) = facts
+                .symbols
+                .iter()
+                .find(|s| s.parent.is_none() && s.name == name)
+            {
+                out.push(SymbolTarget {
+                    name,
+                    origin: SymbolOrigin::Local,
+                    kind: Some(s.kind),
+                    path: Some(row.path.clone()),
+                    start: s.start_line,
+                    end: s.end_line,
+                    module: None,
+                    doc: s.doc.clone(),
+                    signature: Some(s.signature.clone()),
+                });
+                continue;
+            }
+            match binds.get(&name) {
+                Some(Binding::File(f, imported)) => {
+                    let lookup = if imported == "*" || imported == "default" {
+                        name.as_str()
+                    } else {
+                        imported.as_str()
+                    };
+                    let found = table.find(*f, lookup, 0).and_then(|(id, _)| {
+                        self.index
+                            .read(|c| iso_index::symbol_by_id(c, id))
+                            .ok()
+                            .flatten()
+                    });
+                    let path_of = |fid: FileId| {
+                        self.index
+                            .read(|c| iso_index::file_paths(c, [fid]))
+                            .ok()
+                            .and_then(|m| m.get(&fid).cloned())
+                    };
+                    let module = self
+                        .index
+                        .read(|c| iso_index::imports_for_file(c, row.id))
+                        .ok()
+                        .and_then(|v| {
+                            v.into_iter()
+                                .find(|i| {
+                                    i.names.iter().any(|n| n.local() == name)
+                                        || (i.names.is_empty()
+                                            && i.specifier.ends_with(name.as_str()))
+                                })
+                                .map(|i| i.specifier)
+                        });
+                    match found {
+                        Some(sym) => out.push(SymbolTarget {
+                            name,
+                            origin: SymbolOrigin::Imported,
+                            kind: Some(sym.kind),
+                            path: path_of(sym.file_id),
+                            start: sym.start_line,
+                            end: sym.end_line,
+                            module,
+                            doc: sym.doc,
+                            signature: Some(sym.signature),
+                        }),
+                        None => out.push(SymbolTarget {
+                            name,
+                            origin: SymbolOrigin::Imported,
+                            kind: None,
+                            path: path_of(*f),
+                            start: 1,
+                            end: 1,
+                            module,
+                            doc: None,
+                            signature: None,
+                        }),
+                    }
+                }
+                Some(Binding::External(m, _)) => out.push(SymbolTarget {
+                    name,
+                    origin: SymbolOrigin::External,
+                    kind: None,
+                    path: None,
+                    start: 0,
+                    end: 0,
+                    module: Some(m.clone()),
+                    doc: None,
+                    signature: None,
+                }),
+                None if crate::sig::is_builtin_type(&name) => out.push(SymbolTarget {
+                    name,
+                    origin: SymbolOrigin::Builtin,
+                    kind: None,
+                    path: None,
+                    start: 0,
+                    end: 0,
+                    module: None,
+                    doc: None,
+                    signature: None,
+                }),
+                None => {}
+            }
+        }
+        out
     }
 
     /// Call-flow units for a file, cached by content hash and walker version.

@@ -19,6 +19,7 @@ mod edges;
 mod indexer;
 mod modules;
 mod precise;
+pub mod sig;
 mod view;
 mod watch;
 

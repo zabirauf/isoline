@@ -14,6 +14,7 @@ use iso_index::Index;
 use iso_jobs::JobQueue;
 use parking_lot::{Mutex, RwLock};
 
+mod ai;
 mod edges;
 mod indexer;
 mod modules;
@@ -21,9 +22,10 @@ mod precise;
 mod view;
 mod watch;
 
+pub use ai::AiLayer;
 pub use indexer::IndexReport;
 pub use precise::PreciseReport;
-pub use view::AiHook;
+pub use view::{AiHook, CachedAi};
 
 /// Events the engine emits. The Tauri shell forwards them to the UI; the CLI prints them.
 #[derive(Clone, Debug)]

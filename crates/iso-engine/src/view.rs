@@ -243,7 +243,8 @@ impl Engine {
         }
         let flow_units = self.flow_units_for(&row, &source)?;
         let unit_ids: HashSet<&str> = flow_units.iter().map(|u| u.id.as_str()).collect();
-        let summaries = self.summaries_for(&row, &facts);
+        let cached = self.cached_ai(&row, &facts, &flow_units);
+        let summaries = &cached.summaries;
         let mut functions = Vec::with_capacity(n);
         for (i, s) in card_syms.iter().enumerate() {
             let id = SymbolId::new(&row.path, &s.qualified_name, s.kind);
@@ -294,7 +295,7 @@ impl Engine {
                 end: s.end_line,
                 exported: s.exported,
                 doc: s.doc.clone(),
-                summary: None,
+                summary: cached.types.get(&s.qualified_name).cloned(),
             })
             .collect();
         let depth_of = |s: &SymbolFact| -> u32 {
@@ -479,7 +480,7 @@ impl Engine {
             outline,
             flow_units: flow_unit_refs,
             importers,
-            overview: self.overview_for(&row),
+            overview: cached.overview.clone(),
             has_errors: row.has_errors,
             module,
         })
@@ -829,25 +830,31 @@ impl Engine {
         })
     }
 
-    /// Model summaries for a file's symbols, from the AI cache. Filled in by the AI layer.
-    pub(crate) fn summaries_for(
+    /// Cached model output for a file. Reads the AI cache only; never calls a model.
+    pub(crate) fn cached_ai(
         &self,
         row: &FileRow,
         facts: &FileFacts,
-    ) -> HashMap<String, Summary> {
+        flows: &[FlowUnit],
+    ) -> CachedAi {
         match self.ai_hook.read().as_ref() {
-            Some(h) => h.summaries(row, facts),
-            None => HashMap::new(),
+            Some(h) => h.cached(row, facts, flows),
+            None => CachedAi::default(),
         }
     }
+}
 
-    pub(crate) fn overview_for(&self, row: &FileRow) -> Option<AiText> {
-        self.ai_hook.read().as_ref().and_then(|h| h.overview(row))
-    }
+/// Cached model output for one file.
+#[derive(Clone, Debug, Default)]
+pub struct CachedAi {
+    /// By qualified name (functions, methods, flow units).
+    pub summaries: HashMap<String, Summary>,
+    /// One sentence per type, by qualified name.
+    pub types: HashMap<String, String>,
+    pub overview: Option<AiText>,
 }
 
 /// Supplies cached model output to file views. Implemented by the AI layer.
 pub trait AiHook: Send + Sync {
-    fn summaries(&self, row: &FileRow, facts: &FileFacts) -> HashMap<String, Summary>;
-    fn overview(&self, row: &FileRow) -> Option<AiText>;
+    fn cached(&self, row: &FileRow, facts: &FileFacts, flows: &[FlowUnit]) -> CachedAi;
 }

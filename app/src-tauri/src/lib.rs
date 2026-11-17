@@ -13,17 +13,17 @@ mod ai;
 
 #[derive(Default)]
 pub struct AppState {
-    engine: RwLock<Option<Arc<Engine>>>,
+    pub(crate) engine: RwLock<Option<Arc<Engine>>>,
     pub(crate) ai: ai::AiState,
 }
 
-type CmdResult<T> = Result<T, String>;
+pub(crate) type CmdResult<T> = Result<T, String>;
 
-fn err(e: impl std::fmt::Display) -> String {
+pub(crate) fn err(e: impl std::fmt::Display) -> String {
     format!("{e:#}")
 }
 
-fn engine(state: &State<'_, AppState>) -> CmdResult<Arc<Engine>> {
+pub(crate) fn engine(state: &State<'_, AppState>) -> CmdResult<Arc<Engine>> {
     state
         .engine
         .read()
@@ -32,7 +32,7 @@ fn engine(state: &State<'_, AppState>) -> CmdResult<Arc<Engine>> {
 }
 
 /// Run blocking engine work off the UI thread.
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     f: impl FnOnce() -> anyhow::Result<T> + Send + 'static,
 ) -> CmdResult<T> {
     tauri::async_runtime::spawn_blocking(f)

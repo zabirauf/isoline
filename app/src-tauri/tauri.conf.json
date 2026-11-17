@@ -7,7 +7,7 @@
     "frontendDist": "../ui/dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm --prefix ../ui run dev",
-    "beforeBuildCommand": "npm --prefix ../ui run build"
+    "beforeBuildCommand": "npm --prefix ../ui run build && sh ../../sidecar/copilot/build.sh"
   },
   "app": {
     "windows": [
@@ -34,6 +34,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "externalBin": [
+      "../../sidecar/copilot/bin/copilot-sidecar"
     ]
   }
 }

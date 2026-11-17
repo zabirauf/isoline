@@ -30,7 +30,7 @@ use iso_core::{
 use tree_sitter::Node;
 
 use crate::Extractor;
-use crate::util::{UniqueNames, clean_doc, head_until, line, node_hash, short, text};
+use crate::util::{UniqueNames, clean_doc, clip, head_until, line, node_hash, text};
 
 pub struct PythonExtractor;
 pub static PYTHON: PythonExtractor = PythonExtractor;
@@ -449,7 +449,7 @@ impl<'a> Py<'a> {
                 }
                 "keyword_separator" => ("*".to_string(), None),
                 "positional_separator" => ("/".to_string(), None),
-                _ => (short(self.t(ch), 60), None),
+                _ => (clip(self.t(ch), 60), None),
             };
             if !label.is_empty() {
                 labels.push(label);
@@ -511,7 +511,7 @@ impl<'a> Py<'a> {
                 None => !name.starts_with('_'),
             };
         let signature = match kind {
-            SymbolKind::Constant | SymbolKind::Type => short(self.t(def), 200),
+            SymbolKind::Constant | SymbolKind::Type => clip(self.t(def), 200),
             _ => head_until(outer.start_byte(), def, body, self.src),
         };
         self.facts.symbols.push(SymbolFact {
@@ -552,9 +552,9 @@ impl<'a> Py<'a> {
                     let attr = f.child_by_field_name("attribute");
                     self.facts.calls.push(CallFact {
                         caller,
-                        callee: short(self.t(f), 200),
+                        callee: clip(self.t(f), 200),
                         name: attr.map(|a| self.t(a).to_string()).unwrap_or_default(),
-                        receiver: obj.map(|o| short(self.t(o), 200)),
+                        receiver: obj.map(|o| clip(self.t(o), 200)),
                         line: attr.map(line).unwrap_or_else(|| line(f)),
                     });
                     // Visit the receiver chain except a bare root identifier.
@@ -573,7 +573,7 @@ impl<'a> Py<'a> {
                     }
                 }
                 _ => {
-                    let callee = short(self.t(f), 200);
+                    let callee = clip(self.t(f), 200);
                     self.facts.calls.push(CallFact {
                         caller,
                         name: callee.clone(),

@@ -1,0 +1,26 @@
+{
+  "crates/core-lib/src/a/b.rs": {
+    "symbols": [
+      {"name": "Thing", "qualified_name": "Thing", "kind": "struct", "start_line": 4, "end_line": 4,
+       "signature": "pub struct Thing", "doc": "The thing.", "exported": true},
+      {"name": "make", "qualified_name": "Thing.make", "kind": "method", "start_line": 7, "end_line": 10,
+       "signature": "pub fn make() -> Self", "exported": true, "parent": "Thing"},
+      {"name": "tests", "qualified_name": "tests", "kind": "module", "start_line": 14, "end_line": 22,
+       "signature": "mod tests", "exported": false},
+      {"name": "makes", "qualified_name": "tests.makes", "kind": "function", "start_line": 19, "end_line": 21,
+       "signature": "fn makes()", "exported": false, "parent": "tests"}
+    ],
+    "imports": [
+      {"specifier": "super::super::util::helper", "kind": "static", "names": [{"name": "helper"}], "line": 1},
+      {"specifier": "self", "kind": "static", "names": [{"name": "*"}], "line": 15},
+      {"specifier": "super::b", "kind": "static", "names": [{"name": "b"}], "line": 16}
+    ],
+    "calls": [
+      {"caller": "Thing.make", "callee": "helper", "name": "helper", "line": 8},
+      {"caller": "tests.makes", "callee": "Thing::make", "name": "make", "receiver": "Thing", "line": 20}
+    ],
+    "refs": [
+      {"from": "Thing.make", "name": "Thing", "type_position": false, "line": 9}
+    ]
+  }
+}

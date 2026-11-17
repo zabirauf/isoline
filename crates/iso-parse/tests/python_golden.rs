@@ -1,53 +1,15 @@
-//! Golden tests for the Python extractor: `fixtures/python/<case>/expected/facts.json` maps
-//! case-relative paths to the expected `FileFacts` (written by hand). `body_hash` is not
-//! compared; fields with serde defaults may be omitted.
+//! Golden tests for the Python extractor (`fixtures/python/*/expected/facts.json`).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use iso_core::{FileFacts, Language};
-use pretty_assertions::assert_eq;
+use iso_core::Language;
 
-fn check_goldens(lang_dir: &str) -> usize {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../fixtures")
-        .join(lang_dir);
-    let mut cases: Vec<PathBuf> = std::fs::read_dir(&root)
-        .expect("fixture dir")
-        .map(|e| e.expect("entry").path())
-        .filter(|p| p.join("expected/facts.json").exists())
-        .collect();
-    cases.sort();
-    let mut checked = 0;
-    for case in cases {
-        let golden = std::fs::read_to_string(case.join("expected/facts.json")).expect("golden");
-        let golden: serde_json::Value = serde_json::from_str(&golden).expect("golden json");
-        for (rel, facts) in golden.as_object().expect("object of files") {
-            let mut facts = facts.clone();
-            if let Some(syms) = facts.get_mut("symbols").and_then(|s| s.as_array_mut()) {
-                for s in syms {
-                    s["body_hash"] = 0.into();
-                }
-            }
-            let expected: FileFacts = serde_json::from_value(facts)
-                .unwrap_or_else(|e| panic!("{}: bad golden for {rel}: {e}", case.display()));
-            let path = case.join(rel);
-            let src = std::fs::read_to_string(&path).expect("fixture source");
-            let lang = Language::detect(rel, src.lines().next());
-            let mut actual = iso_parse::extract_file(&path, lang, &src);
-            for s in &mut actual.symbols {
-                assert_ne!(s.body_hash, 0, "{}: body_hash set", s.qualified_name);
-                s.body_hash = 0;
-            }
-            assert_eq!(actual, expected, "{}", path.display());
-            checked += 1;
-        }
-    }
-    checked
-}
+#[path = "generic_golden_support.rs"]
+mod support;
 
 #[test]
 fn python_goldens() {
-    assert!(check_goldens("python") >= 2);
+    assert!(support::check_goldens("python") >= 2);
 }
 
 #[test]
@@ -68,4 +30,15 @@ fn python_broken_code_still_extracts() {
     assert!(f.has_errors);
     assert!(f.symbols.iter().any(|s| s.qualified_name == "ok"));
     assert!(f.symbols.iter().any(|s| s.qualified_name == "C.m"));
+}
+
+#[test]
+fn python_deep_nesting_does_not_overflow() {
+    let mut src = String::from("x = 1");
+    for _ in 0..20_000 {
+        src.push_str(" + f()");
+    }
+    src.push('\n');
+    let f = iso_parse::extract_file(Path::new("deep.py"), Language::Python, &src);
+    assert_eq!(f.calls.len(), 20_000);
 }

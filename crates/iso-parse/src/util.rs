@@ -31,6 +31,38 @@ pub fn short(s: &str, max: usize) -> String {
 
 // ---- Helpers added by workstream C + D + N (Python, Rust, HTML, CSS, generic). ----
 
+/// Like [`short`], but only reads as much of `s` as it needs, so clipping a long text costs
+/// O(max) instead of O(len). Use it for texts that nest (callees, receivers).
+pub fn clip(s: &str, max: usize) -> String {
+    let mut out = String::new();
+    let mut count = 0;
+    let mut pending_space = false;
+    for ch in s.chars() {
+        if ch.is_whitespace() {
+            pending_space = count > 0;
+            continue;
+        }
+        let needed = if pending_space { 2 } else { 1 };
+        if count + needed > max {
+            // Drop back to max - 1 chars and add the ellipsis.
+            while count > max.saturating_sub(1) {
+                out.pop();
+                count -= 1;
+            }
+            out.push('…');
+            return out;
+        }
+        if pending_space {
+            out.push(' ');
+            count += 1;
+            pending_space = false;
+        }
+        out.push(ch);
+        count += 1;
+    }
+    out
+}
+
 /// hash64 of a node's source text, used for `SymbolFact::body_hash`.
 pub fn node_hash(n: Node, src: &str) -> u64 {
     iso_core::hash64(text(n, src).as_bytes())
@@ -42,7 +74,7 @@ pub fn head_until(start: usize, n: Node, body: Option<Node>, src: &str) -> Strin
     let end = body.map(|b| b.start_byte()).unwrap_or(n.end_byte());
     let raw = src.get(start..end.max(start)).unwrap_or("");
     let trimmed = raw.trim_end().trim_end_matches([':', '{', ';']).trim_end();
-    short(trimmed, 200)
+    clip(trimmed, 200)
 }
 
 /// Makes qualified names unique per kind by appending `#2`, `#3`, … to repeats.

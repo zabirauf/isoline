@@ -48,13 +48,15 @@ rustPlatform.buildRustPackage {
   # `tauri build` runs in app/src-tauri; the workspace target dir stays at the root.
   buildAndTestSubdir = "app/src-tauri";
 
-  # The sidecar comes from its own derivation, so the build only compiles the UI.
+  # The UI is built in preBuild and the sidecar comes from its own derivation, so Tauri's
+  # beforeBuildCommand is dropped (a JSON merge patch with null; flags must not contain spaces).
   tauriBuildFlags = [
     "--config"
-    (builtins.toJSON { build.beforeBuildCommand = "npm --prefix ui run build"; })
+    (builtins.toJSON { build.beforeBuildCommand = null; })
   ];
 
   preBuild = ''
+    (cd app/ui && npm run build)
     install -Dm755 ${lib.getExe copilot-sidecar} \
       sidecar/copilot/bin/copilot-sidecar-${stdenv.hostPlatform.rust.rustcTarget}
   '';

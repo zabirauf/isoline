@@ -154,6 +154,7 @@ fn every_relative_import_in_the_fixture_is_in_the_golden() {
     }
 }
 
+#[cfg(unix)]
 fn copy_dir(from: &Path, to: &Path) {
     std::fs::create_dir_all(to).unwrap();
     for e in std::fs::read_dir(from).unwrap() {

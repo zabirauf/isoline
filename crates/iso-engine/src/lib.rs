@@ -102,8 +102,9 @@ impl Engine {
     }
 
     pub fn open_with_data(root: &Path, data: &Path) -> Result<Arc<Engine>> {
-        let root = root
-            .canonicalize()
+        // dunce: no Windows verbatim prefix (\\?\C:\...), which resolvers and the UI would
+        // otherwise carry around and fail to compare with ordinary paths.
+        let root = dunce::canonicalize(root)
             .with_context(|| format!("no such folder: {}", root.display()))?;
         anyhow::ensure!(root.is_dir(), "not a folder: {}", root.display());
         let index = Index::open(&index_path(data, &root))?;

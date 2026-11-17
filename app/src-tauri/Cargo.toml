@@ -21,4 +21,5 @@ tauri-plugin-dialog = "2.8.4"
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
+dunce = "1.0.5"
 parking_lot.workspace = true

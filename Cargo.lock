@@ -1966,6 +1966,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crossbeam-channel",
+ "dunce",
  "iso-ai",
  "iso-cache",
  "iso-core",
@@ -2042,6 +2043,7 @@ name = "iso-resolve"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dunce",
  "iso-core",
  "oxc_resolver",
  "parking_lot 0.13.0",
@@ -2071,6 +2073,7 @@ name = "isoline"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dunce",
  "iso-ai",
  "iso-core",
  "iso-engine",

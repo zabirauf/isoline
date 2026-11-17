@@ -62,7 +62,13 @@ impl RepoFiles {
     }
     /// Convert an absolute path back to repo-relative, if it is inside the root.
     pub fn rel(&self, abs: &Path) -> Option<String> {
-        let r = abs.strip_prefix(&self.root).ok()?;
+        if let Ok(r) = abs.strip_prefix(&self.root) {
+            return Some(r.to_string_lossy().replace('\\', "/"));
+        }
+        // Another spelling of the same path (symlinked root, Windows 8.3 or verbatim forms).
+        let root = dunce::canonicalize(&self.root).ok()?;
+        let abs = dunce::canonicalize(abs).ok()?;
+        let r = abs.strip_prefix(&root).ok()?;
         Some(r.to_string_lossy().replace('\\', "/"))
     }
 }

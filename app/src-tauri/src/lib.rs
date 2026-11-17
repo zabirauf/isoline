@@ -166,7 +166,7 @@ async fn launch_args() -> CmdResult<serde_json::Value> {
         .filter(|a| !a.starts_with('-'))
         .collect();
     let repo = args.first().map(|p| {
-        std::fs::canonicalize(p)
+        dunce::canonicalize(p)
             .map(|c| c.to_string_lossy().into_owned())
             .unwrap_or_else(|_| p.clone())
     });

@@ -47,7 +47,7 @@ const CONDITIONS: &[&str] = &[
 
 impl JsResolver {
     pub fn new(repo: &RepoFiles) -> Self {
-        let real_root = std::fs::canonicalize(&repo.root).unwrap_or_else(|_| repo.root.clone());
+        let real_root = dunce::canonicalize(&repo.root).unwrap_or_else(|_| repo.root.clone());
         let ext_alias = |from: &str, to: &[&str]| {
             (
                 from.to_string(),
@@ -103,10 +103,16 @@ impl JsResolver {
 
     /// Repo-relative path of an absolute result, if the walker knows the file.
     fn in_repo(&self, abs: &Path) -> Option<String> {
-        let rel = abs
-            .strip_prefix(&self.real_root)
-            .or_else(|_| abs.strip_prefix(&self.repo.root))
-            .ok()?
+        let strip = |p: &Path| {
+            p.strip_prefix(&self.real_root)
+                .or_else(|_| p.strip_prefix(&self.repo.root))
+                .map(Path::to_path_buf)
+                .ok()
+        };
+        // On Windows a result can name the same file in another spelling (8.3 short names,
+        // the verbatim prefix); its canonical form matches the canonical root.
+        let rel = strip(abs)
+            .or_else(|| dunce::canonicalize(abs).ok().and_then(|c| strip(&c)))?
             .to_string_lossy()
             .replace('\\', "/");
         (self.repo.contains(&rel) && !rel.split('/').any(|s| s == "node_modules")).then_some(rel)

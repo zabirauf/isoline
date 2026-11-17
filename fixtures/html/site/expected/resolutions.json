@@ -1,0 +1,16 @@
+[
+  {"from": "index.html", "kind": "link", "specifier": "css/site.css", "expect": {"file": "css/site.css"}},
+  {"from": "index.html", "kind": "link", "specifier": "/favicon.ico", "expect": "unresolved"},
+  {"from": "index.html", "kind": "link", "specifier": "https://fonts.example.com", "expect": {"external": "fonts.example.com"}},
+  {"from": "index.html", "kind": "link", "specifier": "js/app.js", "expect": {"file": "js/app.js"}},
+  {"from": "css/site.css", "kind": "link", "specifier": "base.css", "expect": {"file": "css/base.css"}},
+  {"from": "css/site.css", "kind": "link", "specifier": "/css/theme.css", "expect": {"file": "css/theme.css"}},
+  {"from": "pages/about.html", "kind": "link", "specifier": "../css/site.css?v=3", "expect": {"file": "css/site.css"}},
+  {"from": "pages/about.html", "kind": "link", "specifier": "/css/base.css#top", "expect": {"file": "css/base.css"}},
+  {"from": "pages/about.html", "kind": "link", "specifier": "local.css", "expect": {"file": "pages/local.css"}},
+  {"from": "pages/about.html", "kind": "link", "specifier": "/local.css", "expect": {"file": "pages/local.css"}},
+  {"from": "pages/about.html", "kind": "link", "specifier": "//cdn.example.org/lib.js", "expect": {"external": "cdn.example.org"}},
+  {"from": "pages/about.html", "kind": "link", "specifier": "{{ static_url }}/x.js", "expect": "unresolved"},
+  {"from": "pages/about.html", "kind": "link", "specifier": "data:text/css;base64,AAAA", "expect": {"external": "data"}},
+  {"from": "pages/about.html", "kind": "link", "specifier": "missing.css", "expect": "unresolved"}
+]

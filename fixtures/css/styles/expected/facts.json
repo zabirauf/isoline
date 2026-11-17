@@ -1,0 +1,33 @@
+{
+  "main.css": {
+    "symbols": [
+      {"name": ".nav, .nav a", "qualified_name": ".nav, .nav a", "kind": "selector", "start_line": 6, "end_line": 9,
+       "signature": ".nav, .nav a", "exported": false},
+      {"name": "#app > main .card:hover", "qualified_name": "#app > main .card:hover", "kind": "selector",
+       "start_line": 11, "end_line": 13, "signature": "#app > main .card:hover", "exported": false},
+      {"name": "@media (max-width: 600px)", "qualified_name": "@media (max-width: 600px)", "kind": "selector",
+       "start_line": 15, "end_line": 23, "signature": "@media (max-width: 600px)", "exported": false},
+      {"name": ".nav a", "qualified_name": "@media (max-width: 600px) .nav a", "kind": "selector",
+       "start_line": 16, "end_line": 18, "signature": ".nav a", "exported": false,
+       "parent": "@media (max-width: 600px)"},
+      {"name": ".nav", "qualified_name": "@media (max-width: 600px) .nav", "kind": "selector",
+       "start_line": 20, "end_line": 22, "signature": ".nav", "exported": false,
+       "parent": "@media (max-width: 600px)"},
+      {"name": "@keyframes spin", "qualified_name": "@keyframes spin", "kind": "selector",
+       "start_line": 25, "end_line": 28, "signature": "@keyframes spin", "exported": false},
+      {"name": ".nav", "qualified_name": ".nav", "kind": "selector", "start_line": 30, "end_line": 32,
+       "signature": ".nav", "exported": false},
+      {"name": "@supports (display: grid)", "qualified_name": "@supports (display: grid)", "kind": "selector",
+       "start_line": 34, "end_line": 38, "signature": "@supports (display: grid)", "exported": false},
+      {"name": ".grid", "qualified_name": "@supports (display: grid) .grid", "kind": "selector",
+       "start_line": 35, "end_line": 37, "signature": ".grid", "exported": false,
+       "parent": "@supports (display: grid)"}
+    ],
+    "imports": [
+      {"specifier": "reset.css", "kind": "link", "names": [], "line": 1},
+      {"specifier": "theme/dark.css", "kind": "link", "names": [], "line": 2},
+      {"specifier": "print.css", "kind": "link", "names": [], "line": 3}
+    ],
+    "calls": []
+  }
+}

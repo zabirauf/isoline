@@ -1,0 +1,41 @@
+{
+  "Cart.java": {
+    "symbols": [
+      {"name": "Cart", "qualified_name": "Cart", "kind": "class", "start_line": 10, "end_line": 30,
+       "signature": "public class Cart", "doc": "A shopping cart.", "exported": true},
+      {"name": "items", "qualified_name": "Cart.items", "kind": "field", "start_line": 11, "end_line": 11,
+       "signature": "private final List<Item> items = new ArrayList<>()", "exported": false, "parent": "Cart"},
+      {"name": "Cart", "qualified_name": "Cart.Cart", "kind": "method", "start_line": 13, "end_line": 13,
+       "signature": "public Cart()", "exported": true, "parent": "Cart"},
+      {"name": "add", "qualified_name": "Cart.add", "kind": "method", "start_line": 16, "end_line": 19,
+       "signature": "public void add(Item item)", "doc": "Adds one item.", "exported": true, "parent": "Cart"},
+      {"name": "add", "qualified_name": "Cart.add#2", "kind": "method", "start_line": 21, "end_line": 23,
+       "signature": "public void add(String name)", "exported": true, "parent": "Cart"},
+      {"name": "log", "qualified_name": "Cart.log", "kind": "method", "start_line": 25, "end_line": 27,
+       "signature": "static void log(String msg)", "exported": false, "parent": "Cart"},
+      {"name": "State", "qualified_name": "Cart.State", "kind": "enum", "start_line": 29, "end_line": 29,
+       "signature": "enum State", "exported": false, "parent": "Cart"},
+      {"name": "OPEN", "qualified_name": "Cart.State.OPEN", "kind": "constant", "start_line": 29, "end_line": 29,
+       "signature": "OPEN", "exported": false, "parent": "Cart.State"},
+      {"name": "CLOSED", "qualified_name": "Cart.State.CLOSED", "kind": "constant", "start_line": 29, "end_line": 29,
+       "signature": "CLOSED", "exported": false, "parent": "Cart.State"},
+      {"name": "Priced", "qualified_name": "Priced", "kind": "interface", "start_line": 32, "end_line": 34,
+       "signature": "interface Priced", "exported": false},
+      {"name": "price", "qualified_name": "Priced.price", "kind": "method", "start_line": 33, "end_line": 33,
+       "signature": "int price()", "exported": false, "parent": "Priced"}
+    ],
+    "imports": [
+      {"specifier": "java.util.ArrayList", "kind": "static", "names": [{"name": "ArrayList"}], "line": 3},
+      {"specifier": "java.util", "kind": "static", "names": [{"name": "*"}], "line": 4},
+      {"specifier": "java.lang.Math.max", "kind": "static", "names": [{"name": "max"}], "line": 5}
+    ],
+    "calls": [
+      {"caller": null, "callee": "new ArrayList<>", "name": "ArrayList", "line": 11},
+      {"caller": "Cart.add", "callee": "items.add", "name": "add", "receiver": "items", "line": 17},
+      {"caller": "Cart.add", "callee": "log", "name": "log", "line": 18},
+      {"caller": "Cart.add#2", "callee": "add", "name": "add", "line": 22},
+      {"caller": "Cart.add#2", "callee": "new Item", "name": "Item", "line": 22},
+      {"caller": "Cart.log", "callee": "System.out.println", "name": "println", "receiver": "System.out", "line": 26}
+    ]
+  }
+}

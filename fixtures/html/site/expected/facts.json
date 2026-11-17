@@ -1,0 +1,31 @@
+{
+  "index.html": {
+    "symbols": [
+      {"name": ".home", "qualified_name": ".home", "kind": "selector", "start_line": 13, "end_line": 13,
+       "signature": "<body class=\"home dark\">", "exported": false},
+      {"name": ".dark", "qualified_name": ".dark", "kind": "selector", "start_line": 13, "end_line": 13,
+       "signature": "<body class=\"home dark\">", "exported": false},
+      {"name": "#app", "qualified_name": "#app", "kind": "selector", "start_line": 14, "end_line": 21,
+       "signature": "<div id=\"app\" class=\"container home\">", "exported": false},
+      {"name": ".container", "qualified_name": ".container", "kind": "selector", "start_line": 14, "end_line": 14,
+       "signature": "<div id=\"app\" class=\"container home\">", "exported": false},
+      {"name": "#nav", "qualified_name": "#nav", "kind": "selector", "start_line": 15, "end_line": 18,
+       "signature": "<nav id=\"nav\" class=\"nav {{ extra }} open\">", "exported": false},
+      {"name": ".nav", "qualified_name": ".nav", "kind": "selector", "start_line": 15, "end_line": 15,
+       "signature": "<nav id=\"nav\" class=\"nav {{ extra }} open\">", "exported": false},
+      {"name": ".open", "qualified_name": ".open", "kind": "selector", "start_line": 15, "end_line": 15,
+       "signature": "<nav id=\"nav\" class=\"nav {{ extra }} open\">", "exported": false},
+      {"name": ".link", "qualified_name": ".link", "kind": "selector", "start_line": 17, "end_line": 17,
+       "signature": "<a href=\"pages/about.html\" class=\"link\">", "exported": false},
+      {"name": "#logo", "qualified_name": "#logo", "kind": "selector", "start_line": 19, "end_line": 19,
+       "signature": "<img id=\"logo\" src=\"logo.png\"/>", "exported": false}
+    ],
+    "imports": [
+      {"specifier": "css/site.css", "kind": "link", "names": [], "line": 4},
+      {"specifier": "/favicon.ico", "kind": "link", "names": [], "line": 5},
+      {"specifier": "https://fonts.example.com", "kind": "link", "names": [], "line": 6},
+      {"specifier": "js/app.js", "kind": "link", "names": [], "line": 7}
+    ],
+    "calls": []
+  }
+}

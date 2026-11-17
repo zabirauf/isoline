@@ -74,7 +74,13 @@ pub fn head_until(start: usize, n: Node, body: Option<Node>, src: &str) -> Strin
     let end = body.map(|b| b.start_byte()).unwrap_or(n.end_byte());
     let raw = src.get(start..end.max(start)).unwrap_or("");
     let trimmed = raw.trim_end().trim_end_matches([':', '{', ';']).trim_end();
-    clip(trimmed, 200)
+    // Multi-line parameter lists collapse to `( a, b, )`; tidy them to `(a, b)`.
+    let head = clip(trimmed, 400)
+        .replace("( ", "(")
+        .replace(", )", ")")
+        .replace(",)", ")")
+        .replace(" )", ")");
+    clip(&head, 200)
 }
 
 /// Makes qualified names unique per kind by appending `#2`, `#3`, … to repeats.

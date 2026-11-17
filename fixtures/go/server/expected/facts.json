@@ -1,0 +1,37 @@
+{
+  "server.go": {
+    "symbols": [
+      {"name": "MaxConns", "qualified_name": "MaxConns", "kind": "constant", "start_line": 11, "end_line": 11,
+       "signature": "MaxConns = 10", "doc": "MaxConns limits connections.", "exported": true},
+      {"name": "debug", "qualified_name": "debug", "kind": "variable", "start_line": 13, "end_line": 13,
+       "signature": "debug = false", "exported": false},
+      {"name": "Server", "qualified_name": "Server", "kind": "struct", "start_line": 17, "end_line": 19,
+       "signature": "Server struct", "doc": "Server serves requests.\nIt is safe for concurrent use.",
+       "exported": true},
+      {"name": "Handler", "qualified_name": "Handler", "kind": "interface", "start_line": 21, "end_line": 23,
+       "signature": "Handler interface", "exported": true},
+      {"name": "Serve", "qualified_name": "Handler.Serve", "kind": "method", "start_line": 22, "end_line": 22,
+       "signature": "Serve(ctx context.Context) error", "exported": true, "parent": "Handler"},
+      {"name": "ID", "qualified_name": "ID", "kind": "type", "start_line": 25, "end_line": 25,
+       "signature": "ID string", "exported": true},
+      {"name": "New", "qualified_name": "New", "kind": "function", "start_line": 28, "end_line": 30,
+       "signature": "func New(addr string) *Server", "doc": "New makes a server.", "exported": true},
+      {"name": "Start", "qualified_name": "Server.Start", "kind": "method", "start_line": 32, "end_line": 35,
+       "signature": "func (s *Server) Start(ctx context.Context) error", "exported": true, "parent": "Server"},
+      {"name": "helper", "qualified_name": "helper", "kind": "function", "start_line": 37, "end_line": 39,
+       "signature": "func helper()", "exported": false}
+    ],
+    "imports": [
+      {"specifier": "context", "kind": "static", "names": [{"name": "context"}], "line": 4},
+      {"specifier": "fmt", "kind": "static", "names": [{"name": "fmt"}], "line": 5},
+      {"specifier": "net/http", "kind": "static", "names": [{"name": "http", "alias": "nethttp"}], "line": 6},
+      {"specifier": "embed", "kind": "static", "names": [{"name": "embed", "alias": "_"}], "line": 7}
+    ],
+    "calls": [
+      {"caller": "Server.Start", "callee": "fmt.Println", "name": "Println", "receiver": "fmt", "line": 33},
+      {"caller": "Server.Start", "callee": "nethttp.ListenAndServe", "name": "ListenAndServe", "receiver": "nethttp", "line": 34},
+      {"caller": "helper", "callee": "New", "name": "New", "line": 38},
+      {"caller": "helper", "callee": "New(\"x\").Start", "name": "Start", "receiver": "New(\"x\")", "line": 38}
+    ]
+  }
+}

@@ -359,13 +359,15 @@ impl<'a> Py<'a> {
         let name = self.t(name_node).to_string();
         let body = def.child_by_field_name("body");
         let doc = body.and_then(|b| docstring(b, self.src));
+        // The signature ends at the `:` before the body (a trailing comment sits between).
+        let head_end = colon_before_body(def).or(body);
         if def.kind() == "class_definition" {
             let idx = self.add_symbol(
                 name,
                 SymbolKind::Class,
                 def,
                 outer,
-                body,
+                head_end,
                 ctx,
                 Vec::new(),
                 doc,
@@ -395,7 +397,7 @@ impl<'a> Py<'a> {
         let is_async = has_token(def, "async");
         let params_node = def.child_by_field_name("parameters");
         let (params, bound) = params_node.map(|p| self.params(p)).unwrap_or_default();
-        let idx = self.add_symbol(name, kind, def, outer, body, ctx, params, doc, is_async);
+        let idx = self.add_symbol(name, kind, def, outer, head_end, ctx, params, doc, is_async);
         let shadow = if bound.is_empty() {
             ctx.shadow
         } else {
@@ -693,6 +695,18 @@ fn push_children<'a>(n: Node<'a>, ctx: Ctx, stack: &mut Vec<(Node<'a>, Ctx)>) {
     for ch in n.named_children(&mut c) {
         stack.push((ch, ctx));
     }
+}
+
+/// The `:` token that opens a `def`/`class` body.
+fn colon_before_body(def: Node) -> Option<Node> {
+    let body_start = def
+        .child_by_field_name("body")
+        .map(|b| b.start_byte())
+        .unwrap_or(def.end_byte());
+    let mut c = def.walk();
+    def.children(&mut c)
+        .filter(|ch| !ch.is_named() && ch.kind() == ":" && ch.start_byte() < body_start)
+        .last()
 }
 
 fn first_named(n: Node) -> Option<Node> {

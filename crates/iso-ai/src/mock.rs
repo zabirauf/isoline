@@ -328,7 +328,23 @@ pub fn mock_answer(system: &str, prompt: &str) -> String {
             );
         }
     };
-    value.to_string()
+    canonical(value).to_string()
+}
+
+/// Sort object keys at every level, so the text is identical whether or not serde_json's
+/// `preserve_order` feature is enabled somewhere in the build (the Go mock sorts keys too).
+fn canonical(v: serde_json::Value) -> serde_json::Value {
+    match v {
+        serde_json::Value::Object(m) => {
+            let sorted: std::collections::BTreeMap<String, serde_json::Value> =
+                m.into_iter().map(|(k, v)| (k, canonical(v))).collect();
+            serde_json::Value::Object(sorted.into_iter().collect())
+        }
+        serde_json::Value::Array(a) => {
+            serde_json::Value::Array(a.into_iter().map(canonical).collect())
+        }
+        other => other,
+    }
 }
 
 #[cfg(test)]

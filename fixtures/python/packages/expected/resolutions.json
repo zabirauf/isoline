@@ -1,0 +1,22 @@
+[
+  {"from": "src/shop/web/views.py", "specifier": "os", "names": ["os"], "expect": {"external": "os"}},
+  {"from": "src/shop/web/views.py", "specifier": "requests.adapters", "names": ["requests.adapters"], "expect": {"external": "requests"}},
+  {"from": "src/shop/web/views.py", "specifier": "shop.core.models", "names": ["shop.core.models"], "expect": {"file": "src/shop/core/models.py"}},
+  {"from": "src/shop/web/views.py", "specifier": "shop", "names": ["web"], "expect": {"file": "src/shop/web/__init__.py"}},
+  {"from": "src/shop/web/views.py", "specifier": "tools.cli", "names": ["main"], "expect": {"file": "tools/cli.py"}},
+  {"from": "src/shop/web/views.py", "specifier": "..core", "names": ["models"], "expect": {"file": "src/shop/core/models.py"}},
+  {"from": "src/shop/web/views.py", "specifier": "..core.db", "names": ["connect"], "expect": {"file": "src/shop/core/db.py"}},
+  {"from": "src/shop/web/views.py", "specifier": "..core", "names": ["Base"], "expect": {"file": "src/shop/core/__init__.py"}},
+  {"from": "src/shop/web/views.py", "specifier": ".", "names": ["helpers"], "expect": {"file": "src/shop/web/helpers.py"}},
+  {"from": "src/shop/web/views.py", "specifier": ".helpers", "names": ["fmt"], "expect": {"file": "src/shop/web/helpers.py"}},
+  {"from": "src/shop/web/views.py", "specifier": "...nowhere", "names": ["thing"], "expect": "unresolved"},
+  {"from": "src/shop/web/views.py", "specifier": "shop.missing", "names": ["x"], "expect": "unresolved"},
+  {"from": "src/shop/core/__init__.py", "specifier": ".models", "names": ["Base"], "expect": {"file": "src/shop/core/models.py"}},
+  {"from": "src/shop/core/models.py", "specifier": ".db", "names": ["connect"], "expect": {"file": "src/shop/core/db.py"}},
+  {"from": "tools/cli.py", "specifier": "shop.web.views", "names": ["index"], "expect": {"file": "src/shop/web/views.py"}},
+  {"from": "tools/cli.py", "specifier": ".common", "names": ["banner"], "expect": {"file": "tools/common.py"}},
+  {"from": "scripts/run.py", "specifier": "helper_mod", "names": ["helper_mod"], "expect": {"file": "scripts/helper_mod.py"}},
+  {"from": "scripts/run.py", "specifier": "tools.cli", "names": ["tools.cli"], "expect": {"file": "tools/cli.py"}},
+  {"from": "scripts/run.py", "specifier": "shop.core", "names": ["Base", "models"], "expect": {"file": "src/shop/core/models.py"}},
+  {"from": "scripts/run.py", "specifier": "__future__", "names": ["annotations"], "expect": {"external": "__future__"}}
+]

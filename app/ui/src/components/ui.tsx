@@ -61,6 +61,25 @@ export function ModuleDot({ color, title }: { color: string | null; title?: stri
   return <span className="mdot" style={{ ["--mc" as string]: color }} title={title} aria-hidden={title ? undefined : true} />;
 }
 
+/** A repo path that wraps only after a "/" (never mid-name), with the full path on hover. */
+export function FilePath({ path }: { path: string }) {
+  const parts = path.split("/");
+  return (
+    <span className="fpath" title={path}>
+      {parts.map((p, i) => (
+        <span key={i} className="seg">
+          {p}
+          {i < parts.length - 1 && (
+            <>
+              /<wbr />
+            </>
+          )}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function Eyebrow({ children, id }: { children: ReactNode; id?: string }) {
   return (
     <div className="eyebrow" id={id}>

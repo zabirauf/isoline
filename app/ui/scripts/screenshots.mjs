@@ -72,7 +72,11 @@ for (const scheme of ["light", "dark"]) {
   await p2.screenshot({ path: `${out}/flow-${scheme}.png` });
   // Drill into the controller method of step 3.
   await p2.locator('.iso-step[data-i="2"] .iso-btn-drill').click();
+  await p2.mouse.move(5, 895);
   await wait(1300);
+  const drillPos = (await p2.locator(".fpos").textContent())?.trim();
+  const curSteps = await p2.locator(".iso-step-cur").count();
+  if (drillPos?.startsWith("–") && curSteps) problems.push(`after drill the counter says "${drillPos}" but ${curSteps} step is highlighted`);
   await p2.screenshot({ path: `${out}/flow-drill-${scheme}.png` });
   await p2.close();
 }
@@ -102,35 +106,24 @@ for (const scheme of ["light", "dark"]) {
   if (rows > 200) problems.push(`sidebar renders ${rows} rows; it should be virtualized`);
   const canvas = page.locator(".mmap-canvas");
   const box = await canvas.boundingBox();
-  // Zoom in to the middle level of detail, then pan for about a second.
+  // Fitted: the zoomed-out level of detail (one block per depth column, counts, bundles).
+  await page.screenshot({ path: `${out}/scale-5000-modules-light.png` });
+  // Zoom in on the middle until names show, then pan for a while and read the frame times.
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 9; i++) {
     await page.mouse.wheel(0, -240);
     await wait(30);
   }
-  const frames = await page.evaluate(async () => {
-    const times = [];
-    let last = performance.now();
-    await new Promise((done) => {
-      const tick = (t) => {
-        times.push(t - last);
-        last = t;
-        if (times.length < 60) requestAnimationFrame(tick);
-        else done();
-      };
-      requestAnimationFrame(tick);
-    });
-    return times;
-  });
-  void frames;
+  await wait(200);
+  await page.screenshot({ path: `${out}/scale-5000-modules-zoomed-light.png` });
   await page.mouse.down();
   const t0 = Date.now();
-  for (let i = 0; i < 60; i++) await page.mouse.move(box.x + box.width / 2 - i * 8, box.y + box.height / 2 - i * 3);
+  for (let i = 0; i < 60; i++) await page.mouse.move(box.x + box.width / 2 - i * 4, box.y + box.height / 2 - i * 2);
   await page.mouse.up();
   const dt = Date.now() - t0;
-  const worst = await page.evaluate(() => window.__isolineMapStats?.() ?? null);
-  console.log(`scale: pan of 60 moves took ${dt} ms; canvas frame stats ${JSON.stringify(worst)}`);
-  await page.screenshot({ path: `${out}/scale-5000-modules-light.png` });
+  const stats = await page.evaluate(() => window.__isolineMapStats?.() ?? null);
+  console.log(`scale: pan of 60 moves took ${dt} ms; canvas frame stats ${JSON.stringify(stats)}`);
+  if (stats && stats.worstMs > 16) problems.push(`slowest module-map frame took ${stats.worstMs} ms`);
   await page.close();
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FlowItem } from "../ipc/bindings/FlowItem";
-import { drillOf, exitKeyword, flowStats, hasLoops, keyOf, metaFor, numberFlow, staggerMs, unitTitle, type CallItem } from "./flow";
+import { drillOf, exitKeyword, flowStats, hasLoops, keyOf, metaFor, metaParts, numberFlow, spinePath, staggerMs, unitTitle, type CallItem } from "./flow";
 import { lifecycleFlows } from "./testdata";
 
 const attempt = lifecycleFlows.runAgentHarnessLifecycleAttempt;
@@ -75,5 +75,38 @@ describe("call flow stats and wording", () => {
     expect(staggerMs(18) * 18).toBeLessThanOrEqual(1000);
     expect(staggerMs(1)).toBe(40);
     expect(staggerMs(500)).toBe(12);
+  });
+});
+
+describe("step meta parts", () => {
+  it("sets paths, identifiers and lines in mono and prose in the body face", () => {
+    const ext: CallItem = { t: "call", label: "x", target: { kind: "ext", id: "x", module: "../../infra/a.js" }, line: 9, await: false, optional: false, argOf: "freeze", inner: [] };
+    const parts = metaParts(ext).flat();
+    expect(parts).toEqual([
+      { text: "infra/a.js", mono: true },
+      { text: "argument to ", mono: false },
+      { text: "freeze()", mono: true },
+      { text: "L9", mono: true },
+    ]);
+    const first = numberFlow(attempt.tree, false).steps[0];
+    expect(metaParts(first).flat()).toEqual([
+      { text: "this file", mono: false },
+      { text: "L365", mono: true },
+    ]);
+  });
+});
+
+describe("spine path", () => {
+  const a = { x: 80, y1: 0, y2: 24 };
+  const b = { x: 30, y1: 200, y2: 224 };
+  it("drops, crosses above the next step, then enters it", () => {
+    expect(spinePath(a, b, [])).toBe("M80,24 L80,193 L30,193 L30,200");
+  });
+  it("steps around an empty frame instead of crossing it", () => {
+    const empty = [{ left: 40, right: 400, top: 60, bottom: 120 }];
+    const d = spinePath(a, b, empty);
+    expect(d).toBe("M80,24 L80,56 L35,56 L35,193 L30,193 L30,200");
+    // A frame that is not under the drop is left alone.
+    expect(spinePath(a, b, [{ left: 100, right: 400, top: 60, bottom: 120 }])).toBe("M80,24 L80,193 L30,193 L30,200");
   });
 });

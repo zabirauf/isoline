@@ -8,11 +8,11 @@ import { api } from "../ipc/api";
 import { fmtInt, fmtUsd, num, plural } from "../lib/format";
 
 export function aiLabel(s: AiStatus | null): string {
-  if (!s) return "AI";
-  if (s.signedIn) return s.enabledForRepo ? "AI on" : "AI off for this repo";
-  if (s.deviceCode || s.sidecar === "starting") return "AI: signing in";
+  if (!s) return "AI summaries";
+  if (s.signedIn) return s.enabledForRepo ? "AI summaries on" : "Turn on AI for this repo…";
+  if (s.deviceCode || s.sidecar === "starting") return "Signing in to AI…";
   if (s.sidecar === "failed") return "AI unavailable";
-  return "AI off";
+  return "Turn on AI…";
 }
 
 export function AiPanel({ status, setStatus, filePath, progress }: { status: AiStatus | null; setStatus(s: AiStatus): void; filePath: string | null; progress: AiProgress | null }) {

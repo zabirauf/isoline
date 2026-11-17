@@ -42,11 +42,34 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
 
   const G: MapLayout = useMemo(() => layoutMap(view.functions, view.modules, { showExt, showTypes }), [view, showExt, showTypes]);
 
+  const headsRef = useRef<SVGGElement>(null);
   const applyT = useCallback((anim: boolean) => {
     const vp = vpRef.current;
     if (!vp) return;
-    vp.classList.toggle("anim", anim && !prefersReducedMotion());
+    const reduce = prefersReducedMotion();
+    vp.classList.toggle("anim", anim && !reduce);
     vp.style.transform = `translate(${T.current.x}px, ${T.current.y}px) scale(${T.current.k})`;
+    // Column heads are drawn at screen size, following the columns sideways only.
+    const heads = headsRef.current;
+    if (heads) {
+      heads.classList.toggle("anim", anim && !reduce);
+      const gs = [...heads.querySelectorAll<SVGGElement>("g[data-x]")];
+      gs.forEach((g, i) => {
+        const x = Number(g.dataset.x) * T.current.k + T.current.x;
+        const w = Number(g.dataset.w) * T.current.k;
+        const next = gs[i + 1] ? Number(gs[i + 1].dataset.x) * T.current.k + T.current.x : Infinity;
+        g.style.transform = `translate(${x}px, 0)`;
+        const line = g.querySelector("line");
+        if (line) line.setAttribute("x2", String(w));
+        const text = g.querySelector("text");
+        if (!text) return;
+        // The full label, else the short one, else nothing: heads never run into each other.
+        const room = next - x - 10;
+        text.textContent = g.dataset.label!;
+        if (text.getComputedTextLength() > room) text.textContent = g.dataset.short!;
+        text.style.visibility = text.getComputedTextLength() > room ? "hidden" : "";
+      });
+    }
   }, []);
 
   const fit = useCallback(
@@ -58,7 +81,7 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
       const bw = G.W + 40;
       const bh = G.H + 70;
       const k = Math.min(1.1, Math.min(r.width / bw, (r.height - 70) / bh) * 0.95);
-      T.current = { k, x: (r.width - G.W * k) / 2, y: Math.max(46, (r.height - 60 - G.H * k) / 2 + 30) };
+      T.current = { k, x: (r.width - G.W * k) / 2, y: Math.max(52, (r.height - 60 - G.H * k) / 2 + 30) };
       applyT(anim);
     },
     [G, applyT],
@@ -258,14 +281,6 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
           ))}
         </defs>
         <g ref={vpRef} className={`vp${focusT ? " focus" : ""}`}>
-          {G.colMeta.map((c, i) => (
-            <g key={"c" + i}>
-              <text className="colhead" x={c.x} y={-30}>
-                {c.label}
-              </text>
-              <line className="colrule" x1={c.x} x2={c.x + c.w} y1={-20} y2={-20} />
-            </g>
-          ))}
           {plainEdges}
           {focusedEdges}
           {G.cols.flat().map((n) => {
@@ -332,6 +347,16 @@ export const DepMap = forwardRef<DepMapHandle, DepMapProps>(function DepMap(p, r
               </g>
             );
           })}
+        </g>
+        <g ref={headsRef} className="heads" aria-hidden="true">
+          {G.colMeta.map((c, i) => (
+            <g key={"c" + i + c.label} data-x={c.x} data-w={c.w} data-label={c.label} data-short={c.label.split(" · ")[0]}>
+              <text className="colhead" x={0} y={22}>
+                {c.label}
+              </text>
+              <line className="colrule" x1={0} x2={c.w} y1={30} y2={30} />
+            </g>
+          ))}
         </g>
       </svg>
       <div className="legend mlegend">

@@ -66,6 +66,7 @@ export function SearchBox({ enabled, onPick }: { enabled: boolean; onPick(hit: S
         aria-activedescendant={showPop && hits[active] ? `hit-${active}` : undefined}
         role="combobox"
         disabled={!enabled}
+        title={enabled ? undefined : "Search works once a repo is open"}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);

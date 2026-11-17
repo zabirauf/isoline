@@ -1,11 +1,12 @@
-// Module-level map on canvas, for repo scale. Level of detail by zoom: dots when far out, boxes
-// in the middle, names and captions when close. Only what is on screen is drawn, and a frame is
+// Module-level map on canvas, for repo scale. Level of detail by zoom: one block per depth column
+// with counts and bundled edges when far out, boxes in the middle, names when close (text is
+// always drawn in screen space at a readable size). Only what is on screen is drawn, and a frame is
 // drawn only when something changed, so panning stays smooth with 5,000 modules.
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { ModuleMap } from "../ipc/bindings/ModuleMap";
 import type { ModuleInfo } from "../ipc/bindings/ModuleInfo";
-import { layoutModules, MOD_H, MOD_W, SpatialGrid } from "../lib/moduleLayout";
-import { fmtInt, num, plural } from "../lib/format";
+import { layoutModules, mapDetail, MOD_H, MOD_W, SpatialGrid } from "../lib/moduleLayout";
+import { fitMiddle, fmtInt, num, plural } from "../lib/format";
 import { onThemeChange, effectiveTheme } from "../lib/theme";
 
 export interface ModuleMapHandle {
@@ -77,11 +78,11 @@ export const ModuleMapCanvas = forwardRef<ModuleMapHandle, Props>(function Modul
     const w = c.clientWidth;
     const h = c.clientHeight;
     if (!w || !h) return;
-    const pad = L.vertical ? 190 : 0;
-    // Leave room at the bottom for the legend that sits over the canvas.
-    const legend = 84;
-    const k = Math.min(1.2, Math.min(w / (L.W + 80 + pad), (h - 40 - legend) / (L.H + 60)));
-    T.current = { k, x: (w - (L.W - pad) * k) / 2, y: (h - legend - L.H * k) / 2 + 14 };
+    // Leave room for the column heads at the top and the legend over the bottom.
+    const top = 34;
+    const legend = 70;
+    const k = Math.min(1.2, Math.min((w - 40) / Math.max(1, L.W), (h - top - legend - 20) / Math.max(1, L.H)));
+    T.current = { k, x: (w - L.W * k) / 2, y: top + (h - top - legend - L.H * k) / 2 };
     request();
   };
 
@@ -118,14 +119,17 @@ export const ModuleMapCanvas = forwardRef<ModuleMapHandle, Props>(function Modul
     }
     const P = (pal.current ??= readPalette(c));
     const { k, x, y } = T.current;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const toScreen = (wx: number, wy: number) => [wx * k + x, wy * k + y] as const;
+    const screen = () => ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const world = () => ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * x, dpr * y);
+    screen();
     ctx.fillStyle = P.bg;
     ctx.fillRect(0, 0, w, h);
-    ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * x, dpr * y);
     const x0 = -x / k;
     const y0 = -y / k;
     const x1 = (w - x) / k;
     const y1 = (h - y) / k;
+    const detail = mapDetail(k);
     const sel = selRef.current >= 0 ? selRef.current : hover.current;
     const focus = sel >= 0;
     const depSet = new Set<number>();
@@ -134,119 +138,157 @@ export const ModuleMapCanvas = forwardRef<ModuleMapHandle, Props>(function Modul
       for (const e of out.o[sel]) depSet.add(L.to[e]);
       for (const e of out.inc[sel]) userSet.add(L.from[e]);
     }
+    const px = (n: number) => n / k; // a screen-pixel length in world units
 
-    // Column heads.
-    if (k > 0.25) {
-      ctx.font = `600 ${11 / Math.max(k, 0.6)}px "IBM Plex Sans Condensed", sans-serif`;
-      ctx.fillStyle = P.muted;
-      ctx.strokeStyle = P.grid;
-      ctx.lineWidth = 1 / k;
-      for (const col of L.columns) {
-        if (L.vertical) {
-          if (col.y > y1 || col.y + MOD_H < y0) continue;
-          ctx.fillText(col.label.toUpperCase(), -24 - ctx.measureText(col.label.toUpperCase()).width, col.y + MOD_H / 2 + 4);
-          continue;
-        }
-        if (col.x > x1 || col.x + MOD_W < x0) continue;
-        ctx.fillText(col.label.toUpperCase(), col.x, -24);
-        ctx.beginPath();
-        ctx.moveTo(col.x, -16);
-        ctx.lineTo(col.x + MOD_W, -16);
-        ctx.stroke();
-      }
-    }
-
-    // Edges: straight when far out, curves when close; only those crossing the viewport.
-    const curves = k > 0.3;
-    const edgePath = (i: number) => {
+    const curve = (sx: number, sy: number, tx: number, ty: number) => {
+      ctx.moveTo(sx, sy);
+      const dx = Math.max(40, Math.abs(tx - sx) * 0.45);
+      ctx.bezierCurveTo(sx + dx, sy, tx - dx, ty, tx, ty);
+    };
+    const edgeTo = (i: number, straight: boolean) => {
       const a = L.from[i];
       const b = L.to[i];
-      const v = L.vertical;
-      const sx = v ? L.x[a] + MOD_W / 2 : L.x[a] + MOD_W;
-      const sy = v ? L.y[a] + MOD_H : L.y[a] + MOD_H / 2;
-      const tx = v ? L.x[b] + MOD_W / 2 : L.x[b];
-      const ty = v ? L.y[b] : L.y[b] + MOD_H / 2;
+      const sx = L.x[a] + MOD_W;
+      const sy = L.y[a] + MOD_H / 2;
+      const tx = L.x[b];
+      const ty = L.y[b] + MOD_H / 2;
       if (Math.max(sx, tx) < x0 || Math.min(sx, tx) > x1 || Math.max(sy, ty) < y0 || Math.min(sy, ty) > y1) return;
-      ctx.moveTo(sx, sy);
-      if (curves && v) {
-        const dy = Math.max(30, Math.abs(ty - sy) * 0.45);
-        ctx.bezierCurveTo(sx, sy + dy, tx, ty - (ty > sy ? dy : -dy), tx, ty);
-      } else if (curves) {
-        const dx = Math.max(40, (tx - sx) * 0.45);
-        ctx.bezierCurveTo(sx + dx, sy, tx - dx, ty, tx, ty);
-      } else ctx.lineTo(tx, ty);
+      if (straight) {
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(tx, ty);
+      } else curve(sx, sy, tx, ty);
     };
-    const E = L.from.length;
-    if (!focus || E < 20000) {
-      ctx.beginPath();
-      for (let i = 0; i < E; i++) edgePath(i);
-      ctx.strokeStyle = P.muted;
-      ctx.globalAlpha = focus ? 0.06 : k < 0.15 ? 0.12 : 0.3;
-      ctx.lineWidth = Math.max(0.6, 1.1 / Math.max(k, 0.5)) / Math.max(1, 1 / k / 4);
-      ctx.stroke();
+    const focusEdges = () => {
+      if (!focus) return;
+      ctx.lineWidth = px(1.8);
       ctx.globalAlpha = 1;
-    }
-    if (focus) {
-      ctx.lineWidth = 1.8 / Math.min(1, k * 1.5);
       ctx.beginPath();
-      for (const e of out.o[sel]) edgePath(e);
+      for (const e of out.o[sel]) edgeTo(e, false);
       ctx.strokeStyle = P.accent;
       ctx.stroke();
       ctx.beginPath();
-      for (const e of out.inc[sel]) edgePath(e);
+      for (const e of out.inc[sel]) edgeTo(e, false);
       ctx.strokeStyle = P.user;
       ctx.stroke();
-    }
+    };
 
-    // Nodes.
-    const vis = grid.query(x0, y0, x1, y1);
-    const boxes = k > 0.12;
-    const byColor = new Map<string, number[]>();
-    for (const i of vis) {
-      const col = map.modules[i].color;
-      let arr = byColor.get(col);
-      if (!arr) byColor.set(col, (arr = []));
-      arr.push(i);
-    }
-    const alphaOf = (i: number) => (!focus || i === sel || depSet.has(i) || userSet.has(i) ? 1 : 0.25);
-    if (boxes) {
-      for (const i of vis) {
-        ctx.globalAlpha = alphaOf(i);
-        ctx.fillStyle = i === sel ? P.surface : depSet.has(i) ? P.accentSoft : userSet.has(i) ? P.userSoft : P.surface;
-        ctx.fillRect(L.x[i], L.y[i], MOD_W, MOD_H);
-      }
-      ctx.lineWidth = 1 / Math.min(1, k * 1.2);
-      for (const i of vis) {
-        ctx.globalAlpha = alphaOf(i);
-        ctx.strokeStyle = i === sel ? P.ink : depSet.has(i) ? P.accent : userSet.has(i) ? P.user : P.line;
-        ctx.lineWidth = (i === sel ? 2 : depSet.has(i) || userSet.has(i) ? 1.6 : 1) / Math.min(1, k * 1.2);
-        ctx.strokeRect(L.x[i], L.y[i], MOD_W, MOD_H);
-      }
-    }
-    for (const [col, idx] of byColor) {
-      ctx.fillStyle = themed(col, dark.current);
-      for (const i of idx) {
-        ctx.globalAlpha = alphaOf(i);
-        if (boxes) ctx.fillRect(L.x[i], L.y[i], 5, MOD_H);
-        else ctx.fillRect(L.x[i], L.y[i], MOD_W, MOD_H);
-      }
-    }
-    ctx.globalAlpha = 1;
-    if (k * 12 >= 7) {
-      ctx.textBaseline = "alphabetic";
-      for (const i of vis) {
-        const m = map.modules[i];
-        ctx.globalAlpha = alphaOf(i);
-        ctx.fillStyle = P.ink;
-        ctx.font = '600 12px "IBM Plex Mono", monospace';
-        ctx.fillText(m.name, L.x[i] + 14, L.y[i] + 19, MOD_W - 22);
-        if (k >= 0.75) {
-          ctx.fillStyle = P.muted;
-          ctx.font = '10.5px "IBM Plex Sans", sans-serif';
-          ctx.fillText(`${plural(m.files, "file")} · ${fmtInt(num(m.lines))} lines`, L.x[i] + 14, L.y[i] + 35, MOD_W - 22);
+    world();
+    if (detail === "aggregate") {
+      // One block per depth column, its modules as texture, edges bundled per column pair.
+      for (const b of L.bundles) {
+        const A = L.columns[b.from];
+        const B = L.columns[b.to];
+        ctx.beginPath();
+        if (B.x > A.x) curve(A.x + A.w, (A.y0 + A.y1) / 2, B.x, (B.y0 + B.y1) / 2);
+        else {
+          // Back edge (a cycle): arc above the columns.
+          const top = Math.min(A.y0, B.y0) - px(26);
+          ctx.moveTo(A.x + A.w / 2, A.y0);
+          ctx.bezierCurveTo(A.x + A.w / 2, top, B.x + B.w / 2, top, B.x + B.w / 2, B.y0);
         }
+        ctx.lineWidth = px(Math.min(8, 1 + Math.log2(b.count)));
+        ctx.strokeStyle = P.muted;
+        ctx.globalAlpha = focus ? 0.1 : B.x > A.x ? 0.28 : 0.14;
+        ctx.stroke();
       }
       ctx.globalAlpha = 1;
+      for (const col of L.columns) {
+        ctx.fillStyle = P.surface;
+        ctx.strokeStyle = P.line;
+        ctx.lineWidth = px(1);
+        ctx.fillRect(col.x - px(6), col.y0 - px(6), col.w + px(12), col.y1 - col.y0 + px(12));
+        ctx.strokeRect(col.x - px(6), col.y0 - px(6), col.w + px(12), col.y1 - col.y0 + px(12));
+      }
+      ctx.fillStyle = P.muted;
+      ctx.globalAlpha = 0.3;
+      for (const i of grid.query(x0, y0, x1, y1)) ctx.fillRect(L.x[i], L.y[i], MOD_W, MOD_H);
+      ctx.globalAlpha = 1;
+      focusEdges();
+      if (focus) {
+        ctx.fillStyle = P.ink;
+        ctx.fillRect(L.x[sel] - px(2), L.y[sel] - px(2), MOD_W + px(4), MOD_H + px(4));
+        ctx.fillStyle = P.accent;
+        for (const i of depSet) ctx.fillRect(L.x[i], L.y[i], MOD_W, MOD_H);
+        ctx.fillStyle = P.user;
+        for (const i of userSet) ctx.fillRect(L.x[i], L.y[i], MOD_W, MOD_H);
+      }
+    } else {
+      // Edges: straight lines in the middle range, curves when close.
+      const E = L.from.length;
+      ctx.beginPath();
+      for (let i = 0; i < E; i++) edgeTo(i, detail === "boxes");
+      ctx.strokeStyle = P.muted;
+      ctx.globalAlpha = focus ? 0.07 : 0.3;
+      ctx.lineWidth = px(1.1);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      focusEdges();
+      const vis = grid.query(x0, y0, x1, y1);
+      const alphaOf = (i: number) => (!focus || i === sel || depSet.has(i) || userSet.has(i) ? 1 : 0.25);
+      for (const i of vis) {
+        ctx.globalAlpha = alphaOf(i);
+        ctx.fillStyle = depSet.has(i) ? P.accentSoft : userSet.has(i) ? P.userSoft : P.surface;
+        ctx.fillRect(L.x[i], L.y[i], MOD_W, MOD_H);
+        ctx.strokeStyle = i === sel ? P.ink : depSet.has(i) ? P.accent : userSet.has(i) ? P.user : P.line;
+        ctx.lineWidth = px(i === sel ? 2 : depSet.has(i) || userSet.has(i) ? 1.6 : 1);
+        ctx.strokeRect(L.x[i], L.y[i], MOD_W, MOD_H);
+      }
+      ctx.globalAlpha = 1;
+      if (detail === "labels") {
+        // Names in screen space at a readable size: a color dot, the name, a caption if room.
+        screen();
+        const bw = MOD_W * k;
+        const bh = MOD_H * k;
+        const nameFont = '600 12px "IBM Plex Sans", sans-serif';
+        const capFont = '11px "IBM Plex Sans", sans-serif';
+        for (const i of vis) {
+          const m = map.modules[i];
+          const [sx, sy] = toScreen(L.x[i], L.y[i]);
+          ctx.globalAlpha = alphaOf(i);
+          const twoLines = bh >= 36;
+          const ny = twoLines ? sy + bh / 2 - 3 : sy + bh / 2 + 4;
+          ctx.fillStyle = themed(m.color, dark.current);
+          ctx.beginPath();
+          ctx.arc(sx + 10, ny - 4, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = nameFont;
+          ctx.fillStyle = P.ink;
+          ctx.fillText(fitMiddle(m.name, bw - 26, (t) => ctx.measureText(t).width), sx + 19, ny);
+          if (twoLines) {
+            ctx.font = capFont;
+            ctx.fillStyle = P.muted;
+            const cap = bw >= 150 ? `${plural(m.files, "file")} · ${fmtInt(num(m.lines))} lines` : plural(m.files, "file");
+            ctx.fillText(fitMiddle(cap, bw - 26, (t) => ctx.measureText(t).width), sx + 19, ny + 15);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Column heads in screen space on one line above the tallest column, like the file map.
+    screen();
+    ctx.textAlign = "left";
+    const headY = Math.max(16, Math.min(...L.columns.map((col) => col.y0)) * k + y - (detail === "aggregate" ? 30 : 12));
+    let lastRight = -Infinity;
+    for (const col of L.columns) {
+      const sx = col.x * k + x;
+      const sw = Math.max(col.w * k, 1);
+      if (sx + sw < 0 || sx > w) continue;
+      ctx.font = '600 11px "IBM Plex Sans Condensed", sans-serif';
+      const text = (sw >= 120 ? col.label : `Depth ${col.level}`).toUpperCase();
+      const tw = ctx.measureText(text).width;
+      if (sx < lastRight + 8) continue;
+      ctx.fillStyle = P.muted;
+      ctx.fillText(text, sx, headY);
+      let right = sx + tw;
+      if (detail === "aggregate") {
+        ctx.font = '600 12px "IBM Plex Sans", sans-serif';
+        ctx.fillStyle = P.ink;
+        const count = fmtInt(col.count);
+        ctx.fillText(count, sx, headY + 15);
+        right = Math.max(right, sx + ctx.measureText(count).width);
+      }
+      lastRight = right;
     }
     const ms = performance.now() - t0;
     perf.current = { frames: perf.current.frames + 1, worstMs: Math.max(perf.current.worstMs, ms), lastMs: ms };

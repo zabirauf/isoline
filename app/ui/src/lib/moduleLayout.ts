@@ -1,14 +1,55 @@
 // Module-level map layout for repo scale (thousands of modules). Same idea as the file map:
-// columns by dependency depth (entry points left), barycentre ordering, but index-based and
-// iterative so 5,000 modules lay out in a few tens of milliseconds. Tall columns wrap into
-// sub-columns to keep the map roughly as wide as it is tall.
+// columns by dependency depth (entry points left, deeper layers to the right), barycentre
+// ordering, but index-based and iterative so 5,000 modules lay out in a few tens of
+// milliseconds. Tall columns wrap into sub-columns so the map stays roughly as wide as tall.
 import type { ModuleMap } from "../ipc/bindings/ModuleMap";
 
-export const MOD_W = 176;
-export const MOD_H = 44;
-const ROW_GAP = 14;
-const SUB_GAP = 24;
-const COL_GAP = 90;
+export const MOD_W = 150;
+export const MOD_H = 40;
+const ROW_GAP = 12;
+const SUB_GAP = 16;
+const COL_GAP = 40;
+
+/** Width to height the wrapped layout aims for: about the shape of the map pane. */
+const ASPECT = 2.4;
+
+/**
+ * How many rows a column may have before it wraps into another sub-column, chosen so the whole
+ * map comes out close to `aspect` (width / height). Short maps never wrap.
+ */
+export function rowsForAspect(counts: number[], aspect: number): number {
+  const tallest = Math.max(1, ...counts);
+  let best = tallest;
+  let bestErr = Infinity;
+  for (let rows = Math.min(tallest, 6); rows <= tallest; rows = rows < 40 ? rows + 1 : Math.ceil(rows * 1.05)) {
+    let w = 0;
+    for (const c of counts) if (c) w += Math.ceil(c / rows) * (MOD_W + SUB_GAP) - SUB_GAP + COL_GAP;
+    const h = rows * (MOD_H + ROW_GAP);
+    const err = Math.abs(Math.log(w / h / aspect));
+    if (err < bestErr) {
+      bestErr = err;
+      best = rows;
+    }
+    if (rows === tallest) break;
+  }
+  return best;
+}
+
+export interface ModuleColumn {
+  x: number;
+  /** Width including wrapped sub-columns. */
+  w: number;
+  y0: number;
+  y1: number;
+  count: number;
+  level: number;
+  label: string;
+}
+export interface ModuleBundle {
+  from: number;
+  to: number;
+  count: number;
+}
 
 export interface ModuleLayout {
   /** Top-left of each module box, in the order of `map.modules`. */
@@ -20,13 +61,12 @@ export interface ModuleLayout {
   to: Int32Array;
   weight: Float64Array;
   index: Map<string, number>;
-  /** Depth bands: columns, or rows when `vertical`. */
-  columns: { x: number; y: number; level: number; label: string }[];
-  /**
-   * Small, deep maps (a long chain of a few modules per depth) read better top to bottom:
-   * depth runs down the rows and edges leave a box's bottom for the next box's top.
-   */
-  vertical: boolean;
+  /** Column of each module (index into `columns`). */
+  col: Int32Array;
+  /** One column per dependency depth, entry points first (left). */
+  columns: ModuleColumn[];
+  /** Edges summed per pair of columns, for the zoomed-out view. */
+  bundles: ModuleBundle[];
   W: number;
   H: number;
 }
@@ -85,7 +125,7 @@ export function layoutModules(map: ModuleMap): ModuleLayout {
   const size = (i: number) => map.modules[i].files;
   cols.forEach((c) => c.sort((a, b) => size(b) - size(a) || (map.modules[a].id < map.modules[b].id ? -1 : 1)));
 
-  const maxRows = Math.max(10, Math.ceil(Math.sqrt(n) * 1.6));
+  const maxRows = rowsForAspect(cols.map((c) => c.length), ASPECT);
   const pos = new Float64Array(n); // vertical position used for barycentres
   const place = () => {
     for (const c of cols) {
@@ -112,27 +152,9 @@ export function layoutModules(map: ModuleMap): ModuleLayout {
 
   const x = new Float64Array(n);
   const y = new Float64Array(n);
-  const columns: ModuleLayout["columns"] = [];
-  const label = (l: number) => (l === maxL && maxL > 0 ? `Depth ${l} · entry points` : l === 0 ? "Depth 0 · no dependencies" : `Depth ${l}`);
-  const widest = Math.max(0, ...cols.map((c) => c.length));
-  const bands = cols.filter((c) => c.length).length;
-  if (n > 0 && n <= 400 && widest <= maxRows && bands * (MOD_W + COL_GAP) > 2.2 * widest * (MOD_H + ROW_GAP)) {
-    const BAND_GAP = 46;
-    const rowW = (c: number[]) => c.length * (MOD_W + SUB_GAP) - SUB_GAP;
-    const W = Math.max(...cols.map(rowW));
-    let cy = 0;
-    cols.forEach((c, ci) => {
-      if (!c.length) return;
-      const off = (W - rowW(c)) / 2;
-      columns.push({ x: 0, y: cy, level: maxL - ci, label: label(maxL - ci) });
-      c.forEach((v, k) => {
-        x[v] = off + k * (MOD_W + SUB_GAP);
-        y[v] = cy;
-      });
-      cy += MOD_H + BAND_GAP;
-    });
-    return { x, y, level, from, to, weight, index, columns, vertical: true, W, H: Math.max(0, cy - BAND_GAP) };
-  }
+  const col = new Int32Array(n);
+  const columns: ModuleColumn[] = [];
+  const label = (l: number) => (l === maxL && maxL > 0 ? `Depth ${l} · entry points` : l === 0 ? (maxL > 0 ? "Depth 0 · no dependencies" : "Depth 0") : `Depth ${l}`);
   let cx = 0;
   let H = 0;
   cols.forEach((c, ci) => {
@@ -140,23 +162,39 @@ export function layoutModules(map: ModuleMap): ModuleLayout {
     const rows = Math.min(maxRows, c.length);
     const subs = Math.ceil(c.length / rows);
     const l = maxL - ci;
-    columns.push({ x: cx, y: 0, level: l, label: label(l) });
+    const w = subs * (MOD_W + SUB_GAP) - SUB_GAP;
+    const h = rows * (MOD_H + ROW_GAP) - ROW_GAP;
+    const index = columns.length;
+    columns.push({ x: cx, w, y0: 0, y1: h, count: c.length, level: l, label: label(l) });
     c.forEach((v, k) => {
       x[v] = cx + Math.floor(k / rows) * (MOD_W + SUB_GAP);
       y[v] = (k % rows) * (MOD_H + ROW_GAP);
+      col[v] = index;
     });
-    H = Math.max(H, rows * (MOD_H + ROW_GAP) - ROW_GAP);
-    cx += subs * (MOD_W + SUB_GAP) - SUB_GAP + COL_GAP;
+    H = Math.max(H, h);
+    cx += w + COL_GAP;
   });
   // Center each column vertically.
-  cols.forEach((c) => {
-    if (!c.length) return;
-    const rows = Math.min(maxRows, c.length);
-    const h = rows * (MOD_H + ROW_GAP) - ROW_GAP;
-    const off = (H - h) / 2;
-    c.forEach((v) => (y[v] += off));
-  });
-  return { x, y, level, from, to, weight, index, columns, vertical: false, W: Math.max(0, cx - COL_GAP), H };
+  for (const c of columns) {
+    const off = (H - c.y1) / 2;
+    c.y0 += off;
+    c.y1 += off;
+  }
+  for (let i = 0; i < n; i++) y[i] += columns[col[i]].y0;
+
+  // Column-to-column bundles: what the zoomed-out view draws instead of thousands of edges.
+  const bundleMap = new Map<number, ModuleBundle>();
+  for (let i = 0; i < from.length; i++) {
+    const a = col[from[i]];
+    const b = col[to[i]];
+    if (a === b) continue;
+    const key = a * 100003 + b;
+    const e = bundleMap.get(key);
+    if (e) e.count++;
+    else bundleMap.set(key, { from: a, to: b, count: 1 });
+  }
+  const bundles = [...bundleMap.values()].sort((p, q) => p.from - q.from || p.to - q.to);
+  return { x, y, level, col, from, to, weight, index, columns, bundles, W: Math.max(0, cx - COL_GAP), H };
 }
 
 /** Uniform grid over the layout for hit testing and viewport culling. */
@@ -193,4 +231,18 @@ export class SpatialGrid {
     }
     return -1;
   }
+}
+
+export type MapDetail = "aggregate" | "boxes" | "labels";
+
+/**
+ * Level of detail for a zoom factor. Far out, a box would be a few pixels tall, so the map
+ * draws one block per depth column with counts and bundled edges. In the middle it draws boxes;
+ * close in, boxes get a color dot, a name and, when there is room, a caption, always at a
+ * readable screen size.
+ */
+export function mapDetail(k: number): MapDetail {
+  if (MOD_H * k < 10) return "aggregate";
+  if (MOD_W * k < 84) return "boxes";
+  return "labels";
 }

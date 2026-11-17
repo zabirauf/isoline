@@ -11,7 +11,7 @@ import { lineRange, plural } from "../lib/format";
 import { prefersReducedMotion } from "../lib/theme";
 import type { CodeContext } from "../editor/EditorHost";
 import { CodeView } from "../editor/CodeView";
-import { AiMark, Eyebrow, RichText, Seg } from "../components/ui";
+import { AiMark, Eyebrow, FilePath, RichText, Seg } from "../components/ui";
 import { FileHeader } from "./FileHeader";
 import { FunctionCard } from "./FunctionCard";
 import { DepMap, type DepMapHandle } from "./DepMap";
@@ -277,7 +277,7 @@ export function Workbench({ view, focusName, focusLine, onOpenFile }: WorkbenchP
                   <AiMark model={view.overview.model} />
                 </p>
               ) : (
-                <p className="muted">No overview yet. Turn on AI summaries to get one; the cards below come from the code itself.</p>
+                <p className="muted">No overview yet. To get one, choose “Turn on AI…” in the top bar. The cards below come from the code itself.</p>
               )}
               {entries.length > 0 && (
                 <div className="flow">
@@ -297,7 +297,7 @@ export function Workbench({ view, focusName, focusLine, onOpenFile }: WorkbenchP
                   {view.importers.length ? (
                     view.importers.map((f) => (
                       <button key={f.path} type="button" className="filelink" onClick={() => onOpenFile(f.path, { line: f.line })} title={`Open ${f.path}${f.line ? ` at line ${f.line}` : ""}`}>
-                        {f.path}
+                        <FilePath path={f.path} />
                       </button>
                     ))
                   ) : (
@@ -308,7 +308,7 @@ export function Workbench({ view, focusName, focusLine, onOpenFile }: WorkbenchP
             </section>
 
             <div className="toolbar" role="toolbar" aria-label="List controls" ref={toolbarRef}>
-              <input ref={filterRef} className="search" type="search" placeholder="Filter functions, steps, symbols (F)" aria-label="Filter functions" value={q} onChange={(e) => setQ(e.target.value)} />
+              <input ref={filterRef} className="search" type="search" placeholder="Filter functions (f)" aria-label="Filter functions" value={q} onChange={(e) => setQ(e.target.value)} />
               <Seg
                 label="Order"
                 value={order}
@@ -553,7 +553,7 @@ function Imports({ view, context, onOpenFile, onTarget }: { view: FileView; cont
             <li key={m.id}>
               {m.resolved ? (
                 <button type="button" className="filelink" onClick={() => onOpenFile(m.resolved!)} title={`Open ${m.resolved}`}>
-                  {m.id}
+                  <FilePath path={m.id} />
                 </button>
               ) : (
                 <code className={isRuntimeModule(m) ? "muted" : "ext"}>{m.id}</code>

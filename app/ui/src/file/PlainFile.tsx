@@ -5,14 +5,14 @@ import type { FileView } from "../ipc/bindings/FileView";
 import { lineRange, plural } from "../lib/format";
 import type { CodeContext } from "../editor/EditorHost";
 import { CodeView } from "../editor/CodeView";
-import { AiMark, Eyebrow, RichText, TierBadge } from "../components/ui";
+import { AiMark, Eyebrow, FilePath, RichText, TierBadge } from "../components/ui";
 import { FileHeader } from "./FileHeader";
 import { Splitter, initialSplit } from "./Splitter";
 
 export function tierSentence(view: FileView): string {
   if (view.tier === "outline")
     return `${view.langLabel} is in the outline tier: Isoline reads its symbols and imports from the grammar's tags query, so there are no function cards, dependency map or call flow, and edges to other files are heuristic.`;
-  return `${view.langLabel} is in the text tier: the file is not parsed, so there is no outline, dependency map or call flow. You get highlighting, search and a file summary.`;
+  return `${view.langLabel} is in the text tier: the file is not parsed, so there is no outline, dependency map or call flow. You get highlighting and search.`;
 }
 
 export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; focusLine?: number | null; onOpenFile(path: string): void }) {
@@ -40,11 +40,13 @@ export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; foc
               <p>
                 <TierBadge tier={view.tier} /> {tierSentence(view)}
               </p>
-              {view.overview && (
+              {view.overview ? (
                 <p>
                   <RichText text={view.overview.text} />
                   <AiMark model={view.overview.model} />
                 </p>
+              ) : (
+                <p className="muted">No file summary yet. To get one, choose “Turn on AI…” in the top bar and summarize this file.</p>
               )}
             </section>
             {view.tier === "outline" && (
@@ -81,7 +83,7 @@ export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; foc
                     <li key={m.id}>
                       {m.resolved ? (
                         <button type="button" className="filelink" onClick={() => onOpenFile(m.resolved!)}>
-                          {m.id}
+                          <FilePath path={m.id} />
                         </button>
                       ) : (
                         <code className="ext">{m.id}</code>

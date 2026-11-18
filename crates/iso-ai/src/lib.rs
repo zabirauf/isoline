@@ -42,7 +42,7 @@ pub use pricing::{PricingTable, default_models};
 pub use prompts::PROMPT_VERSION;
 pub use sidecar::{DeviceCode, SidecarConfig, SidecarProvider, SidecarStatus};
 pub use skeleton::{FileSkeleton, SkeletonOptions, SymbolSkeleton, build_skeleton};
-pub use tokens::estimate_tokens;
+pub use tokens::{Calibration, estimate_tokens};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -92,6 +92,10 @@ pub enum AiError {
 pub trait Provider: Send + Sync {
     fn list_models(&self) -> Result<Vec<ModelInfo>, AiError>;
     fn complete(&self, req: &CompletionRequest) -> Result<Completion, AiError>;
+    /// How billed tokens relate to estimates for this provider.
+    fn calibration(&self) -> Calibration {
+        Calibration::EXACT
+    }
 }
 
 impl<P: Provider + ?Sized> Provider for std::sync::Arc<P> {
@@ -100,5 +104,8 @@ impl<P: Provider + ?Sized> Provider for std::sync::Arc<P> {
     }
     fn complete(&self, req: &CompletionRequest) -> Result<Completion, AiError> {
         (**self).complete(req)
+    }
+    fn calibration(&self) -> Calibration {
+        (**self).calibration()
     }
 }

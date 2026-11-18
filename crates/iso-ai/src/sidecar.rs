@@ -427,6 +427,14 @@ impl Provider for SidecarProvider {
         Ok(r.models)
     }
 
+    fn calibration(&self) -> crate::Calibration {
+        if self.cfg.mock {
+            crate::Calibration::EXACT
+        } else {
+            crate::Calibration::COPILOT
+        }
+    }
+
     fn complete(&self, req: &CompletionRequest) -> Result<Completion, AiError> {
         let params = serde_json::to_value(req).map_err(|e| AiError::Provider(e.to_string()))?;
         let v = self.call("complete", params, self.cfg.complete_timeout)?;

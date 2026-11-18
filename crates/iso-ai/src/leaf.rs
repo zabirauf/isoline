@@ -272,7 +272,7 @@ fn build_batch(
         est_out += item.kind.out_tokens();
         out_items.push((id, item));
     }
-    let max_tokens = (est_out * 2 + 256).min(settings.max_output_tokens as u64) as u32;
+    let max_tokens = crate::tokens::output_limit(est_out, settings.max_output_tokens);
     LeafBatch {
         items: out_items,
         request: CompletionRequest {

@@ -2,6 +2,8 @@
 // the right, one shared selection, draggable divider. Summary first, detail on demand
 // (docs/ux/progressive-disclosure.md): a Glance / Read / Dig level, relations behind counts,
 // typed signatures with definition peeks, and go to definition with a location history.
+import { AiLine } from "../components/AiLine";
+import type { FileAi } from "../lib/aiRuns";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { FileView } from "../ipc/bindings/FileView";
 import type { FlowUnit } from "../ipc/bindings/FlowUnit";
@@ -49,13 +51,17 @@ export interface WorkbenchProps {
   registerLocation(get: (() => WorkbenchLocation) | null): void;
   /** Open the AI panel (the "Turn on AI…" line). */
   onOpenAi(): void;
+  /** What the summary line shows for this file. */
+  ai: FileAi;
+  /** Summarize this file now. */
+  onSummarize(): void;
 }
 
 type Mode = "map" | "flow";
 
 const usePrefs = () => useSyncExternalStore(subscribePrefs, getPrefs);
 
-export function Workbench({ view, focusName, focusLine, focusNonce, restore, restoreNonce, onOpenFile, onPushHistory, registerLocation, onOpenAi }: WorkbenchProps) {
+export function Workbench({ view, focusName, focusLine, focusNonce, restore, restoreNonce, onOpenFile, onPushHistory, registerLocation, onOpenAi, ai, onSummarize }: WorkbenchProps) {
   const path = view.path;
   const cards = view.functions;
   const prefs = usePrefs();
@@ -478,7 +484,7 @@ export function Workbench({ view, focusName, focusLine, focusNonce, restore, res
       <div className="main" ref={mainRef} style={{ ["--left" as string]: split + "%" }}>
         <div className="pane-left" ref={leftRef}>
           <div className="inner">
-            <Overview view={view} detail={detail} prefs={prefs} startAt={entries.length ? startAt : null} importersOpen={importersOpen || allDetail} onImporters={() => setImportersOpen(true)} onOpenFile={onOpenFile} onOpenAi={onOpenAi} />
+            <Overview view={view} detail={detail} prefs={prefs} startAt={entries.length ? startAt : null} importersOpen={importersOpen || allDetail} onImporters={() => setImportersOpen(true)} onOpenFile={onOpenFile} onOpenAi={onOpenAi} ai={ai} onSummarize={onSummarize} />
 
             <div className="toolbar" role="toolbar" aria-label="List controls" ref={toolbarRef}>
               <input ref={filterRef} className="search" type="search" placeholder="Filter functions (f)" aria-label="Filter functions" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -764,6 +770,8 @@ function Overview({
   onImporters,
   onOpenFile,
   onOpenAi,
+  ai,
+  onSummarize,
 }: {
   view: FileView;
   detail: Detail;
@@ -773,12 +781,14 @@ function Overview({
   onImporters(): void;
   onOpenFile: WorkbenchProps["onOpenFile"];
   onOpenAi(): void;
+  ai: FileAi;
+  onSummarize(): void;
 }) {
   const peek = usePeek();
   const [more, setMore] = useState(false);
   const imp = view.importers;
   const shown = importersOpen ? imp : imp.slice(0, 2);
-  const aiLine = !view.overview && !prefs.aiNoticeHidden;
+  const aiLine = ai.kind !== "none" && !(ai.kind === "off" && prefs.aiNoticeHidden);
   if (!view.overview && !aiLine && !startAt && (detail === "glance" || !imp.length)) return null;
   return (
     <section className={`overview${view.overview ? "" : " overview-quiet"}`} aria-labelledby="ov-h">
@@ -796,17 +806,7 @@ function Overview({
           )}
         </>
       )}
-      {aiLine && (
-        <div className="ai-line" id="ov-h">
-          <span className="muted">Summaries are off. Cards show signatures and docs.</span>
-          <button type="button" className="link-quiet accentish" onClick={onOpenAi}>
-            Turn on AI…
-          </button>
-          <button type="button" className="link-quiet" onClick={() => setPrefs({ aiNoticeHidden: true })}>
-            Hide
-          </button>
-        </div>
-      )}
+      {aiLine && <AiLine ai={ai} hidden={prefs.aiNoticeHidden} onOpenAi={onOpenAi} onSummarize={onSummarize} id={view.overview ? undefined : "ov-h"} />}
       {startAt && (
         <div className="flow">
           <span className="lab">Start at</span>

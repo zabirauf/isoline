@@ -204,7 +204,7 @@ impl AiEngine {
                 let prompt = format!(
                     "Task: cluster\nName the module below. Answer with the JSON object described in the instructions.\n\n### m1 {dir}\n{block}\n"
                 );
-                let max_tokens = ((OUT_TOKENS_ENVELOPE + OUT_TOKENS_MODULE) * 3 + 256).min(s.max_output_tokens as u64) as u32;
+                let max_tokens = crate::tokens::output_limit(OUT_TOKENS_ENVELOPE + OUT_TOKENS_MODULE, s.max_output_tokens);
                 ModuleItem {
                     index,
                     content,
@@ -308,7 +308,7 @@ impl AiEngine {
                     est_out: OUT_TOKENS_ENVELOPE + OUT_TOKENS_MODULE,
                 })
                 .collect();
-            sum_requests(&price, &reqs)
+            sum_requests(&price, self.calibration(), &reqs)
         };
         e.items = items.len() as u32;
         e.cached = (items.len() - pending.len()) as u32;
@@ -344,7 +344,7 @@ impl AiEngine {
                     est_out: OUT_TOKENS_ENVELOPE + OUT_TOKENS_MODULE,
                 })
                 .collect();
-            let est = sum_requests(&price, &reqs);
+            let est = sum_requests(&price, self.calibration(), &reqs);
             if est.cost_usd > budget_usd + EPS {
                 return Err(AiError::Budget(format!(
                     "the cluster pass is estimated at ${:.4}, over the budget of ${:.4}",
@@ -354,6 +354,7 @@ impl AiEngine {
             let mut m = Meter::new(
                 Pass::Cluster,
                 price,
+                self.calibration(),
                 budget_usd,
                 pending.len() as u32,
                 on_progress,
@@ -487,7 +488,7 @@ impl AiEngine {
             model: s.repo_model.clone(),
             system: repo_system(),
             prompt,
-            max_tokens: (est_out * 3 + 256).min(s.max_output_tokens as u64) as u32,
+            max_tokens: crate::tokens::output_limit(est_out, s.max_output_tokens),
         };
         (content, req, est_out)
     }
@@ -536,6 +537,7 @@ impl AiEngine {
             let price = self.price(&req.model);
             sum_requests(
                 &price,
+                self.calibration(),
                 &[Planned {
                     request: &req,
                     est_out,
@@ -584,6 +586,7 @@ impl AiEngine {
         let price = self.price(&model);
         let est = sum_requests(
             &price,
+            self.calibration(),
             &[Planned {
                 request: &req,
                 est_out,
@@ -595,7 +598,14 @@ impl AiEngine {
                 est.cost_usd, budget_usd
             )));
         }
-        let mut m = Meter::new(Pass::Repo, price, budget_usd, 1, on_progress);
+        let mut m = Meter::new(
+            Pass::Repo,
+            price,
+            self.calibration(),
+            budget_usd,
+            1,
+            on_progress,
+        );
         m.report.items = 1;
         let mut overview = None;
         match self.provider.complete(&m.capped(&req)) {

@@ -1,11 +1,14 @@
 // AI status and sign-in. Summaries come from the reader's own Copilot account and are never
 // requested until AI is turned on for the repo; the panel says what a run would cost first.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { AiEstimate } from "../ipc/bindings/AiEstimate";
-import type { AiProgress } from "../ipc/bindings/AiProgress";
+import type { AiScope } from "../ipc/bindings/AiScope";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
+import { AUTO_MAX_USD, budgetFor, type AiJob } from "../lib/aiRuns";
+import { getPrefs, setPrefs, subscribePrefs } from "../lib/prefs";
 import { api } from "../ipc/api";
 import { SignInDialog } from "./SignInDialog";
+import { Seg } from "./ui";
 import { fmtInt, fmtUsd, num, plural } from "../lib/format";
 
 export function aiLabel(s: AiStatus | null): string {
@@ -16,7 +19,16 @@ export function aiLabel(s: AiStatus | null): string {
   return "Turn on AI…";
 }
 
-export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 }: { status: AiStatus | null; setStatus(s: AiStatus): void; filePath: string | null; progress: AiProgress | null; openSignal?: number }) {
+const SCOPES: { scope: AiScope; label: string; needsFile: boolean }[] = [
+  { scope: "file", label: "This file", needsFile: true },
+  { scope: "module", label: "Its module", needsFile: true },
+  { scope: "repo", label: "Whole repo", needsFile: false },
+];
+const scopeText = { file: "this file", module: "this module", repo: "the repo" } as const;
+
+export function AiPanel({ status, setStatus, filePath, job, onRun, openSignal = 0 }: { status: AiStatus | null; setStatus(s: AiStatus): void; filePath: string | null; job: AiJob | null; onRun(scope: AiScope, path: string | null, budgetUsd: number): Promise<void>; openSignal?: number }) {
+  const prefs = useSyncExternalStore(subscribePrefs, getPrefs);
+  const [scope, setScope] = useState<AiScope>("file");
   const [open, setOpen] = useState(false);
   // Signing in happens in a dialog; the popover holds what comes after.
   const [dialog, setDialog] = useState(false);
@@ -38,7 +50,8 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
     return () => clearInterval(t);
   }, [status, setStatus]);
 
-  useEffect(() => setEst(null), [filePath]);
+  useEffect(() => setEst(null), [filePath, scope]);
+  const scopeShown: AiScope = !filePath && scope !== "repo" ? "repo" : scope;
 
   useEffect(() => {
     if (!open) return;
@@ -67,12 +80,12 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
   };
 
   const s = status;
-  const running = progress && !progress.finished;
+  const running = !!job && !job.finished;
   return (
     <div className="ai" ref={box}>
       <button type="button" className={`iso-btn ai-btn${s?.signedIn && s.enabledForRepo ? " on" : ""}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => (signedIn ? setOpen(!open) : setDialog(true))}>
         {aiLabel(s)}
-        {running ? ` · ${progress.done} / ${progress.total}` : ""}
+        {running && job.total > 0 ? ` · ${job.done} / ${job.total}` : ""}
       </button>
       {open && s && (
         <div className="popover ai-pop" role="dialog" aria-label="AI summaries">
@@ -98,26 +111,45 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
               <button type="button" className="iso-btn" aria-pressed={s.enabledForRepo} disabled={busy} onClick={() => run(() => api.aiEnable(!s.enabledForRepo).then(setStatus))}>
                 Use AI for this repo
               </button>
-              {s.enabledForRepo && filePath && (
+              {s.enabledForRepo && (
                 <div className="ai-file">
-                  <div className="caption">This file</div>
+                  <label className="ai-check">
+                    <input type="checkbox" checked={prefs.aiAuto} onChange={(e) => setPrefs({ aiAuto: e.target.checked })} />
+                    Summarize files as I open them (up to {fmtUsd(AUTO_MAX_USD)} each)
+                  </label>
+                  <div className="caption">Summarize now</div>
+                  <Seg label="What to summarize" value={scopeShown} options={SCOPES.filter((x) => !x.needsFile || filePath).map((x) => [x.scope, x.label] as [AiScope, string])} onChange={setScope} />
                   {!est ? (
-                    <button type="button" className="iso-btn" disabled={busy} onClick={() => run(() => api.aiEstimate("file", filePath).then(setEst))}>
-                      Estimate the cost
+                    <button type="button" className="iso-btn" disabled={busy} onClick={() => run(() => api.aiEstimate(scopeShown, scopeShown === "repo" ? undefined : (filePath ?? undefined)).then(setEst))}>
+                      {busy ? "Estimating…" : "Estimate the cost"}
                     </button>
                   ) : (
                     <>
                       <p className="caption">
-                        {plural(est.symbols, "symbol")}, {fmtInt(est.cached)} cached · {plural(est.requests, "request")} · {fmtInt(num(est.tokensIn))} tokens in, {fmtInt(num(est.tokensOut))} out · about {fmtUsd(est.costUsd)} with {est.model}
+                        {plural(est.symbols, "item")}, {fmtInt(est.cached)} cached · {plural(est.requests, "request")} · {fmtInt(num(est.tokensIn))} tokens in, {fmtInt(num(est.tokensOut))} out · about {fmtUsd(est.costUsd)} with {est.model}
                       </p>
-                      <button type="button" className="iso-btn" disabled={busy || !!running || est.requests === 0} onClick={() => run(() => api.aiRun("file", filePath, Math.max(0.05, est.costUsd * 2)))}>
-                        {est.requests === 0 ? "Everything is cached" : `Summarize · up to ${fmtUsd(Math.max(0.05, est.costUsd * 2))}`}
+                      <button
+                        type="button"
+                        className="iso-btn primary"
+                        disabled={busy || running || est.requests === 0}
+                        onClick={() =>
+                          run(async () => {
+                            await onRun(scopeShown, scopeShown === "repo" ? null : filePath, budgetFor(est));
+                            setEst(null);
+                          })
+                        }
+                      >
+                        {est.requests === 0 ? "Everything is cached" : `Summarize · up to ${fmtUsd(budgetFor(est))}`}
                       </button>
                     </>
                   )}
-                  {progress && (
+                  {job && (
                     <p className="caption" aria-live="polite">
-                      {progress.error ? `Stopped: ${progress.error}` : progress.finished ? `Done: ${plural(progress.total, "summary", "summaries")}, ${fmtUsd(progress.costUsd)}` : `Summarizing ${progress.done} / ${progress.total} · ${fmtUsd(progress.costUsd)} so far`}
+                      {job.finished
+                        ? job.error
+                          ? `Stopped (${scopeText[job.scope]}): ${job.error}`
+                          : `Done (${scopeText[job.scope]}): ${plural(job.stored, "summary", "summaries")}, ${fmtUsd(job.costUsd)}`
+                        : `Writing summaries for ${scopeText[job.scope]}${job.total > 0 ? ` · ${job.done} / ${job.total}` : "…"} · ${fmtUsd(job.costUsd)} so far`}
                     </p>
                   )}
                 </div>

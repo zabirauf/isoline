@@ -282,12 +282,16 @@ export function createMockBackend(): Backend {
         const finished = done >= total;
         emit("ai_progress", { jobId, done, total, tokensIn: big(done * 900), tokensOut: big(done * 120), costUsd: done * 0.00015, finished, error: null });
         if (!finished) setTimeout(tick, 350);
-        else if (path) {
-          const f = fileFor(path);
-          f.view.functions.forEach((c) => {
-            c.summary ??= { desc: `Runs ${c.name} (mock summary written by the AI run).`, algo: ["Takes its arguments as given.", "Returns the first one."], notes: [], model: "mock-small", ai: true };
-          });
-          emit("summary_ready", { path });
+        else {
+          if (path) {
+            const f = fileFor(path);
+            f.view.functions.forEach((c) => {
+              c.summary ??= { desc: `Runs ${c.name} (mock summary written by the AI run).`, algo: ["Takes its arguments as given.", "Returns the first one."], notes: [], model: "mock-small", ai: true };
+            });
+            f.view.overview ??= { text: `Mock overview of ${path}, written by the AI run.`, model: "mock-small" };
+            emit("summary_ready", { path });
+          }
+          emit("ai_job_done", { jobId, stored: total, failed: 0, costUsd: total * 0.00015, error: null });
         }
       };
       setTimeout(tick, 300);

@@ -24,11 +24,21 @@ import type { GitRefs } from "./bindings/GitRefs";
 import type { GitStatus } from "./bindings/GitStatus";
 import type { PullRequests } from "./bindings/PullRequests";
 
+export interface AiJobDone {
+  jobId: number;
+  stored: number;
+  failed: number;
+  costUsd: number;
+  error: string | null;
+}
+
 /** Payloads of the events the backend emits. */
 export interface BackendEvents {
   index_progress: IndexProgress;
   index_done: RepoSummary;
   ai_progress: AiProgress;
+  /** An AI run ended, after all of its passes. `error` says why it stopped or failed. */
+  ai_job_done: AiJobDone;
   summary_ready: { path: string };
   job_progress: JobsState;
   /** Repo-relative paths whose facts changed after a save (watcher). */

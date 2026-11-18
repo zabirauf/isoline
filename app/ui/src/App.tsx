@@ -1,7 +1,8 @@
 // App shell: top bar, source-tree sidebar and the main area (start screen, repo overview, or a
 // file). Holds the repo-level state and listens to the backend's events.
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { AiProgress } from "./ipc/bindings/AiProgress";
+import { useAiRuns } from "./lib/aiRuns";
+import { getPrefs, subscribePrefs } from "./lib/prefs";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { AiStatus } from "./ipc/bindings/AiStatus";
 import type { FileView } from "./ipc/bindings/FileView";
 import type { IndexProgress } from "./ipc/bindings/IndexProgress";
@@ -113,7 +114,6 @@ function Shell() {
   const [progress, setProgress] = useState<IndexProgress | null>(null);
   const [jobs, setJobs] = useState<JobsState | null>(null);
   const [ai, setAi] = useState<AiStatus | null>(null);
-  const [aiProgress, setAiProgress] = useState<AiProgress | null>(null);
   const [sidebar, setSidebar] = useState(true);
   const [theme, setTheme] = useState<ThemeChoice>(loadThemeChoice);
   const [busy, setBusy] = useState(false);
@@ -197,7 +197,6 @@ function Shell() {
           void api.getFileView(open).then(setView).catch(() => {});
         }
       }),
-      api.listen("ai_progress", setAiProgress),
       api.listen("ai_status", setAi),
       api.listen("summary_ready", ({ path }) => {
         invalidate(path);
@@ -372,6 +371,8 @@ function Shell() {
   const onSearchPick = useCallback((h: SearchHit) => openFile(h.path, { line: h.line, symbol: h.kind === "symbol" ? h.name : null }), [openFile]);
 
   const showView = view && file && view.path === file.path ? view : null;
+  const prefs = useSyncExternalStore(subscribePrefs, getPrefs);
+  const aiRuns = useAiRuns({ status: ai, view: compareOn ? null : showView, repoRoot: repo?.root ?? null, auto: prefs.aiAuto });
   const indexing = !!progress && progress.phase !== "done";
   const justIndexed = !!progress && progress.phase === "done";
   const jobsRunning = !!jobs && !!repo && jobs.running > 0;
@@ -488,7 +489,7 @@ function Shell() {
             </span>
           )}
         </div>
-        {repo && <AiPanel status={ai} setStatus={setAi} filePath={file?.path ?? null} progress={aiProgress} openSignal={aiOpen} />}
+        {repo && <AiPanel status={ai} setStatus={setAi} filePath={file?.path ?? null} job={aiRuns.job} onRun={aiRuns.run} openSignal={aiOpen} />}
         <div className="theme-wrap">
           <button type="button" className="iso-btn quiet" aria-expanded={themeOpen} onClick={() => setThemeOpen(!themeOpen)}>
             Theme
@@ -543,9 +544,11 @@ function Shell() {
               onPushHistory={pushHere}
               registerLocation={registerLocation}
               onOpenAi={() => setAiOpen((n) => n + 1)}
+              ai={aiRuns.fileAi}
+              onSummarize={aiRuns.summarizeFile}
             />
           )}
-          {!compareOn && showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} />}
+          {!compareOn && showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} ai={aiRuns.fileAi} onOpenAi={() => setAiOpen((n) => n + 1)} onSummarize={aiRuns.summarizeFile} />}
         </main>
       </div>
     </div>

@@ -319,6 +319,31 @@ pub async fn ai_run(
         let res = eng.ai_run(&ai, scope, path.as_deref(), budget_usd, &mut |p| {
             let _ = h.emit("ai_progress", p.to_ipc(job_id));
         });
+        // One event per job, after every pass: per-pass progress also says "finished".
+        let done = match &res {
+            Ok(rep) => {
+                let l = &rep.leaf;
+                let cost = l.cost_usd
+                    + rep.cluster.as_ref().map_or(0.0, |c| c.run.cost_usd)
+                    + rep.repo.as_ref().map_or(0.0, |r| r.run.cost_usd);
+                let error = if l.stopped_by_budget {
+                    Some("Stopped at the budget.".to_string())
+                } else if l.stored == 0 && l.failed > 0 {
+                    Some(format!(
+                        "No summary could be used: {}",
+                        l.errors
+                            .first()
+                            .map_or("no reason given", |e| e.message.as_str())
+                    ))
+                } else {
+                    None
+                };
+                serde_json::json!({ "jobId": job_id, "stored": l.stored, "failed": l.failed, "costUsd": cost, "error": error })
+            }
+            Err(e) => {
+                serde_json::json!({ "jobId": job_id, "stored": 0, "failed": 0, "costUsd": 0.0, "error": format!("{e:#}") })
+            }
+        };
         match res {
             Ok(rep) => {
                 for p in &rep.leaf.updated_paths {
@@ -346,6 +371,7 @@ pub async fn ai_run(
                 );
             }
         }
+        let _ = app.emit("ai_job_done", done);
     });
     Ok(AiRunHandle { job_id, estimate })
 }

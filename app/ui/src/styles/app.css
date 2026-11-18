@@ -58,6 +58,10 @@ code, .mono { font-family: var(--font-mono); }
 .devcode { font-weight: 600; font-size: 14px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
 .ai-file { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; padding-top: 6px; border-top: 1px solid var(--line); width: 100%; }
 .row-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.ai-check { display: flex; gap: 6px; align-items: baseline; font-size: 12.5px; cursor: pointer; }
+.ai-bar { display: inline-block; width: 120px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; align-self: center; }
+.ai-bar > span { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.ai-line .spinner { width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
 .mock-tag { font: 600 10px/1.4 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border: 1px dashed var(--muted); border-radius: 4px; padding: 0 5px; white-space: nowrap; cursor: default; }
 
 .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; }
@@ -747,7 +751,7 @@ button.ty:hover { text-decoration: underline; text-underline-offset: 2px; text-d
 .signin-copied { text-align: center; color: var(--muted); font-size: 12px; margin-top: -4px !important; }
 .signin-steps { margin: 2px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
 .signin-wait { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; }
-.spinner { width: 12px; height: 12px; flex: none; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+.spinner { display: inline-block; box-sizing: border-box; width: 12px; height: 12px; flex: none; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
 .signin-ok { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-size: 20px; font-weight: 700; }

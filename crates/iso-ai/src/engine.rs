@@ -15,7 +15,7 @@ use crate::pricing::{
     DEFAULT_CLUSTER_MODEL, DEFAULT_LEAF_MODEL, DEFAULT_REPO_MODEL, PricingTable, cost_usd,
 };
 use crate::skeleton::SkeletonOptions;
-use crate::tokens::{estimate_tokens, request_tokens};
+use crate::tokens::{Calibration, estimate_tokens, request_tokens};
 use crate::{AiError, Completion, CompletionRequest, ModelInfo, Provider};
 
 /// One file, as the engine builds it from the index. `source` is needed only for files
@@ -373,7 +373,7 @@ pub(crate) struct Planned<'a> {
 
 /// Sums the expected tokens and cost of a list of requests. The system message of every
 /// request after the first one with the same system message counts as cached.
-pub(crate) fn sum_requests(model: &ModelInfo, reqs: &[Planned]) -> PassEstimate {
+pub(crate) fn sum_requests(model: &ModelInfo, cal: Calibration, reqs: &[Planned]) -> PassEstimate {
     let mut seen: HashSet<&str> = HashSet::new();
     let mut e = PassEstimate {
         model: model.id.clone(),
@@ -381,16 +381,17 @@ pub(crate) fn sum_requests(model: &ModelInfo, reqs: &[Planned]) -> PassEstimate 
         ..Default::default()
     };
     for p in reqs {
-        let tin = request_tokens(p.request);
+        let tin = cal.tokens_in(request_tokens(p.request));
         let cached = if seen.insert(p.request.system.as_str()) {
             0
         } else {
             estimate_tokens(&p.request.system)
         };
+        let tout = cal.tokens_out(p.est_out);
         e.tokens_in += tin;
         e.cached_tokens_in += cached;
-        e.tokens_out += p.est_out;
-        e.cost_usd += cost_usd(model, tin, cached, p.est_out);
+        e.tokens_out += tout;
+        e.cost_usd += cost_usd(model, tin, cached, tout);
     }
     e
 }
@@ -399,6 +400,7 @@ pub(crate) fn sum_requests(model: &ModelInfo, reqs: &[Planned]) -> PassEstimate 
 pub(crate) struct Meter<'a> {
     pub report: RunReport,
     pub price: ModelInfo,
+    pub cal: Calibration,
     /// Budget left for this pass, in USD.
     pub budget: f64,
     pub total: u32,
@@ -411,6 +413,7 @@ impl<'a> Meter<'a> {
     pub fn new(
         pass: Pass,
         price: ModelInfo,
+        cal: Calibration,
         budget: f64,
         total: u32,
         progress: &'a mut dyn FnMut(&Progress),
@@ -418,6 +421,7 @@ impl<'a> Meter<'a> {
         Meter {
             report: RunReport::new(pass, &price.id),
             price,
+            cal,
             budget,
             total,
             progress,
@@ -430,7 +434,7 @@ impl<'a> Meter<'a> {
     /// the budget. Providers stop at `max_tokens`, so the budget holds even when answers run
     /// longer than estimated.
     pub fn capped(&self, req: &CompletionRequest) -> CompletionRequest {
-        let tin = request_tokens(req);
+        let tin = self.cal.tokens_in(request_tokens(req));
         let cached = if self.systems.contains(&req.system) {
             estimate_tokens(&req.system)
         } else {
@@ -449,13 +453,14 @@ impl<'a> Meter<'a> {
 
     /// Whether the next request fits in what is left of the budget.
     pub fn can_afford(&self, req: &CompletionRequest, est_out: u64) -> bool {
-        let tin = request_tokens(req);
+        let tin = self.cal.tokens_in(request_tokens(req));
         let cached = if self.systems.contains(&req.system) {
             estimate_tokens(&req.system)
         } else {
             0
         };
-        self.report.cost_usd + cost_usd(&self.price, tin, cached, est_out) <= self.budget + EPS
+        let tout = self.cal.tokens_out(est_out);
+        self.report.cost_usd + cost_usd(&self.price, tin, cached, tout) <= self.budget + EPS
     }
 
     pub fn record(&mut self, req: &CompletionRequest, c: &Completion) {
@@ -501,6 +506,14 @@ impl<'a> Meter<'a> {
             Some("stopped at the budget".to_string())
         } else if self.too_many_failures(failure_limit) {
             Some("stopped after repeated failed requests".to_string())
+        } else if self.report.stored == 0 && self.report.failed > 0 {
+            let why = self
+                .report
+                .errors
+                .first()
+                .map(|e| e.message.as_str())
+                .unwrap_or("");
+            Some(format!("no answer could be used ({why})"))
         } else {
             None
         };
@@ -554,6 +567,11 @@ impl AiEngine {
 
     pub fn cache(&self) -> &AiCache {
         &self.cache
+    }
+
+    /// How billed tokens relate to estimates for the current provider.
+    pub fn calibration(&self) -> Calibration {
+        self.provider.calibration()
     }
 
     pub fn settings(&self) -> AiSettings {
@@ -633,7 +651,7 @@ impl AiEngine {
                     est_out: b.est_out,
                 })
                 .collect();
-            sum_requests(&price, &reqs)
+            sum_requests(&price, self.calibration(), &reqs)
         };
         e.items = plan.total;
         e.cached = plan.cached;
@@ -700,14 +718,21 @@ impl AiEngine {
                 est_out: b.est_out,
             })
             .collect();
-        let est = sum_requests(&price, &reqs);
+        let est = sum_requests(&price, self.calibration(), &reqs);
         if est.cost_usd > budget_usd + EPS {
             return Err(AiError::Budget(format!(
                 "the leaf pass is estimated at ${:.4}, over the budget of ${:.4}",
                 est.cost_usd, budget_usd
             )));
         }
-        let mut m = Meter::new(Pass::Leaf, price, budget_usd, pending, on_progress);
+        let mut m = Meter::new(
+            Pass::Leaf,
+            price,
+            self.calibration(),
+            budget_usd,
+            pending,
+            on_progress,
+        );
         m.report.items = plan.total;
         m.report.cached = plan.cached;
         let mut paths: HashSet<String> = HashSet::new();

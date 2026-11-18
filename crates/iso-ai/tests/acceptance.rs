@@ -343,6 +343,39 @@ fn bad_answers_are_skipped_and_retried_next_run() {
 }
 
 #[test]
+fn a_run_whose_answers_are_all_unreadable_reports_it() {
+    // An answer cut off at the output limit holds no JSON; the run must not end as "done".
+    let files = common::repo(2, 0);
+    let mock = Arc::new(MockProvider::new());
+    mock.push_response("{\"items\":[\n {\"id\":\"f1\",\"desc\":\"Checks that");
+    let e = AiEngine::in_memory(mock.clone()).unwrap();
+    let mut last = None;
+    let r = e
+        .run_leaf(&files, 10.0, &mut |p: &Progress| last = Some(p.clone()))
+        .unwrap();
+    assert_eq!(r.stored, 0);
+    let last = last.unwrap();
+    assert!(last.finished);
+    assert!(
+        last.error
+            .as_deref()
+            .is_some_and(|m| m.contains("no answer could be used")),
+        "{last:?}"
+    );
+}
+
+#[test]
+fn requests_leave_room_for_reasoning() {
+    // Reasoning models spend output tokens before the answer; twice the estimate was not
+    // enough for Copilot's claude-haiku-5.5 and every answer came back cut off.
+    let files = common::repo(1, 0);
+    let mock = Arc::new(MockProvider::new());
+    let e = AiEngine::in_memory(mock.clone()).unwrap();
+    e.run_leaf(&files, 10.0, &mut noop()).unwrap();
+    assert!(mock.requests()[0].max_tokens >= 2048);
+}
+
+#[test]
 fn cluster_colors_are_stable_and_keep_user_choices() {
     let files = common::repo(9, 0);
     let modules = common::modules(&files);

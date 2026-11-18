@@ -1,12 +1,15 @@
 // Outline-tier and text-tier files: the whole file in Monaco, an outline list, and a sentence
 // saying why there are no cards, map or call flow.
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { FileView } from "../ipc/bindings/FileView";
 import { lineRange, plural } from "../lib/format";
 import type { CodeContext } from "../editor/EditorHost";
 import { CodeView } from "../editor/CodeView";
 import { AiMark, Eyebrow, FilePath, RichText } from "../components/ui";
 import { FileHeader } from "./FileHeader";
+import { AiLine } from "../components/AiLine";
+import type { FileAi } from "../lib/aiRuns";
+import { getPrefs, subscribePrefs } from "../lib/prefs";
 import { Splitter, initialSplit } from "./Splitter";
 
 export function tierSentence(view: FileView): string {
@@ -15,7 +18,8 @@ export function tierSentence(view: FileView): string {
   return `${view.langLabel} is in the text tier: the file is not parsed, so there is no outline, dependency map or call flow. You get highlighting and search.`;
 }
 
-export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; focusLine?: number | null; onOpenFile(path: string): void }) {
+export function PlainFile({ view, focusLine, onOpenFile, ai, onOpenAi, onSummarize }: { view: FileView; focusLine?: number | null; onOpenFile(path: string): void; ai: FileAi; onOpenAi(): void; onSummarize(): void }) {
+  const prefs = useSyncExternalStore(subscribePrefs, getPrefs);
   const [reveal, setReveal] = useState<{ line: number; n: number } | null>(focusLine ? { line: focusLine, n: 0 } : null);
   const [split] = useState(initialSplit);
   const [why, setWhy] = useState(false);
@@ -37,14 +41,13 @@ export function PlainFile({ view, focusLine, onOpenFile }: { view: FileView; foc
         <div className="pane-left">
           <div className="inner">
             <section className="overview tier-note">
-              {view.overview ? (
+              {view.overview && (
                 <p>
                   <RichText text={view.overview.text} />
                   <AiMark model={view.overview.model} />
                 </p>
-              ) : (
-                <p className="muted">No file summary yet. To get one, choose “Turn on AI…” in the top bar and summarize this file.</p>
               )}
+              <AiLine ai={ai} hidden={prefs.aiNoticeHidden} onOpenAi={onOpenAi} onSummarize={onSummarize} />
               <Eyebrow>{view.tier === "outline" ? "Outline tier" : "Text tier"}</Eyebrow>
               <p>
                 {view.tier === "outline" ? "No call flow or dependency map for this language." : "This file is not parsed: no outline, map or call flow."}{" "}

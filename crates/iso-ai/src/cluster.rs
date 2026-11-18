@@ -202,7 +202,8 @@ impl AiEngine {
                 let content = format!("module:{:016x}", hash64(block.as_bytes()));
                 let dir = if m.dir.is_empty() { "/" } else { m.dir.as_str() };
                 let prompt = format!(
-                    "Task: cluster\nName the module below. Answer with the JSON object described in the instructions.\n\n### m1 {dir}\n{block}\n"
+                    "Task: cluster\nName the module below. Answer with the JSON object described in the instructions.\n\n### m1 {dir}\n{block}\n{}",
+                    crate::prompts::STE_REMINDER
                 );
                 let max_tokens = crate::tokens::output_limit(OUT_TOKENS_ENVELOPE + OUT_TOKENS_MODULE, s.max_output_tokens);
                 ModuleItem {
@@ -482,6 +483,7 @@ impl AiEngine {
                 prompt.push_str(&format!("depends on: {}\n", deps.join(", ")));
             }
         }
+        prompt.push_str(crate::prompts::STE_REMINDER);
         let content = format!("repo:{:016x}", hash64(prompt.as_bytes()));
         let est_out = OUT_TOKENS_REPO + OUT_TOKENS_REPO_PER_MODULE * modules.len() as u64;
         let req = CompletionRequest {

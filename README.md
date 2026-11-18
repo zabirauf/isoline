@@ -136,7 +136,8 @@ Off by default, per repo. Turning it on starts the sidecar; nothing leaves the m
 that. Once it is on, a file is summarized when it opens if its estimate is under $0.05 (about
 a tenth of a cent is typical; this can be switched off in the AI panel), with progress at the
 top of the file. A module or the whole repo is summarized from the AI panel, which shows the
-estimate first. Every run has a budget it cannot exceed. Sign in
+estimate first. Every run has a budget it cannot exceed. Model text is written in ASD-STE100
+Simplified Technical English: short sentences, the active voice, one meaning for each word. Sign in
 with a GitHub account that has a Copilot plan (device flow through Isoline's OAuth app; the
 token stays in the OS keychain). Release builds embed the Copilot CLI, whose license ships in
 the app as `licenses/github-copilot-cli.txt`. `ISOLINE_GITHUB_CLIENT_ID` overrides the OAuth

@@ -10,12 +10,46 @@
 //! every cache key, so old answers are not reused for new prompts.
 
 /// Version of the prompts and skeleton formats. Part of every `ai_cache` key.
-pub const PROMPT_VERSION: u32 = 1;
+pub const PROMPT_VERSION: u32 = 2;
 
-const STYLE: &str = "Style for every text: plain, short sentences in sentence case. \
-Keep identifiers exactly as written in the code. Use numbers and units where they help. \
-No emoji, no exclamation marks, no marketing words, and no filler such as \"This function\" \
-or \"This module\". Do not guess beyond what the input shows; when it cannot tell, say less.";
+/// Writing rules for every text a model writes: ASD-STE100 Simplified Technical English,
+/// stated as rules because no model has the STE dictionary, plus Isoline's own style.
+const STYLE: &str = "Write every text in ASD-STE100 Simplified Technical English (STE):
+- Words: use simple, common English words, each with one meaning only. Use a word only as \
+the part of speech it usually is (do not use nouns as verbs). Technical names (identifiers, \
+file names, library names) and technical verbs for computer processes (call, return, throw, \
+parse, cache, index, compile, render, emit, resolve) are permitted. Use \"use\" not \"utilize\", \
+\"do\" not \"perform\", \"make sure\" not \"ensure\", \"through\" or \"with\" not \"via\", \
+\"before\" not \"prior to\", \"then\" not \"subsequently\", \"to\" not \"in order to\", \
+\"because\" not \"since\" or \"as\" for a reason, \"when\" or \"after\" not \"once\", \
+\"if\" not \"whether\", \"about\" not \"approximately\", \"let\" not \"allow\" or \"enable\", \
+\"get\" not \"obtain\" or \"retrieve\", \"start\" not \"initiate\", \"stop\" not \"terminate\".
+- Verbs: use only the simple present, simple past, simple future, the infinitive and the \
+imperative. Use the past participle only as an adjective. Do not use -ing forms, except \
+in technical names. Rewrite them: \"when X is missing\" as \"when there is no X\", \"using X\" as \
+\"with X\", \"including X\" as \"with X\", \"a matching id\" as \"an id that matches\", \"the \
+remaining rules\" as \"the other rules\", \"without running a getter\" as \"without a call to a \
+getter\". Do not use \"would\", \"could\" or \"might\"; write \"can\" for a possibility.
+- Voice: use the active voice. Say which thing does the action: \"The parser removes the \
+comments\", not \"The comments are removed\".
+- Noun clusters: do not put more than three nouns together. Use \"of\", \"for\" or a short \
+clause to break a longer cluster.
+- Sentences: one topic in each sentence. A sentence has at most 20 words when it tells the \
+reader to do something and at most 25 words when it describes. Do not omit articles \
+(\"the\", \"a\", \"an\") or the word \"that\" where they help clarity.
+- Use the same word for the same thing every time. Do not use contractions, idioms, \
+slang or humor.
+Also: sentence case. Keep identifiers exactly as written in the code. Use numbers and units \
+where they help. No emoji, no exclamation marks, no marketing words, and no filler such as \
+\"This function\" or \"This module\". Do not guess beyond what the input shows; when the \
+input does not tell, say less.
+Before you answer, read each sentence again. If it breaks one of these rules, write it again.";
+
+/// The end of every prompt: the STE rules a model breaks most, repeated after the items,
+/// where a small model weighs them most.
+pub const STE_REMINDER: &str = "\nWrite every text in STE. No -ing words (write \"when there is no X\", \
+not \"when X is missing\"; \"with X\", not \"using X\"). Write \"let\", not \"allow\"; \"if\", not \
+\"whether\". Use the active voice. At most 25 words in each sentence.\n";
 
 /// System message of the leaf pass.
 pub fn leaf_system() -> String {
@@ -44,14 +78,14 @@ Function entries:
 - desc: one sentence of at most 25 words that starts with a verb and says what the function \
 does for its caller. Example: \"Builds the identity fields shared by every harness event.\"
 - algo: 3 to 7 steps in run order, each one short sentence. The steps are the algorithm, not \
-a restatement of each line. Name conditions and outcomes, for example \"No run trace: \
-return, since no span was started.\" Use fewer steps only when the function is trivial.
+a restatement of each line. Name conditions and outcomes, for example \"If there is no run \
+trace, return, because no span started.\" Use fewer steps only when the function is trivial.
 - notes: 0 to 2 observations a careful reader would want, each one or two sentences that \
 name the exact construct and its consequence. Use kind \"warn\" only for something that can \
 go wrong at run time, such as a subscription that is never released when a call throws, or \
 an event that can be sent twice. Use kind \"info\" for subtleties, such as a check order that \
-sets priority. Leave notes empty when nothing stands out. Describe what you observe \
-(\"sits outside the try, so ...\"); never tell the reader what to do.
+sets priority. Leave notes empty when nothing is important. Describe what you see \
+(\"The call is outside the try, so ...\"). Do not tell the reader what to do.
 Type entries: desc is one sentence that says what the type represents.
 Overview entries: overview is two or three sentences that say what the file is for and \
 which functions are its entry points.

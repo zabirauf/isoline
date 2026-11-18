@@ -272,6 +272,7 @@ fn build_batch(
         est_out += item.kind.out_tokens();
         out_items.push((id, item));
     }
+    prompt.push_str(crate::prompts::STE_REMINDER);
     let max_tokens = crate::tokens::output_limit(est_out, settings.max_output_tokens);
     LeafBatch {
         items: out_items,

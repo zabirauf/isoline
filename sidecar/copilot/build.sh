@@ -15,8 +15,9 @@
 #
 # --mock-only   skip the live build.
 # --embed-cli   run the SDK's bundler first, which downloads the Copilot CLI release for the
-#               target and embeds it in the binary. Without it the live sidecar needs
-#               COPILOT_CLI_PATH at run time.
+#               target and embeds it in the binary, and refresh LICENSE-github-copilot-cli.txt.
+#               Fails instead of falling back to the mock build. Without it the live sidecar
+#               needs COPILOT_CLI_PATH at run time. Release builds (tauri build) pass it.
 #
 # Environment: GO (go binary, default `go`), OUT_DIR (default ./bin).
 set -eu
@@ -71,12 +72,22 @@ if [ "$mock_only" = 0 ]; then
   if (
     cd "$here/live"
     if [ "$embed" = 1 ]; then
+      # Drop bundles from earlier runs (other platforms or CLI versions) so only this one is
+      # embedded, then fetch it.
+      rm -f zcopilot*
       GOOS= GOARCH= GOTOOLCHAIN=auto "$GO" run github.com/github/copilot-sdk/go/cmd/bundler -platform "$goos/$goarch"
+      # The Copilot CLI license requires shipping a copy of it; the app bundles this file.
+      cp zcopilot_*_"$goos"_"$goarch".license "$here/LICENSE-github-copilot-cli.txt"
     fi
     GOTOOLCHAIN=auto "$GO" build -trimpath -o "$out" .
   ); then
-    echo "built $out (live)"
+    if [ "$embed" = 1 ]; then echo "built $out (live, Copilot CLI embedded)"; else echo "built $out (live)"; fi
     exit 0
+  fi
+  # A build asked to embed the CLI is a release build: never ship one without AI.
+  if [ "$embed" = 1 ]; then
+    echo "build.sh: the live build with the embedded Copilot CLI failed" >&2
+    exit 1
   fi
   echo "build.sh: the live build failed; building the mock-only sidecar instead" >&2
 fi

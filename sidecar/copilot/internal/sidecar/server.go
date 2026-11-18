@@ -33,6 +33,19 @@ type LiveConfig struct {
 // LiveFactory builds the live backend. Nil means live mode is not available in this build.
 type LiveFactory func(cfg LiveConfig) (Backend, error)
 
+// DefaultClientID is Isoline's GitHub OAuth app, used for device-flow sign-in. A client id
+// is public by design: the device flow needs no client secret.
+const DefaultClientID = "Ov23liMTukjjf5HWlgAg"
+
+// defaultClientID is ISOLINE_GITHUB_CLIENT_ID when set (even empty, which turns sign-in off),
+// else DefaultClientID.
+func defaultClientID() string {
+	if v, ok := os.LookupEnv("ISOLINE_GITHUB_CLIENT_ID"); ok {
+		return v
+	}
+	return DefaultClientID
+}
+
 // Options configure a Server.
 type Options struct {
 	Mock     bool
@@ -40,7 +53,7 @@ type Options struct {
 	LiveCfg  LiveConfig
 	Store    TokenStore  // nil: MemoryStore in mock mode, KeyringStore in live mode
 	Flow     *DeviceFlow // nil: GitHub's endpoints
-	ClientID string      // default client id (ISOLINE_GITHUB_CLIENT_ID)
+	ClientID string      // default client id (see defaultClientID)
 	Log      *log.Logger // nil: stderr
 	Exit     func(int)   // nil: os.Exit
 	// ShutdownWait bounds how long shutdown waits for in-flight requests.
@@ -279,7 +292,7 @@ func (s *Server) dispatch(req rpcRequest) (any, error) {
 		}
 		if clientID == "" {
 			return nil, Errorf(CodeNoClientID,
-				"sign-in needs a GitHub OAuth app client id: pass clientId to signIn or set ISOLINE_GITHUB_CLIENT_ID (registering the OAuth app is a human step)")
+				"sign-in needs a GitHub OAuth app client id: pass clientId to signIn or set ISOLINE_GITHUB_CLIENT_ID")
 		}
 		pending, res, err := s.flow.Start(ctx, clientID)
 		if err != nil {
@@ -430,7 +443,7 @@ func Main(args []string, live LiveFactory) int {
 		Mock:     mock,
 		Live:     live,
 		LiveCfg:  LiveConfig{DataDir: dataDir},
-		ClientID: os.Getenv("ISOLINE_GITHUB_CLIENT_ID"),
+		ClientID: defaultClientID(),
 	})
 	s.log.Printf("started (mock=%v, live=%v, version %s)", mock, live != nil, Version)
 	if err := s.Serve(os.Stdin, os.Stdout); err != nil {

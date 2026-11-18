@@ -9,3 +9,4 @@ node_modules/
 .DS_Store
 *.log
 /.claude/
+/sidecar/copilot/live/zcopilot*

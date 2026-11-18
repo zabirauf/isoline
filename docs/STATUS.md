@@ -75,9 +75,10 @@ Then, also at the product owner's request:
 
 ## What needs a human
 
-These five items from the plan, unchanged:
+These items from the plan:
 
-1. A GitHub OAuth app client id for device-flow sign-in (`ISOLINE_GITHUB_CLIENT_ID`).
+1. Done: Isoline's GitHub OAuth app (client id `Ov23liMTukjjf5HWlgAg`, device flow) is the
+   sidecar's default; `ISOLINE_GITHUB_CLIENT_ID` overrides it.
 2. One live sign-in with a Copilot subscription, and a small credit budget for the first
    real AI passes.
 3. Confirmation that Copilot's terms allow bulk background analysis from a third-party app.

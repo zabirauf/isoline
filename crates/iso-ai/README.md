@@ -78,9 +78,10 @@ When the process exits or a call times out, pending calls fail and the next call
 process; more than `max_restarts` starts within `restart_window` fail fast. Dropping the
 provider sends `shutdown`. Set `ISOLINE_SIDECAR_LOG=1` to echo the sidecar's stderr.
 
-Sign-in needs a GitHub OAuth app client id (`sign_in(Some(id))` or
-`ISOLINE_GITHUB_CLIENT_ID` in the sidecar's environment). Without one the sidecar answers
-with error code -32002 and a message saying so. Registering the app is a human step.
+Sign-in uses a GitHub OAuth app client id: `sign_in(Some(id))`, else
+`ISOLINE_GITHUB_CLIENT_ID` in the sidecar's environment, else Isoline's own app (built into
+the sidecar). Setting the variable to an empty string turns sign-in off: the sidecar then
+answers with error code -32002 and a message saying so.
 
 ### `MockProvider`
 

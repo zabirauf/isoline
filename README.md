@@ -133,8 +133,11 @@ cargo test --workspace                       # unit, golden and acceptance tests
 ## AI summaries
 
 Off by default, per repo. Turning it on starts the sidecar; nothing leaves the machine before
-that, and estimates are shown before any run with a budget the run cannot exceed. Live mode
-needs a GitHub OAuth app client id (`ISOLINE_GITHUB_CLIENT_ID`) and a Copilot subscription.
+that, and estimates are shown before any run with a budget the run cannot exceed. Sign in
+with a GitHub account that has a Copilot plan (device flow through Isoline's OAuth app; the
+token stays in the OS keychain). Release builds embed the Copilot CLI, whose license ships in
+the app as `licenses/github-copilot-cli.txt`. `ISOLINE_GITHUB_CLIENT_ID` overrides the OAuth
+app.
 `ISOLINE_SIDECAR_MOCK=1` runs the full pipeline against the sidecar's deterministic mock.
 
 ## License

@@ -10,4 +10,9 @@ callers: Array<FileRef>,
 /**
  * Unchanged files that call it, including the ones not listed.
  */
-callerFiles: number, };
+callerFiles: number, 
+/**
+ * The symbol is not in the index (the head side is checked out), so `callers` are the
+ * files that import it from its file rather than call edges.
+ */
+byImport: boolean, };

@@ -223,7 +223,7 @@ export function CompareView({ status, moduleMap, request, onOpenFile }: { status
                                 {CHANGE_WORD[it.change]}
                               </span>
                             </div>
-                            <ImpactCallers callers={it.callers} total={it.callerFiles} onOpenFile={onOpenFile} />
+                            <ImpactCallers callers={it.callers} total={it.callerFiles} byImport={it.byImport} onOpenFile={onOpenFile} />
                           </li>
                         ))}
                       </ul>
@@ -307,14 +307,15 @@ export function CompareView({ status, moduleMap, request, onOpenFile }: { status
 const CALLERS_SHOWN = 8;
 
 /** The first callers inline; the rest (up to the 50 the backend lists) on request. */
-function ImpactCallers({ callers, total, onOpenFile }: { callers: { path: string; line: number | null }[]; total: number; onOpenFile(path: string, line?: number | null): void }) {
+function ImpactCallers({ callers, total, byImport, onOpenFile }: { callers: { path: string; line: number | null }[]; total: number; byImport: boolean; onOpenFile(path: string, line?: number | null): void }) {
   const [all, setAll] = useState(false);
   const shown = all ? callers : callers.slice(0, CALLERS_SHOWN);
   const hidden = callers.length - shown.length;
   const unlisted = Math.max(0, total - callers.length);
   return (
     <div className="impact-callers">
-      <span className="caption">{total === 1 ? "1 unchanged file calls it:" : `${fmtInt(total)} unchanged files call it:`}</span>
+      {/* Not in the index (the head side is checked out): the files that import it, not call edges. */}
+      <span className="caption">{byImport ? (total === 1 ? "1 unchanged file imports it:" : `${fmtInt(total)} unchanged files import it:`) : total === 1 ? "1 unchanged file calls it:" : `${fmtInt(total)} unchanged files call it:`}</span>
       {shown.map((c) => (
         <button key={c.path + c.line} type="button" className="filelink" onClick={() => onOpenFile(c.path, c.line)}>
           {c.path}

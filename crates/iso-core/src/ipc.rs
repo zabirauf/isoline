@@ -623,6 +623,9 @@ ipc! {
         pub callers: Vec<FileRef>,
         /// Unchanged files that call it, including the ones not listed.
         pub caller_files: u32,
+        /// The symbol is not in the index (the head side is checked out), so `callers` are the
+        /// files that import it from its file rather than call edges.
+        pub by_import: bool,
     }
 
     /// Returned by `compare_file`: both versions of one file, for the diff view.

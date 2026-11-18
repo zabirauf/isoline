@@ -160,7 +160,9 @@ function Shell() {
     let gitTimer: ReturnType<typeof setTimeout> | undefined;
     const offs: Promise<() => void>[] = [
       api.listen("index_progress", (p) => {
-        setProgress(p);
+        // A follow-up run that found nothing to do (the watcher after a branch switch already
+        // reindexed the files) keeps the last "Indexed N files" rather than showing 0.
+        setProgress((prev) => (p.phase !== "walk" && p.total === 0 && prev?.phase === "done" && prev.total > 0 ? prev : p));
         if (p.phase === "parse" && treeWanted.current) {
           treeWanted.current = false;
           refreshTree();

@@ -263,6 +263,15 @@ impl Modules {
     }
 }
 
+/// How a revision reads in the summary: a full commit id is shortened, names stay as typed.
+fn rev_label(spec: &str) -> String {
+    if spec.len() >= 40 && spec.bytes().all(|b| b.is_ascii_hexdigit()) {
+        spec[..7].to_string()
+    } else {
+        spec.to_string()
+    }
+}
+
 impl Engine {
     /// Compare `base` with `head` (`worktree` for uncommitted changes), or a pull request.
     /// With `merge_base`, the base side is where the two histories split, as on GitHub.
@@ -302,7 +311,7 @@ impl Engine {
                 let base_rev = CompareRev {
                     spec: base.to_string(),
                     sha: b.clone(),
-                    label: base.to_string(),
+                    label: rev_label(base),
                     subject: git.subject(&b),
                 };
                 let head_rev = CompareRev {
@@ -311,7 +320,7 @@ impl Engine {
                     label: if h.is_none() {
                         "Working tree".to_string()
                     } else {
-                        head.to_string()
+                        rev_label(head)
                     },
                     subject: h.as_deref().and_then(|h| git.subject(h)),
                 };
@@ -731,7 +740,8 @@ impl Engine {
                     }
                     // Gone from the index (the head side is checked out): files that import
                     // the name from its file.
-                    if callers.is_empty() {
+                    let by_import = callers.is_empty();
+                    if by_import {
                         let top = s.name.split('.').next().unwrap_or(&s.name);
                         for (imp_file, _) in
                             iso_index::importers_of(conn, FileId::of_path(base_path))?
@@ -768,6 +778,7 @@ impl Engine {
                         signature_after: s.signature_after.clone(),
                         callers,
                         caller_files,
+                        by_import,
                     });
                 }
             }
@@ -825,6 +836,17 @@ mod tests {
 
     fn facts(src: &str) -> FileFacts {
         iso_parse::extract_file(Path::new("a.ts"), Language::TypeScript, src)
+    }
+
+    #[test]
+    fn full_commit_ids_are_shortened_in_labels() {
+        assert_eq!(
+            rev_label("a17feb9195400d3d37c92e9ad8805e7196daf90c"),
+            "a17feb9"
+        );
+        assert_eq!(rev_label("origin/main"), "origin/main");
+        assert_eq!(rev_label("HEAD~3"), "HEAD~3");
+        assert_eq!(rev_label("deadbeef"), "deadbeef");
     }
 
     #[test]

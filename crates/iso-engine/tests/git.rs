@@ -157,6 +157,10 @@ fn compare_switch_and_tree_events() {
         .expect("impact of sub");
     assert_eq!(sub.change, ChangeKind::Deleted);
     assert_eq!(sub.caller_files, 1);
+    assert!(
+        !sub.by_import,
+        "sub is indexed on main: its call edges count"
+    );
     assert_eq!(sub.callers[0].path, "app/other.ts");
     assert!(
         !c.impact.iter().any(|i| i.symbol == "add"),

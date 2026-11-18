@@ -226,6 +226,17 @@ async fn launch_args() -> CmdResult<serde_json::Value> {
     Ok(serde_json::json!({ "repo": repo, "open": args.get(1) }))
 }
 
+/// Opens a GitHub page (a pull request, the sign-in page) in the default browser. The
+/// webview does not follow target="_blank" links, and only github.com pages are allowed.
+#[tauri::command]
+async fn open_url(app: tauri::AppHandle, url: String) -> CmdResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    if !url.starts_with("https://github.com/") {
+        return Err(format!("Only github.com links open from Isoline: {url}"));
+    }
+    app.opener().open_url(&url, None::<&str>).map_err(err)
+}
+
 #[tauri::command]
 async fn recent_repos() -> CmdResult<Vec<String>> {
     Ok(iso_engine::recent_repos(&iso_engine::data_dir()))
@@ -235,6 +246,7 @@ async fn recent_repos() -> CmdResult<Vec<String>> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
         .setup(|app| {
             let _ = app.get_webview_window("main");
@@ -253,6 +265,7 @@ pub fn run() {
             get_jobs,
             rename_module,
             recent_repos,
+            open_url,
             launch_args,
             git_status,
             git_refs,

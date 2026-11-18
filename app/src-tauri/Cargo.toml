@@ -23,3 +23,5 @@ serde_json.workspace = true
 anyhow.workspace = true
 dunce = "1.0.5"
 parking_lot.workspace = true
+tauri-plugin-opener = "2.7.3"
+arboard = { version = "3.7.0", default-features = false }

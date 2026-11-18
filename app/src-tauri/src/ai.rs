@@ -21,7 +21,20 @@ use crate::{AppState, CmdResult, blocking, err};
 pub struct AiState {
     inner: Mutex<Option<(Arc<SidecarProvider>, Arc<AiEngine>)>>,
     device: Mutex<Option<DeviceCode>>,
+    /// Why the last sign-in stopped (code expired, denied, GitHub unreachable), shown until
+    /// the next sign-in starts.
+    notice: Mutex<Option<String>>,
     next_job: AtomicU64,
+}
+
+/// Kept for the app's lifetime: on Linux the copied text lives only as long as its owner.
+static CLIPBOARD: std::sync::OnceLock<Mutex<Option<arboard::Clipboard>>> =
+    std::sync::OnceLock::new();
+
+fn copy_text(text: &str) -> bool {
+    let cell = CLIPBOARD.get_or_init(|| Mutex::new(arboard::Clipboard::new().ok()));
+    let mut g = cell.lock();
+    g.as_mut().is_some_and(|c| c.set_text(text).is_ok())
 }
 
 fn sidecar_path() -> PathBuf {
@@ -86,8 +99,9 @@ pub(crate) fn attach(app: &AppHandle, eng: &Arc<Engine>) {
     }
 }
 
-fn status(state: &State<'_, AppState>, message: Option<String>) -> AiStatus {
+fn status(state: &AppState, message: Option<String>) -> AiStatus {
     let enabled = state.engine.read().as_ref().is_some_and(|e| e.ai_enabled());
+    let device_code = state.ai.device.lock().clone();
     let mut s = AiStatus {
         sidecar: SidecarState::Off,
         signed_in: false,
@@ -95,10 +109,18 @@ fn status(state: &State<'_, AppState>, message: Option<String>) -> AiStatus {
         models: vec![],
         enabled_for_repo: enabled,
         mock: mock_mode(),
-        device_code: state.ai.device.lock().clone(),
-        message,
+        message: message.or_else(|| state.ai.notice.lock().clone()),
+        device_code,
     };
-    if !enabled {
+    // Ask the sidecar once AI is on for this repo, while a sign-in is pending (which comes
+    // before turning AI on), or when it already runs. Otherwise don't start it.
+    let running = state
+        .ai
+        .inner
+        .lock()
+        .as_ref()
+        .is_some_and(|(p, _)| p.is_running());
+    if !enabled && s.device_code.is_none() && !running {
         return s;
     }
     let Ok((provider, ai)) = state.ai.get() else {
@@ -142,6 +164,36 @@ pub async fn ai_status(state: State<'_, AppState>) -> CmdResult<AiStatus> {
     Ok(status(&state, None))
 }
 
+/// Polls GitHub until the device code is approved, denied or expired, then clears it, so the
+/// next `ai_status` shows the outcome. Gives up after three failed polls in a row.
+fn poll_sign_in(app: AppHandle, provider: Arc<SidecarProvider>) {
+    use tauri::Manager;
+    let mut failures = 0;
+    let mut outcome: Option<String> = Some("The sign-in code expired. Sign in again.".into());
+    for _ in 0..180 {
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        match provider.sign_in_poll() {
+            Ok((true, _)) => {
+                outcome = None;
+                break;
+            }
+            Ok((false, _)) => failures = 0,
+            Err(e) => {
+                let msg = e.to_string();
+                failures += 1;
+                if failures >= 3 || msg.contains("expired") || msg.contains("denied") {
+                    outcome = Some(format!("Sign-in stopped: {msg}"));
+                    break;
+                }
+            }
+        }
+    }
+    let state = app.state::<AppState>();
+    *state.ai.device.lock() = None;
+    *state.ai.notice.lock() = outcome;
+    let _ = app.emit("ai_status", status(&state, None));
+}
+
 #[tauri::command]
 pub async fn ai_enable(state: State<'_, AppState>, enabled: bool) -> CmdResult<AiStatus> {
     let eng = state.engine.read().clone();
@@ -155,29 +207,40 @@ pub async fn ai_enable(state: State<'_, AppState>, enabled: bool) -> CmdResult<A
 }
 
 #[tauri::command]
-pub async fn ai_sign_in(state: State<'_, AppState>) -> CmdResult<AiStatus> {
+pub async fn ai_sign_in(app: AppHandle, state: State<'_, AppState>) -> CmdResult<AiStatus> {
     let (provider, _) = state.ai.get().map_err(err)?;
+    *state.ai.notice.lock() = None;
+    // A token from an earlier session: already signed in, no new code needed.
+    if provider.status().is_ok_and(|st| st.signed_in) {
+        *state.ai.device.lock() = None;
+        return Ok(status(&state, None));
+    }
     let client = std::env::var("ISOLINE_GITHUB_CLIENT_ID").ok();
     match provider.sign_in(client.as_deref()) {
         Ok(code) => {
+            // Put the code on the clipboard and open GitHub's page, so finishing is a paste.
+            let copied = copy_text(&code.user_code);
+            let opened = code.verification_uri.starts_with("https://github.com/") && {
+                use tauri_plugin_opener::OpenerExt;
+                app.opener()
+                    .open_url(&code.verification_uri, None::<&str>)
+                    .is_ok()
+            };
+            let hint = match (copied, opened) {
+                (true, true) => {
+                    "The code is on your clipboard and GitHub is open in your browser: paste it there."
+                }
+                (true, false) => "The code is on your clipboard: paste it at the address above.",
+                (false, true) => "GitHub is open in your browser: enter the code there.",
+                (false, false) => "Enter the code on GitHub to finish signing in.",
+            };
             *state.ai.device.lock() = Some(DeviceCode {
                 user_code: code.user_code,
                 verification_uri: code.verification_uri,
             });
-            // Poll in the background; the UI refreshes ai_status while the code is shown.
-            let p = Arc::clone(&provider);
-            std::thread::spawn(move || {
-                for _ in 0..180 {
-                    std::thread::sleep(std::time::Duration::from_secs(5));
-                    if matches!(p.sign_in_poll(), Ok((true, _)) | Err(_)) {
-                        break;
-                    }
-                }
-            });
-            Ok(status(
-                &state,
-                Some("Enter the code on GitHub to finish signing in.".into()),
-            ))
+            let (app2, p) = (app.clone(), Arc::clone(&provider));
+            std::thread::spawn(move || poll_sign_in(app2, p));
+            Ok(status(&state, Some(hint.into())))
         }
         Err(e) => Ok(status(&state, Some(format!("{e}")))),
     }
@@ -189,6 +252,7 @@ pub async fn ai_sign_out(state: State<'_, AppState>) -> CmdResult<AiStatus> {
         let _ = p.sign_out();
     }
     *state.ai.device.lock() = None;
+    *state.ai.notice.lock() = None;
     Ok(status(&state, None))
 }
 

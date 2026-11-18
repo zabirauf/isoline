@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AiEstimate } from "../ipc/bindings/AiEstimate";
 import type { AiProgress } from "../ipc/bindings/AiProgress";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
-import { api } from "../ipc/api";
+import { api, openExternal } from "../ipc/api";
 import { fmtInt, fmtUsd, num, plural } from "../lib/format";
 
 export function aiLabel(s: AiStatus | null): string {
@@ -75,6 +75,7 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
           {!s.signedIn && !s.deviceCode && (
             <>
               <p>Summaries come from your own GitHub Copilot account. Nothing is sent until you turn AI on for this repo.</p>
+              {s.message && <p className="caption">{s.message}</p>}
               <button type="button" className="iso-btn" disabled={busy} onClick={() => run(() => api.aiSignIn().then(setStatus))}>
                 Sign in with GitHub
               </button>
@@ -86,6 +87,15 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
                 Enter <code className="devcode">{s.deviceCode.userCode}</code> at <code>{s.deviceCode.verificationUri}</code>.
               </p>
               {s.message && <p className="caption">{s.message}</p>}
+              <div className="row-btns">
+                <button type="button" className="iso-btn" onClick={() => void navigator.clipboard?.writeText(s.deviceCode!.userCode)}>
+                  Copy code
+                </button>
+                <button type="button" className="iso-btn" onClick={() => void openExternal(s.deviceCode!.verificationUri)}>
+                  Open GitHub
+                </button>
+              </div>
+              <p className="caption">Waiting for GitHub…</p>
             </>
           )}
           {s.signedIn && (

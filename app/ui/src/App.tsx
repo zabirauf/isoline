@@ -198,6 +198,7 @@ function Shell() {
         }
       }),
       api.listen("ai_progress", setAiProgress),
+      api.listen("ai_status", setAi),
       api.listen("summary_ready", ({ path }) => {
         invalidate(path);
         if (fileRef.current?.path === path) void api.getFileView(path).then(setView);

@@ -37,6 +37,8 @@ export interface BackendEvents {
   tree_changed: null;
   /** HEAD or the branch changed (switch, fetch, or outside the app). */
   git_changed: GitStatus;
+  /** A device-flow sign-in finished: signed in, or stopped (the status says why). */
+  ai_status: AiStatus;
 }
 export type EventName = keyof BackendEvents;
 export type Unlisten = () => void;
@@ -196,6 +198,20 @@ function wantsHttp(): boolean {
 }
 
 let backendPromise: Promise<Backend> | null = null;
+
+/**
+ * Opens a GitHub page in the default browser. The desktop app's webview does not follow
+ * target="_blank" links, so it goes through the `open_url` command (github.com only).
+ */
+export async function openExternal(url: string): Promise<void> {
+  const b = await backend();
+  if (b.kind === "tauri") {
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("open_url", { url });
+  } else {
+    window.open(url, "_blank", "noopener");
+  }
+}
 
 export function backend(): Promise<Backend> {
   if (!backendPromise)

@@ -7,7 +7,7 @@ import type { GitRefs } from "../ipc/bindings/GitRefs";
 import type { GitStatus } from "../ipc/bindings/GitStatus";
 import type { ModuleMap } from "../ipc/bindings/ModuleMap";
 import type { PullRequest } from "../ipc/bindings/PullRequest";
-import { api } from "../ipc/api";
+import { api, openExternal } from "../ipc/api";
 import { basename, fmtAgo, fmtInt, fmtMs, plural } from "../lib/format";
 import { Seg } from "../components/ui";
 import { defaultBase, defaultHead, refLabel, WORKTREE } from "../lib/refs";
@@ -101,7 +101,16 @@ export function CompareView({ status, moduleMap, request, onOpenFile }: { status
           <h1>Compare</h1>
           {pr ? (
             <div className="cmp-pr">
-              <a className="link" href={pr.url} target="_blank" rel="noreferrer">
+              <a
+                className="link"
+                href={pr.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void openExternal(pr.url);
+                }}
+              >
                 #{pr.number}
               </a>
               <span className="cmp-pr-title">{pr.title}</span>

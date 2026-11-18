@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::cache::kind;
 use crate::engine::{
     AiEngine, ClusterReport, FileInput, Meter, ModuleInput, ModuleSummary, Pass, PassEstimate,
-    Planned, Progress, RepoLayer, RepoOverview, RepoReport, RunReport, sum_requests,
+    Planned, Progress, RepoFlow, RepoLayer, RepoOverview, RepoReport, RunReport, sum_requests,
 };
 use crate::palette::{assign_colors, dark_variant};
 use crate::prompts::{
@@ -54,6 +54,8 @@ struct ClusterAnswer {
 struct RepoAnswer {
     overview: String,
     layers: Vec<RepoLayer>,
+    #[serde(default)]
+    flows: Vec<RepoFlow>,
     model: String,
 }
 
@@ -283,14 +285,23 @@ impl AiEngine {
     }
 
     /// Estimates the cluster pass. Members without cached summaries count at a typical size.
+    /// `leaf_first`: the leaf pass runs before this one, so missing member summaries will
+    /// exist by then and count at a typical size. Without it (an architecture run) the
+    /// prompts are priced as they will be sent, and cached answers count as cached.
     pub fn estimate_cluster(
         &self,
         modules: &[ModuleInput],
         edges: &[ModuleEdge],
         files: &[FileInput],
+        leaf_first: bool,
     ) -> PassEstimate {
         let model = self.settings().effective_cluster_model().to_string();
-        let items = self.module_items(modules, edges, files, Mode::Estimate, &model);
+        let mode = if leaf_first {
+            Mode::Estimate
+        } else {
+            Mode::Cached
+        };
+        let items = self.module_items(modules, edges, files, mode, &model);
         let pending: Vec<&ModuleItem> = items
             .iter()
             .filter(|it| !self.cache.contains(&it.content, &model, kind::CLUSTER))
@@ -360,60 +371,34 @@ impl AiEngine {
                 pending.len() as u32,
                 on_progress,
             );
-            for it in &pending {
-                let module = &modules[it.index];
-                let est_out = OUT_TOKENS_ENVELOPE + OUT_TOKENS_MODULE;
-                if !m.can_afford(&it.request, est_out) {
+            let est_out = OUT_TOKENS_ENVELOPE + OUT_TOKENS_MODULE;
+            let conc = self.concurrency();
+            let mut next = 0;
+            while next < pending.len() {
+                let front: Vec<(&CompletionRequest, u64)> = pending[next..]
+                    .iter()
+                    .take(conc)
+                    .map(|it| (&it.request, est_out))
+                    .collect();
+                let wave = m.wave(&front);
+                if wave.is_empty() {
                     m.report.stopped_by_budget = true;
                     break;
                 }
-                match self.provider.complete(&m.capped(&it.request)) {
-                    Ok(c) => {
-                        m.record(&it.request, &c);
-                        let parsed = parse::extract_json(&c.text)
-                            .and_then(|v| {
-                                let list = parse::items(&v)?;
-                                list.iter()
-                                    .find(|x| parse::item_id(x).as_deref() == Some("m1"))
-                                    .or(list.first())
-                                    .cloned()
-                                    .ok_or_else(|| "the answer has no entry m1".to_string())
-                            })
-                            .and_then(|v| parse::parse_module(&v));
-                        match parsed {
-                            Ok((name, role, responsibilities)) => {
-                                let a = ClusterAnswer {
-                                    name,
-                                    role,
-                                    responsibilities,
-                                    model: c.model.clone(),
-                                };
-                                match self.cache.put_json(
-                                    &it.content,
-                                    &model,
-                                    kind::CLUSTER,
-                                    &a,
-                                    c.tokens_in,
-                                    c.tokens_out,
-                                ) {
-                                    Ok(()) => m.report.stored += 1,
-                                    Err(e) => m.item_error(module.id.clone(), e.to_string()),
-                                }
-                            }
-                            Err(e) => m.item_error(module.id.clone(), e),
-                        }
-                    }
-                    Err(e) => {
-                        if let Some(stop) = m.failed(e, vec![module.id.clone()]) {
-                            m.emit(true, Some(stop.to_string()));
-                            return Err(stop);
-                        }
-                        if m.too_many_failures(s.max_consecutive_failures) {
-                            break;
-                        }
-                    }
+                let answers = self.complete_many(&wave);
+                let mut stop = None;
+                for (it, answer) in pending[next..].iter().zip(answers) {
+                    self.cluster_answer(&mut m, &model, &modules[it.index], it, answer, &mut stop);
+                    m.emit(false, None);
                 }
-                m.emit(false, None);
+                next += wave.len();
+                if let Some(stop) = stop {
+                    m.emit(true, Some(stop.to_string()));
+                    return Err(stop);
+                }
+                if m.too_many_failures(s.max_consecutive_failures) {
+                    break;
+                }
             }
             m.finish(s.max_consecutive_failures);
             report = m.report;
@@ -437,6 +422,61 @@ impl AiEngine {
             run: report,
             modules: summaries,
         })
+    }
+
+    /// Records one cluster answer: stores the module's name and role, or notes the error and
+    /// a reason to stop.
+    fn cluster_answer(
+        &self,
+        m: &mut Meter,
+        model: &str,
+        module: &ModuleInput,
+        it: &ModuleItem,
+        answer: Result<crate::Completion, AiError>,
+        stop: &mut Option<AiError>,
+    ) {
+        match answer {
+            Ok(c) => {
+                m.record(&it.request, &c);
+                let parsed = parse::extract_json(&c.text)
+                    .and_then(|v| {
+                        let list = parse::items(&v)?;
+                        list.iter()
+                            .find(|x| parse::item_id(x).as_deref() == Some("m1"))
+                            .or(list.first())
+                            .cloned()
+                            .ok_or_else(|| "the answer has no entry m1".to_string())
+                    })
+                    .and_then(|v| parse::parse_module(&v));
+                match parsed {
+                    Ok((name, role, responsibilities)) => {
+                        let a = ClusterAnswer {
+                            name,
+                            role,
+                            responsibilities,
+                            model: c.model.clone(),
+                        };
+                        match self.cache.put_json(
+                            &it.content,
+                            model,
+                            kind::CLUSTER,
+                            &a,
+                            c.tokens_in,
+                            c.tokens_out,
+                        ) {
+                            Ok(()) => m.report.stored += 1,
+                            Err(e) => m.item_error(module.id.clone(), e.to_string()),
+                        }
+                    }
+                    Err(e) => m.item_error(module.id.clone(), e),
+                }
+            }
+            Err(e) => {
+                if let Some(e) = m.failed(e, vec![module.id.clone()]) {
+                    stop.get_or_insert(e);
+                }
+            }
+        }
     }
 
     fn repo_request(
@@ -484,7 +524,8 @@ impl AiEngine {
             }
         }
         prompt.push_str(crate::prompts::STE_REMINDER);
-        let content = format!("repo:{:016x}", hash64(prompt.as_bytes()));
+        // "repo2": the answer gained flows; answers cached without them are not reused.
+        let content = format!("repo2:{:016x}", hash64(prompt.as_bytes()));
         let est_out = OUT_TOKENS_REPO + OUT_TOKENS_REPO_PER_MODULE * modules.len() as u64;
         let req = CompletionRequest {
             model: s.repo_model.clone(),
@@ -499,6 +540,7 @@ impl AiEngine {
         RepoOverview {
             overview: a.overview,
             layers: a.layers,
+            flows: a.flows,
             legend: modules
                 .iter()
                 .map(|m| (m.id.clone(), m.name.clone(), m.color.clone()))
@@ -619,7 +661,7 @@ impl AiEngine {
                     .map(|(i, x)| (format!("m{}", i + 1), x.id.as_str()))
                     .collect();
                 match parse::extract_json(&c.text).and_then(|v| parse::parse_repo(&v)) {
-                    Ok((text, raw_layers)) => {
+                    Ok((text, raw_layers, raw_flows)) => {
                         let mut placed: HashSet<&str> = HashSet::new();
                         let mut layers: Vec<RepoLayer> = raw_layers
                             .into_iter()
@@ -648,9 +690,29 @@ impl AiEngine {
                                 }),
                             }
                         }
+                        // A flow keeps the modules that exist, in order, without repeats in a
+                        // row; a flow with fewer than two is dropped.
+                        let flows: Vec<RepoFlow> = raw_flows
+                            .into_iter()
+                            .filter_map(|(name, text, ids)| {
+                                let mut mods: Vec<String> = Vec::new();
+                                for id in ids.iter().filter_map(|k| keys.get(k).copied()) {
+                                    if mods.last().map(String::as_str) != Some(id) {
+                                        mods.push(id.to_string());
+                                    }
+                                }
+                                (mods.len() >= 2).then_some(RepoFlow {
+                                    name,
+                                    text,
+                                    modules: mods,
+                                })
+                            })
+                            .take(6)
+                            .collect();
                         let a = RepoAnswer {
                             overview: text,
                             layers,
+                            flows,
                             model: c.model.clone(),
                         };
                         match self.cache.put_json(

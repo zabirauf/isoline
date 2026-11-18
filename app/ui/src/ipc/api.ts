@@ -7,6 +7,7 @@ import type { AiProgress } from "./bindings/AiProgress";
 import type { AiRunHandle } from "./bindings/AiRunHandle";
 import type { AiScope } from "./bindings/AiScope";
 import type { AiStatus } from "./bindings/AiStatus";
+import type { Architecture } from "./bindings/Architecture";
 import type { FileView } from "./bindings/FileView";
 import type { FlowUnit } from "./bindings/FlowUnit";
 import type { Impact } from "./bindings/Impact";
@@ -71,6 +72,8 @@ export interface Backend {
   getSource(path: string, start?: number, end?: number): Promise<SourceSlice>;
   getImpact(symbol: string, transitive: boolean): Promise<Impact>;
   getModuleMap(): Promise<ModuleMap>;
+  /** The last architecture overview, or null. Never calls a model. */
+  getArchitecture(): Promise<Architecture | null>;
   search(query: string, limit?: number): Promise<SearchHit[]>;
   aiStatus(): Promise<AiStatus>;
   aiSignIn(): Promise<AiStatus>;
@@ -116,6 +119,7 @@ async function createTauriBackend(): Promise<Backend> {
     getSource: (path, start, end) => call("get_source", { path, start: start ?? null, end: end ?? null }),
     getImpact: (symbol, transitive) => call("get_impact", { symbol, transitive }),
     getModuleMap: () => call("get_module_map"),
+    getArchitecture: () => call("get_architecture"),
     search: (query, limit) => call("search", { query, limit: limit ?? null }),
     aiStatus: () => call("ai_status"),
     aiSignIn: () => call("ai_sign_in"),
@@ -173,6 +177,7 @@ function createHttpBackend(): Backend {
     getFileView: (path) => call("get_file_view", { path }),
     getFlow: (path, unit) => call("get_flow", { path, unit }),
     getSource: (path, start, end) => call("get_source", { path, start: start ?? null, end: end ?? null }),
+    getArchitecture: () => call("get_architecture"),
     getImpact: (symbol, transitive) => call("get_impact", { symbol, transitive }),
     getModuleMap: () => call("get_module_map"),
     search: (query, limit) => call("search", { query, limit: limit ?? null }),
@@ -245,6 +250,7 @@ export const api = {
   getSource: async (path: string, start?: number, end?: number) => (await backend()).getSource(path, start, end),
   getImpact: async (symbol: string, transitive: boolean) => (await backend()).getImpact(symbol, transitive),
   getModuleMap: async () => (await backend()).getModuleMap(),
+  getArchitecture: async () => (await backend()).getArchitecture(),
   search: async (query: string, limit?: number) => (await backend()).search(query, limit),
   aiStatus: async () => (await backend()).aiStatus(),
   aiSignIn: async () => (await backend()).aiSignIn(),

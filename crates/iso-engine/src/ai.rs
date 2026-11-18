@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
 use iso_ai::{AiEngine, FileInput, FullReport, ModuleInput, Progress};
-use iso_core::ipc::{AiEstimate, AiScope, ModuleEdge};
+use iso_core::ipc::{AiEstimate, AiScope, ArchFlow, ArchLayer, Architecture, ModuleEdge};
 use iso_core::{FileFacts, FileId, FlowUnit, Tier};
 use iso_index::FileRow;
 
@@ -70,16 +70,24 @@ impl Engine {
                 let m = fm.get(&row.id).cloned();
                 all.iter().filter(|f| fm.get(&f.id) == m.as_ref()).collect()
             }
-            AiScope::Repo => all.iter().collect(),
+            AiScope::Repo | AiScope::Architecture => all.iter().collect(),
         };
+        // The architecture run reads only cached summaries and symbol names: no source, no
+        // call flows, which keeps it fast on large repos.
+        let light = scope == AiScope::Architecture;
         let mut files = Vec::new();
         for row in selected.into_iter().filter(|f| f.tier != Tier::Text) {
             let facts = self.facts_for(row)?;
             if facts.symbols.is_empty() {
                 continue;
             }
-            let source = std::fs::read_to_string(self.root.join(&row.path)).unwrap_or_default();
-            let flows = self.flow_units_for(row, &source).unwrap_or_default();
+            let (source, flows) = if light {
+                (String::new(), Vec::new())
+            } else {
+                let source = std::fs::read_to_string(self.root.join(&row.path)).unwrap_or_default();
+                let flows = self.flow_units_for(row, &source).unwrap_or_default();
+                (source, flows)
+            };
             files.push(FileInput {
                 path: row.path.clone(),
                 lang: row.lang,
@@ -91,7 +99,7 @@ impl Engine {
         }
         let path_of: HashMap<FileId, &str> = all.iter().map(|f| (f.id, f.path.as_str())).collect();
         let wanted: Option<std::collections::HashSet<String>> = match scope {
-            AiScope::Repo => None,
+            AiScope::Repo | AiScope::Architecture => None,
             _ => Some(
                 files
                     .iter()
@@ -193,6 +201,48 @@ impl Engine {
                 Ok(())
             })?;
         }
+        if let Some(o) = report.repo.as_ref().and_then(|r| r.overview.as_ref()) {
+            let a = Architecture {
+                overview: o.overview.clone(),
+                layers: o
+                    .layers
+                    .iter()
+                    .map(|l| ArchLayer {
+                        name: l.name.clone(),
+                        modules: l.modules.clone(),
+                    })
+                    .collect(),
+                flows: o
+                    .flows
+                    .iter()
+                    .map(|f| ArchFlow {
+                        name: f.name.clone(),
+                        text: f.text.clone(),
+                        modules: f.modules.clone(),
+                    })
+                    .collect(),
+                model: o.model.clone(),
+                modules: o.legend.len() as u32,
+                written_at: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| d.as_secs()),
+            };
+            let json = serde_json::to_string(&a)?;
+            self.index
+                .write(|tx| iso_index::meta_set(tx, ARCHITECTURE_KEY, &json))?;
+        }
         Ok(report)
     }
+
+    /// The last architecture overview written for this repo, if any. Reading it never calls
+    /// a model.
+    pub fn architecture(&self) -> Result<Option<Architecture>> {
+        let raw = self
+            .index
+            .read(|c| iso_index::meta_get(c, ARCHITECTURE_KEY))?;
+        Ok(raw.and_then(|s| serde_json::from_str(&s).ok()))
+    }
 }
+
+/// Index meta key of the stored architecture overview (JSON).
+const ARCHITECTURE_KEY: &str = "ai_architecture";

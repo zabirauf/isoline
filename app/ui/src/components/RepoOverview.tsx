@@ -9,13 +9,26 @@ import { api } from "../ipc/api";
 import { fmtInt, num, plural } from "../lib/format";
 import { ModuleDot, TIER_HELP, TierBadge } from "./ui";
 import { ModuleMapCanvas, type ModuleMapHandle } from "./ModuleMapCanvas";
+import { ArchitecturePanel } from "./ArchitecturePanel";
+import type { AiScope } from "../ipc/bindings/AiScope";
+import type { AiStatus } from "../ipc/bindings/AiStatus";
+import type { Architecture } from "../ipc/bindings/Architecture";
+import type { AiJob } from "../lib/aiRuns";
 
 const SOURCE_TEXT = { cluster: "grouped by directory and imports", ai: "named by AI", user: "named by you" } as const;
 const LIST_LIMIT = 200;
 const TOP_LANGS = 5;
 const PHASE_TEXT = { walk: "walking", parse: "parsing", resolve: "resolving imports", graph: "building the graph", done: "done" } as const;
 
-export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed }: { repo: RepoSummary; moduleMap: ModuleMap | null; progress: IndexProgress | null; onModuleRenamed(): void }) {
+export interface RepoAi {
+  arch: Architecture | null;
+  status: AiStatus | null;
+  job: AiJob | null;
+  onRun(scope: AiScope, path: string | null, budgetUsd: number): Promise<void>;
+  onOpenAi(): void;
+}
+
+export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai }: { repo: RepoSummary; moduleMap: ModuleMap | null; progress: IndexProgress | null; onModuleRenamed(): void; ai: RepoAi }) {
   const [sel, setSel] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [allLangs, setAllLangs] = useState(false);
@@ -24,6 +37,7 @@ export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed }: { r
   const maxLines = Math.max(1, ...repo.languages.map((l) => num(l.lines)));
   const mods = useMemo(() => (moduleMap ? [...moduleMap.modules].sort((a, b) => num(b.lines) - num(a.lines)) : []), [moduleMap]);
   const selected = moduleMap?.modules.find((m) => m.id === sel) ?? null;
+  const byId = useMemo(() => new Map((moduleMap?.modules ?? []).map((m) => [m.id, m])), [moduleMap]);
   const deps = moduleMap && sel ? moduleMap.edges.filter((e) => e.from === sel).length : 0;
   const users = moduleMap && sel ? moduleMap.edges.filter((e) => e.to === sel).length : 0;
   const langs = allLangs ? repo.languages : repo.languages.slice(0, TOP_LANGS);
@@ -46,6 +60,7 @@ export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed }: { r
         </div>
       </header>
       <div className="repo-scroll">
+        <ArchitecturePanel arch={ai.arch} modules={byId} ai={ai.status} job={ai.job} onRun={ai.onRun} onOpenAi={ai.onOpenAi} onSelect={(id) => setSel(id === sel ? null : id)} selected={sel} />
         <section className="panel map-panel" aria-label="Module map">
           <div className="rbar">
             <div className="display-heading">Module map</div>

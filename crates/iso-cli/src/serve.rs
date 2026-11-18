@@ -200,6 +200,7 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
             serde_json::to_value(engine(st)?.impact(id, t)?)?
         }
         "get_module_map" => serde_json::to_value(engine(st)?.module_map()?)?,
+        "get_architecture" => serde_json::to_value(engine(st)?.architecture()?)?,
         "search" => serde_json::to_value(
             engine(st)?.search(&s(args, "query")?, u(args, "limit").unwrap_or(30) as usize)?,
         )?,

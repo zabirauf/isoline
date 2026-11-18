@@ -757,12 +757,14 @@ impl Engine {
             .read(iso_index::file_modules)?
             .into_iter()
             .collect();
-        let colors: HashMap<String, String> = self
-            .index
-            .read(iso_index::modules_all)?
-            .into_iter()
-            .map(|m| (m.id, m.color))
+        let mods = self.index.read(iso_index::modules_all)?;
+        let colors: HashMap<String, String> = mods
+            .iter()
+            .map(|m| (m.id.clone(), m.color.clone()))
             .collect();
+        // A module's home directory: the directory it was clustered from.
+        let homes: HashMap<String, (String, String)> =
+            mods.into_iter().map(|m| (m.dir, (m.id, m.color))).collect();
         let mut root = TreeNode {
             name: self.name.clone(),
             path: String::new(),
@@ -859,6 +861,25 @@ impl Engine {
             }
         }
         sort(&mut root);
+        // A directory whose files are split between modules takes the color of the module
+        // that lives there, so every module's home folder is colored.
+        fn home(n: &mut TreeNode, homes: &HashMap<String, (String, String)>) {
+            if !n.is_dir {
+                return;
+            }
+            if n.module.is_none()
+                && let Some((id, color)) = homes.get(&n.path)
+            {
+                n.module = Some(id.clone());
+                n.color = Some(color.clone());
+            }
+            for c in n.children.iter_mut() {
+                home(c, homes);
+            }
+        }
+        for c in root.children.iter_mut() {
+            home(c, &homes);
+        }
         Ok(root)
     }
 

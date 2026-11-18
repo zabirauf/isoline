@@ -132,9 +132,11 @@ export interface SidebarProps {
   onOpen(path: string): void;
   /** Shown while the tree is empty: "Listing files…" until the walk is known to be done. */
   emptyText?: string;
+  /** Module names by id, for the color dots' titles. */
+  moduleNames?: ReadonlyMap<string, string>;
 }
 
-export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emptyText = "Listing files…" }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emptyText = "Listing files…", moduleNames }: SidebarProps) {
   const [expanded, setExpanded] = useState<Set<string>>(() => loadExpanded(repo) ?? defaultExpanded(tree));
   // The tree usually arrives empty (the walk has not listed the files yet): the default
   // expansion is applied when the first files show up, unless the reader had their own.
@@ -256,9 +258,10 @@ export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emp
             const badge = !n.isDir && !!n.tier && n.tier !== "full";
             const count = n.isDir ? (counts.get(n.path) ?? 0) : 0;
             // Room for the name: row minus indent, dot or twisty, badge, count, status dot and gaps.
-            const room = width - indent - 14 - (badge ? 58 : 0) - (n.isDir ? 14 + 12 + String(count).length * 7 : 20) - (r.dir !== undefined ? 60 : 0);
+            const room = width - indent - 14 - (badge ? 58 : 0) - (n.isDir ? 14 + 12 + String(count).length * 7 + (n.color ? 14 : 0) : 20) - (r.dir !== undefined ? 60 : 0);
             const shown = middleEllipsis(n.name, Math.max(4, Math.floor(room / (n.isDir ? monoCharWidth() * 1.05 : monoCharWidth()))));
-            const title = n.path;
+            const modName = n.module ? (moduleNames?.get(n.module) ?? n.module) : null;
+            const title = modName ? `${n.path} · module: ${modName}` : n.path;
             return (
               <div
                 key={n.path}
@@ -276,7 +279,14 @@ export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emp
                 }}
                 title={title}
               >
-                {n.isDir ? <span className={`twisty${r.open ? " open" : ""}`}>›</span> : <ModuleDot color={n.color} title={n.module ? `Module: ${n.module}` : undefined} />}
+                {n.isDir ? (
+                  <>
+                    <span className={`twisty${r.open ? " open" : ""}`}>›</span>
+                    {n.color && <ModuleDot color={n.color} title={`Module: ${modName}`} />}
+                  </>
+                ) : (
+                  <ModuleDot color={n.color} title={modName ? `Module: ${modName}` : undefined} />
+                )}
                 <span className="nm">{shown}</span>
                 {r.dir !== undefined && <span className="dirhint">{r.dir}</span>}
                 {badge && <span className={`tier-mini tier-${n.tier}`}>{n.tier}</span>}

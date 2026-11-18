@@ -427,3 +427,76 @@ fn cluster_colors_are_stable_and_keep_user_choices() {
     assert!(req.prompt.contains("imports)"));
     assert!(!req.prompt.contains("computeDefault"));
 }
+
+/// A provider that answers like the mock but slowly, several at a time, and records how many
+/// requests were in flight at once.
+struct Parallel {
+    inner: MockProvider,
+    now: std::sync::atomic::AtomicUsize,
+    peak: std::sync::atomic::AtomicUsize,
+}
+
+impl Provider for Parallel {
+    fn list_models(&self) -> Result<Vec<iso_ai::ModelInfo>, AiError> {
+        self.inner.list_models()
+    }
+    fn complete(&self, req: &iso_ai::CompletionRequest) -> Result<iso_ai::Completion, AiError> {
+        use std::sync::atomic::Ordering::SeqCst;
+        let n = self.now.fetch_add(1, SeqCst) + 1;
+        self.peak.fetch_max(n, SeqCst);
+        std::thread::sleep(std::time::Duration::from_millis(30));
+        let c = self.inner.complete(req);
+        self.now.fetch_sub(1, SeqCst);
+        c
+    }
+    fn max_concurrency(&self) -> usize {
+        4
+    }
+}
+
+#[test]
+fn passes_send_requests_in_parallel_within_the_budget() {
+    use std::sync::atomic::Ordering::SeqCst;
+    let files = common::repo(60, 0);
+    let p = Arc::new(Parallel {
+        inner: MockProvider::new(),
+        now: 0.into(),
+        peak: 0.into(),
+    });
+    let e = AiEngine::in_memory(p.clone()).unwrap();
+    let est = e.estimate_leaf(&files);
+    assert!(est.requests >= 4, "{est:?}");
+    let r = e
+        .run_leaf(&files, est.cost_usd * 1.05, &mut noop())
+        .unwrap();
+    assert_eq!(r.stored, r.items);
+    assert!(r.cost_usd <= est.cost_usd * 1.05);
+    assert!(p.peak.load(SeqCst) > 1, "requests overlapped");
+    assert!(p.peak.load(SeqCst) <= 4);
+}
+
+#[test]
+fn missing_models_fall_back_within_the_family() {
+    let m = |id: &str, o: f64| iso_ai::ModelInfo {
+        id: id.into(),
+        name: id.into(),
+        input_per_m: o / 5.0,
+        output_per_m: o,
+        cached_input_per_m: o / 50.0,
+    };
+    // A plan without Opus: the repo pass takes the newest Sonnet, not the priciest model.
+    let models = vec![
+        m("auto", 0.0),
+        m("claude-sonnet-5", 10.0),
+        m("claude-sonnet-5.5", 10.0),
+        m("claude-haiku-5.5", 0.5),
+        m("kimi-k3", 15.0),
+    ];
+    let s = AiSettings::default().fitted_to(&models);
+    assert_eq!(s.repo_model, "claude-sonnet-5.5");
+    assert_eq!(s.cluster_model, "claude-sonnet-5.5");
+    assert_eq!(s.leaf_model, "claude-haiku-5.5");
+    // No Claude at all: cheapest for the leaf pass, priciest for the rest, never "auto".
+    let s = AiSettings::default().fitted_to(&[m("auto", 0.0), m("a", 1.0), m("b", 3.0)]);
+    assert_eq!((s.leaf_model.as_str(), s.repo_model.as_str()), ("a", "b"));
+}

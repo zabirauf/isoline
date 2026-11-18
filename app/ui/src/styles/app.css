@@ -755,3 +755,28 @@ button.ty:hover { text-decoration: underline; text-underline-offset: 2px; text-d
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
 .signin-ok { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-size: 20px; font-weight: 700; }
+
+/* Architecture panel on the repo page: overview, major flows, layers. */
+.arch { gap: 12px; flex: none; }
+.arch-bar { padding: 0; border: 0; min-height: 0; }
+.arch-text { font-size: 14px; line-height: 1.55; max-width: 92ch; }
+.arch-sec { display: flex; flex-direction: column; gap: 6px; }
+.arch-flows { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: flow; }
+.arch-flows li { display: flex; flex-direction: column; gap: 3px; counter-increment: flow; }
+.flow-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.flow-h b { font-size: 13px; font-weight: 600; min-width: 11ch; }
+.flow-h b::before { content: counter(flow) ". "; color: var(--muted); font-weight: 400; }
+.flow-path { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.flow-step { display: inline-flex; align-items: center; gap: 4px; }
+.flow-step .sep { color: var(--muted); }
+.arch-flows .caption { padding-left: 2.2ch; }
+.arch-layers { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.arch-layers li { display: grid; grid-template-columns: minmax(9ch, 16ch) 1fr; gap: 10px; align-items: baseline; }
+.layer-name { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.arch-layers .chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.mchip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 2px 9px 2px 7px; font: 12px var(--font-body); cursor: pointer; white-space: nowrap; max-width: 28ch; overflow: hidden; text-overflow: ellipsis; }
+.mchip:hover { border-color: var(--accent); }
+.mchip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.arch-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 12.5px; }
+.arch-actions .spinner { width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
+@media (max-width: 640px) { .arch-layers li { grid-template-columns: 1fr; gap: 4px; } }

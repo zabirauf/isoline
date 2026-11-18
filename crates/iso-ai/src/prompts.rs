@@ -127,12 +127,17 @@ people read code. Each item starts with a header line \"### <id> <name>\" and is
 with its directory, role, size and the modules it depends on.
 
 Answer with one JSON object and nothing else, without code fences:
-{{\"overview\":\"...\",\"layers\":[{{\"name\":\"...\",\"modules\":[\"m1\",\"m2\"]}}]}}
+{{\"overview\":\"...\",\"layers\":[{{\"name\":\"...\",\"modules\":[\"m1\",\"m2\"]}}],\"flows\":[{{\"name\":\"...\",\"text\":\"...\",\"modules\":[\"m3\",\"m1\",\"m2\"]}}]}}
 
 - overview: 3 to 6 sentences that say what the system does, what its main parts are and how \
 requests or data move through them.
 - layers: 2 to 6 layers, from the entry points down to the foundations. Every module id \
 appears in exactly one layer. Layer names are 1 to 3 words in sentence case.
+- flows: 2 to 5 major flows: the main paths that requests, commands or data take through \
+the system, such as a request from the entry point to storage. name is 1 to 4 words in \
+sentence case. modules lists 2 to 8 module ids in the order the data passes through them; \
+use only the \"depends on\" edges and the roles to decide the order. text is one sentence \
+that says what moves and what happens to it.
 
 {STYLE}"
     )

@@ -69,12 +69,23 @@ pub struct RepoLayer {
     pub modules: Vec<String>,
 }
 
+/// A major path that requests or data take through the modules.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoFlow {
+    pub name: String,
+    pub text: String,
+    /// Module ids, in the order the data passes through them.
+    pub modules: Vec<String>,
+}
+
 /// The architecture overview.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RepoOverview {
     pub overview: String,
     pub layers: Vec<RepoLayer>,
+    pub flows: Vec<RepoFlow>,
     /// Color legend for the source tree: (module id, name, light color).
     pub legend: Vec<(String, String, String)>,
     pub model: String,
@@ -144,38 +155,63 @@ impl AiSettings {
         }
     }
 
-    /// Settings whose models exist in `models`: missing ids are replaced by the cheapest
-    /// listed model (leaf, cluster in Economy) or the most expensive (cluster, repo).
+    /// Settings whose models exist in `models`. A missing model is replaced by the newest
+    /// listed model of the nearest family: Opus, then Sonnet for the repo pass; Sonnet, then
+    /// Opus for the cluster pass; Haiku for the leaf pass. Without one, the leaf pass takes
+    /// the cheapest model and the others the most expensive. "auto" is never chosen.
     pub fn fitted_to(mut self, models: &[ModelInfo]) -> Self {
-        if models.is_empty() {
+        let listed: Vec<&ModelInfo> = models.iter().filter(|m| m.id != "auto").collect();
+        if listed.is_empty() {
             return self;
         }
-        let has = |id: &str| models.iter().any(|m| m.id == id);
-        let cheapest = models
-            .iter()
-            .min_by(|a, b| a.output_per_m.total_cmp(&b.output_per_m))
-            .map(|m| m.id.clone());
-        let priciest = models
-            .iter()
-            .max_by(|a, b| a.output_per_m.total_cmp(&b.output_per_m))
-            .map(|m| m.id.clone());
+        let has = |id: &str| listed.iter().any(|m| m.id == id);
+        let newest = |families: &[&str]| {
+            families.iter().find_map(|f| {
+                listed
+                    .iter()
+                    .filter(|m| m.id.starts_with(f))
+                    .max_by(|a, b| version_key(&a.id).cmp(&version_key(&b.id)))
+                    .map(|m| m.id.clone())
+            })
+        };
+        let cheapest = || {
+            listed
+                .iter()
+                .min_by(|a, b| a.output_per_m.total_cmp(&b.output_per_m))
+                .map(|m| m.id.clone())
+        };
+        let priciest = || {
+            listed
+                .iter()
+                .max_by(|a, b| a.output_per_m.total_cmp(&b.output_per_m))
+                .map(|m| m.id.clone())
+        };
         if !has(&self.leaf_model)
-            && let Some(c) = &cheapest
+            && let Some(m) = newest(&["claude-haiku"]).or_else(cheapest)
         {
-            self.leaf_model = c.clone();
+            self.leaf_model = m;
         }
         if !has(&self.cluster_model)
-            && let Some(p) = &priciest
+            && let Some(m) = newest(&["claude-sonnet", "claude-opus"]).or_else(priciest)
         {
-            self.cluster_model = p.clone();
+            self.cluster_model = m;
         }
         if !has(&self.repo_model)
-            && let Some(p) = &priciest
+            && let Some(m) = newest(&["claude-opus", "claude-sonnet"]).or_else(priciest)
         {
-            self.repo_model = p.clone();
+            self.repo_model = m;
         }
         self
     }
+}
+
+/// Sort key for a model id: its numbers compare as numbers, so "claude-sonnet-5.10" is newer
+/// than "claude-sonnet-5.9".
+fn version_key(id: &str) -> Vec<u64> {
+    id.split(|c: char| !c.is_ascii_digit())
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| s.parse().ok())
+        .collect()
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -233,15 +269,23 @@ impl Estimate {
     }
     /// The IPC payload of `ai_estimate`.
     pub fn to_ipc(&self) -> AiEstimate {
+        // An architecture run sends modules, not symbols: count those instead.
+        let (items, cached) = match (&self.cluster, self.scope) {
+            (Some(c), AiScope::Architecture) => (c.items, c.cached),
+            _ => (self.leaf.items, self.leaf.cached),
+        };
         AiEstimate {
             scope: self.scope,
-            symbols: self.leaf.items,
-            cached: self.leaf.cached,
+            symbols: items,
+            cached,
             requests: self.requests(),
             tokens_in: self.tokens_in(),
             tokens_out: self.tokens_out(),
             cost_usd: self.cost_usd(),
-            model: self.leaf.model.clone(),
+            model: match (&self.cluster, self.scope) {
+                (Some(c), AiScope::Architecture) => c.model.clone(),
+                _ => self.leaf.model.clone(),
+            },
         }
     }
 }
@@ -434,13 +478,19 @@ impl<'a> Meter<'a> {
     /// the budget. Providers stop at `max_tokens`, so the budget holds even when answers run
     /// longer than estimated.
     pub fn capped(&self, req: &CompletionRequest) -> CompletionRequest {
+        self.capped_reserving(req, 0.0)
+    }
+
+    /// Like [`Meter::capped`], with `reserved` USD set aside for requests sent at the same time.
+    fn capped_reserving(&self, req: &CompletionRequest, reserved: f64) -> CompletionRequest {
         let tin = self.cal.tokens_in(request_tokens(req));
         let cached = if self.systems.contains(&req.system) {
             estimate_tokens(&req.system)
         } else {
             0
         };
-        let left = self.budget - self.report.cost_usd - cost_usd(&self.price, tin, cached, 0);
+        let left =
+            self.budget - self.report.cost_usd - reserved - cost_usd(&self.price, tin, cached, 0);
         let mut out = req.clone();
         if self.price.output_per_m > 0.0 {
             let affordable = (left.max(0.0) * 1_000_000.0 / self.price.output_per_m).floor();
@@ -451,16 +501,36 @@ impl<'a> Meter<'a> {
         out
     }
 
-    /// Whether the next request fits in what is left of the budget.
-    pub fn can_afford(&self, req: &CompletionRequest, est_out: u64) -> bool {
+    /// The estimated cost of a request.
+    fn cost_of(&self, req: &CompletionRequest, est_out: u64) -> f64 {
         let tin = self.cal.tokens_in(request_tokens(req));
         let cached = if self.systems.contains(&req.system) {
             estimate_tokens(&req.system)
         } else {
             0
         };
-        let tout = self.cal.tokens_out(est_out);
-        self.report.cost_usd + cost_usd(&self.price, tin, cached, tout) <= self.budget + EPS
+        cost_usd(&self.price, tin, cached, self.cal.tokens_out(est_out))
+    }
+
+    /// The next requests to send together: from the front of `next` (request, estimated
+    /// output), as many as fit in the budget along with each other. Each comes back capped
+    /// so that it cannot take the spend past the budget, counting what the others in the
+    /// wave are expected to spend. Empty when not even the first one fits.
+    pub fn wave(&self, next: &[(&CompletionRequest, u64)]) -> Vec<CompletionRequest> {
+        let mut costs = Vec::new();
+        let mut reserved = 0.0;
+        for (req, est_out) in next {
+            let c = self.cost_of(req, *est_out);
+            if self.report.cost_usd + reserved + c > self.budget + EPS {
+                break;
+            }
+            reserved += c;
+            costs.push(c);
+        }
+        next.iter()
+            .zip(&costs)
+            .map(|((req, _), c)| self.capped_reserving(req, reserved - c))
+            .collect()
     }
 
     pub fn record(&mut self, req: &CompletionRequest, c: &Completion) {
@@ -668,10 +738,19 @@ impl AiEngine {
         edges: &[ModuleEdge],
         scope: AiScope,
     ) -> Estimate {
-        let leaf = self.estimate_leaf(files);
+        // An architecture run names modules from whatever summaries are cached and skips
+        // the leaf pass.
+        let leaf = if scope == AiScope::Architecture {
+            PassEstimate {
+                model: self.settings().leaf_model,
+                ..Default::default()
+            }
+        } else {
+            self.estimate_leaf(files)
+        };
         let cluster = (scope != AiScope::File && !modules.is_empty())
-            .then(|| self.estimate_cluster(modules, edges, files));
-        let repo = (scope == AiScope::Repo && !modules.is_empty())
+            .then(|| self.estimate_cluster(modules, edges, files, scope != AiScope::Architecture));
+        let repo = (matches!(scope, AiScope::Repo | AiScope::Architecture) && !modules.is_empty())
             .then(|| self.estimate_repo(modules, edges, files));
         Estimate {
             scope,
@@ -736,51 +815,108 @@ impl AiEngine {
         m.report.items = plan.total;
         m.report.cached = plan.cached;
         let mut paths: HashSet<String> = HashSet::new();
-        for batch in &plan.batches {
-            if !m.can_afford(&batch.request, batch.est_out) {
+        let conc = self.concurrency();
+        let mut next = 0;
+        while next < plan.batches.len() {
+            let front: Vec<(&CompletionRequest, u64)> = plan.batches[next..]
+                .iter()
+                .take(conc)
+                .map(|b| (&b.request, b.est_out))
+                .collect();
+            let wave = m.wave(&front);
+            if wave.is_empty() {
                 m.report.stopped_by_budget = true;
                 break;
             }
-            match self.provider.complete(&m.capped(&batch.request)) {
-                Ok(c) => {
-                    m.record(&batch.request, &c);
-                    let res = leaf::store_answer(
-                        &self.cache,
-                        batch,
-                        &s.leaf_model,
-                        &c.model,
-                        &c.text,
-                        c.tokens_in,
-                        c.tokens_out,
-                    );
-                    m.report.stored += res.stored;
-                    for (item, msg) in res.errors {
-                        m.item_error(item, msg);
-                    }
-                    paths.extend(res.paths);
-                }
-                Err(e) => {
-                    let items = batch
-                        .items
-                        .iter()
-                        .map(|(_, i)| format!("{}#{}", i.path, i.name))
-                        .collect();
-                    if let Some(stop) = m.failed(e, items) {
-                        m.emit(true, Some(stop.to_string()));
-                        return Err(stop);
-                    }
-                    if m.too_many_failures(s.max_consecutive_failures) {
-                        break;
-                    }
-                }
+            let answers = self.complete_many(&wave);
+            let mut stop = None;
+            for (batch, answer) in plan.batches[next..].iter().zip(answers) {
+                self.leaf_answer(&mut m, &s, batch, answer, &mut paths, &mut stop);
+                m.emit(false, None);
             }
-            m.emit(false, None);
+            next += wave.len();
+            if let Some(stop) = stop {
+                m.emit(true, Some(stop.to_string()));
+                return Err(stop);
+            }
+            if m.too_many_failures(s.max_consecutive_failures) {
+                break;
+            }
         }
         let mut p: Vec<String> = paths.into_iter().collect();
         p.sort();
         m.report.updated_paths = p;
         m.finish(s.max_consecutive_failures);
         Ok(m.report)
+    }
+
+    /// Records one leaf answer: stores what parses, and notes errors and a reason to stop.
+    fn leaf_answer(
+        &self,
+        m: &mut Meter,
+        s: &AiSettings,
+        batch: &leaf::LeafBatch,
+        answer: Result<Completion, AiError>,
+        paths: &mut HashSet<String>,
+        stop: &mut Option<AiError>,
+    ) {
+        match answer {
+            Ok(c) => {
+                m.record(&batch.request, &c);
+                let res = leaf::store_answer(
+                    &self.cache,
+                    batch,
+                    &s.leaf_model,
+                    &c.model,
+                    &c.text,
+                    c.tokens_in,
+                    c.tokens_out,
+                );
+                m.report.stored += res.stored;
+                for (item, msg) in res.errors {
+                    m.item_error(item, msg);
+                }
+                paths.extend(res.paths);
+            }
+            Err(e) => {
+                let items = batch
+                    .items
+                    .iter()
+                    .map(|(_, i)| format!("{}#{}", i.path, i.name))
+                    .collect();
+                if let Some(e) = m.failed(e, items) {
+                    stop.get_or_insert(e);
+                }
+            }
+        }
+    }
+
+    /// How many requests a pass sends at once.
+    pub(crate) fn concurrency(&self) -> usize {
+        self.provider.max_concurrency().max(1)
+    }
+
+    /// Sends the requests at once and returns the answers in the same order.
+    pub(crate) fn complete_many(
+        &self,
+        reqs: &[CompletionRequest],
+    ) -> Vec<Result<Completion, AiError>> {
+        if reqs.len() == 1 {
+            return vec![self.provider.complete(&reqs[0])];
+        }
+        std::thread::scope(|scope| {
+            let handles: Vec<_> = reqs
+                .iter()
+                .map(|r| scope.spawn(move || self.provider.complete(r)))
+                .collect();
+            handles
+                .into_iter()
+                .map(|h| {
+                    h.join()
+                        .unwrap_or_else(|_| Err(AiError::Provider("a request failed".into())))
+                })
+                .collect()
+        })
     }
 
     /// Runs the passes a scope needs, in order (leaf, then cluster, then repo), with one
@@ -804,7 +940,11 @@ impl AiEngine {
                 budget_usd
             )));
         }
-        let leaf = self.run_leaf(files, budget_usd, on_progress)?;
+        let leaf = if scope == AiScope::Architecture {
+            RunReport::new(Pass::Leaf, &self.settings().leaf_model)
+        } else {
+            self.run_leaf(files, budget_usd, on_progress)?
+        };
         let mut left = budget_usd - leaf.cost_usd;
         let cluster = if scope != AiScope::File && !modules.is_empty() && !leaf.stopped_by_budget {
             let c = self.cluster_pass(modules, edges, files, existing_colors, left, on_progress)?;
@@ -814,7 +954,7 @@ impl AiEngine {
             None
         };
         let repo = match (&cluster, scope) {
-            (Some(c), AiScope::Repo) if !c.run.stopped_by_budget => {
+            (Some(c), AiScope::Repo | AiScope::Architecture) if !c.run.stopped_by_budget => {
                 Some(self.repo_pass(&c.modules, edges, left, on_progress)?)
             }
             _ => None,

@@ -427,6 +427,11 @@ impl Provider for SidecarProvider {
         Ok(r.models)
     }
 
+    /// The sidecar answers each request in its own goroutine and Copilot session.
+    fn max_concurrency(&self) -> usize {
+        6
+    }
+
     fn calibration(&self) -> crate::Calibration {
         if self.cfg.mock {
             crate::Calibration::EXACT

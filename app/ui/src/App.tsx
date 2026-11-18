@@ -2,8 +2,9 @@
 // file). Holds the repo-level state and listens to the backend's events.
 import { useAiRuns } from "./lib/aiRuns";
 import { getPrefs, subscribePrefs } from "./lib/prefs";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { AiStatus } from "./ipc/bindings/AiStatus";
+import type { Architecture } from "./ipc/bindings/Architecture";
 import type { FileView } from "./ipc/bindings/FileView";
 import type { IndexProgress } from "./ipc/bindings/IndexProgress";
 import type { JobsState } from "./ipc/bindings/JobsState";
@@ -100,6 +101,7 @@ function Shell() {
   const [repo, setRepo] = useState<RepoSummary | null>(null);
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [moduleMap, setModuleMap] = useState<ModuleMap | null>(null);
+  const [architecture, setArchitecture] = useState<Architecture | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
   const [file, setFile] = useState<OpenFile | null>(null);
   const [view, setView] = useState<FileView | null>(null);
@@ -145,6 +147,10 @@ function Shell() {
   const refreshRepoData = useCallback(() => {
     refreshTree();
     void api.getModuleMap().then(setModuleMap);
+    void api
+      .getArchitecture()
+      .then(setArchitecture)
+      .catch(() => setArchitecture(null));
   }, [refreshTree]);
   const refreshGit = useCallback(() => {
     if (!repoRef.current) return;
@@ -373,6 +379,12 @@ function Shell() {
   const showView = view && file && view.path === file.path ? view : null;
   const prefs = useSyncExternalStore(subscribePrefs, getPrefs);
   const aiRuns = useAiRuns({ status: ai, view: compareOn ? null : showView, repoRoot: repo?.root ?? null, auto: prefs.aiAuto });
+  // An architecture or repo run renames modules and writes the overview: reload both.
+  const jobDone = aiRuns.job?.finished && (aiRuns.job.scope === "architecture" || aiRuns.job.scope === "repo") ? aiRuns.job.jobId : null;
+  useEffect(() => {
+    if (jobDone != null) refreshRepoData();
+  }, [jobDone, refreshRepoData]);
+  const moduleNames = useMemo(() => new Map((moduleMap?.modules ?? []).map((m) => [m.id, m.name])), [moduleMap]);
   const indexing = !!progress && progress.phase !== "done";
   const justIndexed = !!progress && progress.phase === "done";
   const jobsRunning = !!jobs && !!repo && jobs.running > 0;
@@ -514,7 +526,7 @@ function Shell() {
         </div>
       </header>
       <div className={`body${repo && sidebar ? " with-side" : ""}`}>
-        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} />}
+        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} moduleNames={moduleNames} />}
         <main className="content">
           {!repo && <StartScreen recent={recent} onOpen={(p) => void openRepo(p)} onPick={() => void pickRepo()} busy={busy} error={openError} />}
           {repo && compareReq && (
@@ -522,7 +534,7 @@ function Shell() {
               <CompareView status={git} moduleMap={moduleMap} request={compareReq} onOpenFile={(p, line) => openFile(p, { line })} />
             </div>
           )}
-          {repo && !compareOn && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} />}
+          {repo && !compareOn && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} ai={{ arch: architecture, status: ai, job: aiRuns.job, onRun: aiRuns.run, onOpenAi: () => setAiOpen((n) => n + 1) }} />}
           {repo && !compareOn && file && viewError && (
             <div className="start">
               <p className="err">

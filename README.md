@@ -29,7 +29,13 @@ GitHub Copilot sign-in, and never before the user turns AI on for a repo.
   Python package roots and Cargo workspaces; call edges marked exact or heuristic; precise
   indexers (rust-analyzer, scip-typescript, scip-python) upgrade edges when installed.
 - **Modules and colors**: the source tree is clustered into modules from directories and the
-  import graph, colored, and renamable; AI can name them.
+  import graph, colored, and renamable. Files and folders in the tree carry their module's
+  color.
+- **Architecture**: with AI on, one run names every module and writes the repo's
+  architecture: what the system does, its layers from entry points to foundations, and the
+  major flows of requests and data between modules, shown as colored module chains above the
+  module map. It reads only the module graph and whatever summaries are cached, so it costs
+  cents for a mid-size repo (about $0.70 for openclaw's 637 modules).
 - **Gets faster with use**: everything derived is cached by content hash, so a branch switch
   back and forth costs nothing and AI summaries are never paid for twice.
 
@@ -136,7 +142,8 @@ Off by default, per repo. Turning it on starts the sidecar; nothing leaves the m
 that. Once it is on, a file is summarized when it opens if its estimate is under $0.05 (about
 a tenth of a cent is typical; this can be switched off in the AI panel), with progress at the
 top of the file. A module or the whole repo is summarized from the AI panel, which shows the
-estimate first. Every run has a budget it cannot exceed. Model text is written in ASD-STE100
+estimate first, as does the architecture overview on the repo page. Requests go out six at a
+time. Every run has a budget it cannot exceed. Model text is written in ASD-STE100
 Simplified Technical English: short sentences, the active voice, one meaning for each word. Sign in
 with a GitHub account that has a Copilot plan (device flow through Isoline's OAuth app; the
 token stays in the OS keychain). Release builds embed the Copilot CLI, whose license ships in

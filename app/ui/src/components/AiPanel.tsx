@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { AiEstimate } from "../ipc/bindings/AiEstimate";
 import type { AiScope } from "../ipc/bindings/AiScope";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
-import { AUTO_MAX_USD, budgetFor, type AiJob } from "../lib/aiRuns";
+import { AUTO_MAX_USD, SCOPE_TEXT as scopeText, budgetFor, type AiJob } from "../lib/aiRuns";
 import { getPrefs, setPrefs, subscribePrefs } from "../lib/prefs";
 import { api } from "../ipc/api";
 import { SignInDialog } from "./SignInDialog";
@@ -22,9 +22,9 @@ export function aiLabel(s: AiStatus | null): string {
 const SCOPES: { scope: AiScope; label: string; needsFile: boolean }[] = [
   { scope: "file", label: "This file", needsFile: true },
   { scope: "module", label: "Its module", needsFile: true },
+  { scope: "architecture", label: "Architecture", needsFile: false },
   { scope: "repo", label: "Whole repo", needsFile: false },
 ];
-const scopeText = { file: "this file", module: "this module", repo: "the repo" } as const;
 
 export function AiPanel({ status, setStatus, filePath, job, onRun, openSignal = 0 }: { status: AiStatus | null; setStatus(s: AiStatus): void; filePath: string | null; job: AiJob | null; onRun(scope: AiScope, path: string | null, budgetUsd: number): Promise<void>; openSignal?: number }) {
   const prefs = useSyncExternalStore(subscribePrefs, getPrefs);
@@ -51,7 +51,7 @@ export function AiPanel({ status, setStatus, filePath, job, onRun, openSignal = 
   }, [status, setStatus]);
 
   useEffect(() => setEst(null), [filePath, scope]);
-  const scopeShown: AiScope = !filePath && scope !== "repo" ? "repo" : scope;
+  const scopeShown: AiScope = !filePath && (scope === "file" || scope === "module") ? "architecture" : scope;
 
   useEffect(() => {
     if (!open) return;
@@ -120,7 +120,7 @@ export function AiPanel({ status, setStatus, filePath, job, onRun, openSignal = 
                   <div className="caption">Summarize now</div>
                   <Seg label="What to summarize" value={scopeShown} options={SCOPES.filter((x) => !x.needsFile || filePath).map((x) => [x.scope, x.label] as [AiScope, string])} onChange={setScope} />
                   {!est ? (
-                    <button type="button" className="iso-btn" disabled={busy} onClick={() => run(() => api.aiEstimate(scopeShown, scopeShown === "repo" ? undefined : (filePath ?? undefined)).then(setEst))}>
+                    <button type="button" className="iso-btn" disabled={busy} onClick={() => run(() => api.aiEstimate(scopeShown, scopeShown === "repo" || scopeShown === "architecture" ? undefined : (filePath ?? undefined)).then(setEst))}>
                       {busy ? "Estimating…" : "Estimate the cost"}
                     </button>
                   ) : (
@@ -134,7 +134,7 @@ export function AiPanel({ status, setStatus, filePath, job, onRun, openSignal = 
                         disabled={busy || running || est.requests === 0}
                         onClick={() =>
                           run(async () => {
-                            await onRun(scopeShown, scopeShown === "repo" ? null : filePath, budgetFor(est));
+                            await onRun(scopeShown, scopeShown === "repo" || scopeShown === "architecture" ? null : filePath, budgetFor(est));
                             setEst(null);
                           })
                         }

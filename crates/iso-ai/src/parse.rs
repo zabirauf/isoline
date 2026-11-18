@@ -229,8 +229,11 @@ pub fn parse_module(item: &Value) -> Result<(String, String, Vec<String>), Strin
 /// A layer as the model wrote it: name and module ids.
 pub type RawLayer = (String, Vec<String>);
 
-/// A repo answer: overview and layers (name, module ids).
-pub fn parse_repo(v: &Value) -> Result<(String, Vec<RawLayer>), String> {
+/// A flow as the model wrote it: name, sentence and module ids in order.
+pub type RawFlow = (String, String, Vec<String>);
+
+/// A repo answer: overview, layers (name, module ids) and flows.
+pub fn parse_repo(v: &Value) -> Result<(String, Vec<RawLayer>, Vec<RawFlow>), String> {
     let overview = string_field(v, "overview")
         .map(|s| clean_text(&s))
         .filter(|s| !s.is_empty())
@@ -251,7 +254,26 @@ pub fn parse_repo(v: &Value) -> Result<(String, Vec<RawLayer>), String> {
             layers.push((name, mods));
         }
     }
-    Ok((overview, layers))
+    let mut flows = Vec::new();
+    if let Some(Value::Array(a)) = v.get("flows") {
+        for f in a {
+            let Some(name) = string_field(f, "name").map(|s| clean_text(&s)) else {
+                continue;
+            };
+            let text = string_field(f, "text")
+                .map(|s| clean_text(&s))
+                .unwrap_or_default();
+            let mods: Vec<String> = match f.get("modules") {
+                Some(Value::Array(m)) => m
+                    .iter()
+                    .filter_map(|x| x.as_str().map(|s| s.trim().to_string()))
+                    .collect(),
+                _ => Vec::new(),
+            };
+            flows.push((name, text, mods));
+        }
+    }
+    Ok((overview, layers, flows))
 }
 
 /// A one-line summary from a doc comment, used when there is no model answer.

@@ -8,6 +8,9 @@ import type { AiStatus } from "../ipc/bindings/AiStatus";
 import type { FileView } from "../ipc/bindings/FileView";
 import { api, type AiJobDone } from "../ipc/api";
 
+/** What a run covers, in words. */
+export const SCOPE_TEXT: Record<AiScope, string> = { file: "this file", module: "this module", repo: "the repo", architecture: "the architecture" };
+
 /** The largest estimate a file is summarized at without asking. */
 export const AUTO_MAX_USD = 0.05;
 
@@ -41,7 +44,8 @@ type Check = { path: string } & ({ kind: "checking" } | { kind: "none" } | { kin
 export function fileAiState(view: FileView | null, status: AiStatus | null, job: AiJob | null, check: Check | null): FileAi {
   if (!view || view.tier === "text") return { kind: "none" };
   if (!status?.signedIn || !status.enabledForRepo) return view.overview ? { kind: "none" } : { kind: "off" };
-  if (job && !job.finished) return job.scope !== "file" || job.path === view.path ? { kind: "running", job } : { kind: "waiting", job };
+  // Module and repo runs summarize this file too; an architecture run does not.
+  if (job && !job.finished) return (job.scope === "file" && job.path === view.path) || job.scope === "module" || job.scope === "repo" ? { kind: "running", job } : { kind: "waiting", job };
   if (job?.finished && job.error && job.scope === "file" && job.path === view.path) return { kind: "failed", error: job.error };
   if (check?.path === view.path) {
     if (check.kind === "checking") return { kind: "checking" };

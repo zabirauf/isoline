@@ -141,10 +141,11 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `get_source` | `path`, `start?`, `end?` | `SourceSlice` | |
 | `get_impact` | `symbol` (hex id), `transitive` | `Impact` | |
 | `get_module_map` | | `ModuleMap` | |
+| `get_architecture` | | `Architecture \| null` | The last repo pass: overview, layers and major flows. Never calls a model. |
 | `search` | `query`, `limit?` | `SearchHit[]` | |
 | `ai_status` / `ai_sign_in` / `ai_sign_out` | | `AiStatus` | |
 | `ai_estimate` | `scope`, `path?` | `AiEstimate` | |
-| `ai_run` | `scope`, `path?`, `budgetUsd` | `AiRunHandle` | `ai_progress: AiProgress`, `summary_ready: { path }` |
+| `ai_run` | `scope`, `path?`, `budgetUsd` | `AiRunHandle` | `ai_progress: AiProgress`, `summary_ready: { path }`, `ai_job_done: { jobId, stored, failed, costUsd, error }` once per run. Scope `architecture` skips file summaries: cluster and repo passes only. |
 | `ai_enable` | `enabled` | `AiStatus` | |
 | `get_jobs` | | `JobsState` | `job_progress: JobsState` |
 | `rename_module` | `id`, `name?`, `color?` | `ModuleInfo` | |

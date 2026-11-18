@@ -373,6 +373,33 @@ ipc! {
         pub estimate: AiEstimate,
     }
 
+    /// Returned by `get_architecture`: the repo pass's overview, kept until the next one.
+    pub struct Architecture {
+        pub overview: String,
+        pub layers: Vec<ArchLayer>,
+        pub flows: Vec<ArchFlow>,
+        pub model: String,
+        /// Modules the overview was written from.
+        pub modules: u32,
+        /// Unix seconds.
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub written_at: u64,
+    }
+
+    pub struct ArchLayer {
+        pub name: String,
+        /// Module ids.
+        pub modules: Vec<String>,
+    }
+
+    /// A major path that requests or data take through the modules.
+    pub struct ArchFlow {
+        pub name: String,
+        pub text: String,
+        /// Module ids, in the order the data passes through them.
+        pub modules: Vec<String>,
+    }
+
     /// Event `ai_progress`.
     pub struct AiProgress {
         #[cfg_attr(feature = "ts", ts(type = "number"))]
@@ -657,7 +684,7 @@ ipc_enum! {
     pub enum ModuleSource { Cluster, Ai, User }
     pub enum SearchKind { File, Symbol }
     pub enum SidecarState { Off, Starting, Ready, Failed }
-    pub enum AiScope { File, Module, Repo }
+    pub enum AiScope { File, Module, Repo, Architecture }
     pub enum SymbolOrigin { Local, Imported, External, Builtin }
     pub enum ChangeKind { Added, Modified, Deleted, Renamed }
 }

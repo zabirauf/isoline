@@ -33,8 +33,8 @@ mod leaf;
 pub use cache::AiCache;
 pub use engine::{
     AiEngine, AiSettings, CachedFile, ClusterReport, Estimate, FileInput, FullReport, ItemError,
-    ModuleInput, ModuleSummary, Pass, PassEstimate, Progress, RepoLayer, RepoOverview, RepoReport,
-    RunReport,
+    ModuleInput, ModuleSummary, Pass, PassEstimate, Progress, RepoFlow, RepoLayer, RepoOverview,
+    RepoReport, RunReport,
 };
 pub use mock::MockProvider;
 pub use palette::{ModuleColor, PALETTE};
@@ -96,6 +96,10 @@ pub trait Provider: Send + Sync {
     fn calibration(&self) -> Calibration {
         Calibration::EXACT
     }
+    /// How many requests a pass may have in flight at once.
+    fn max_concurrency(&self) -> usize {
+        1
+    }
 }
 
 impl<P: Provider + ?Sized> Provider for std::sync::Arc<P> {
@@ -107,5 +111,8 @@ impl<P: Provider + ?Sized> Provider for std::sync::Arc<P> {
     }
     fn calibration(&self) -> Calibration {
         (**self).calibration()
+    }
+    fn max_concurrency(&self) -> usize {
+        (**self).max_concurrency()
     }
 }

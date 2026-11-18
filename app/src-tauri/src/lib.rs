@@ -127,6 +127,12 @@ async fn get_module_map(state: State<'_, AppState>) -> CmdResult<ModuleMap> {
 }
 
 #[tauri::command]
+async fn get_architecture(state: State<'_, AppState>) -> CmdResult<Option<Architecture>> {
+    let e = engine(&state)?;
+    blocking(move || e.architecture()).await
+}
+
+#[tauri::command]
 async fn search(
     state: State<'_, AppState>,
     query: String,
@@ -261,6 +267,7 @@ pub fn run() {
             get_source,
             get_impact,
             get_module_map,
+            get_architecture,
             search,
             get_jobs,
             rename_module,

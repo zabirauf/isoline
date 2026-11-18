@@ -92,3 +92,52 @@ fn ai_is_off_until_enabled_then_cached_summaries_reach_file_views() {
         "My module"
     );
 }
+
+#[test]
+fn architecture_run_skips_file_summaries_and_is_kept() {
+    let src = tempfile::tempdir().unwrap();
+    repo(src.path());
+    let data = tempfile::tempdir().unwrap();
+    let eng = Engine::open_with_data(src.path(), data.path()).unwrap();
+    eng.index().unwrap();
+    let mock = Arc::new(MockProvider::new());
+    let ai = AiEngine::open(&data.path().join("ai_cache.sqlite"), mock.clone()).unwrap();
+    eng.set_ai_enabled(true).unwrap();
+    assert!(eng.architecture().unwrap().is_none());
+
+    let est = eng.ai_estimate(&ai, AiScope::Architecture, None).unwrap();
+    let modules = eng.module_map().unwrap().modules.len() as u32;
+    assert_eq!(
+        est.symbols, modules,
+        "an architecture estimate counts modules"
+    );
+    let rep = eng
+        .ai_run(&ai, AiScope::Architecture, None, 1.0, &mut |_| {})
+        .unwrap();
+    assert_eq!(rep.leaf.requests, 0, "no file summaries");
+    assert!(rep.cluster.is_some());
+
+    let a = eng
+        .architecture()
+        .unwrap()
+        .expect("an architecture overview");
+    assert!(!a.overview.is_empty());
+    assert!(!a.layers.is_empty());
+    assert_eq!(a.modules, modules);
+    let known: std::collections::HashSet<String> = eng
+        .module_map()
+        .unwrap()
+        .modules
+        .into_iter()
+        .map(|m| m.id)
+        .collect();
+    for f in &a.flows {
+        assert!(f.modules.len() >= 2);
+        assert!(f.modules.iter().all(|m| known.contains(m)), "{f:?}");
+    }
+
+    // Kept in the index: a fresh engine on the same data reads it back.
+    drop(eng);
+    let eng = Engine::open_with_data(src.path(), data.path()).unwrap();
+    assert_eq!(eng.architecture().unwrap().unwrap().overview, a.overview);
+}

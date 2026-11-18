@@ -319,6 +319,7 @@ pub fn mock_answer(system: &str, prompt: &str) -> String {
             json!({
                 "overview": format!("The repository is split into {} modules. Each module groups the files of one directory, and the module graph shows how they depend on each other.", items.len()),
                 "layers": [{"name": "Core", "modules": ids}],
+                "flows": [{"name": "Main flow", "text": "Data moves from the first module to the last.", "modules": [ids.first(), ids.last()]}],
             })
         }
         _ => {

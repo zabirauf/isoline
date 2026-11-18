@@ -248,7 +248,7 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
         "recent_repos" => serde_json::to_value(iso_engine::recent_repos(
             &st.data.clone().unwrap_or_else(iso_engine::data_dir),
         ))?,
-        "ai_status" | "ai_sign_in" | "ai_sign_out" | "ai_enable" => json!({
+        "ai_status" | "ai_sign_in" | "ai_sign_in_cancel" | "ai_sign_out" | "ai_enable" => json!({
             "sidecar": "off", "signedIn": false, "user": null, "models": [],
             "enabledForRepo": false, "mock": false, "deviceCode": null,
             "message": "AI summaries are not available over the HTTP bridge."

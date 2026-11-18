@@ -24,6 +24,8 @@ pub struct AiState {
     /// Why the last sign-in stopped (code expired, denied, GitHub unreachable), shown until
     /// the next sign-in starts.
     notice: Mutex<Option<String>>,
+    /// Bumped by every sign-in and cancel; a poller whose sign-in is no longer current stops.
+    sign_in_gen: AtomicU64,
     next_job: AtomicU64,
 }
 
@@ -166,12 +168,22 @@ pub async fn ai_status(state: State<'_, AppState>) -> CmdResult<AiStatus> {
 
 /// Polls GitHub until the device code is approved, denied or expired, then clears it, so the
 /// next `ai_status` shows the outcome. Gives up after three failed polls in a row.
-fn poll_sign_in(app: AppHandle, provider: Arc<SidecarProvider>) {
+fn poll_sign_in(app: AppHandle, provider: Arc<SidecarProvider>, generation: u64) {
     use tauri::Manager;
+    let current = |app: &AppHandle| {
+        app.state::<AppState>()
+            .ai
+            .sign_in_gen
+            .load(Ordering::SeqCst)
+            == generation
+    };
     let mut failures = 0;
     let mut outcome: Option<String> = Some("The sign-in code expired. Sign in again.".into());
     for _ in 0..180 {
         std::thread::sleep(std::time::Duration::from_secs(5));
+        if !current(&app) {
+            return;
+        }
         match provider.sign_in_poll() {
             Ok((true, _)) => {
                 outcome = None;
@@ -187,6 +199,9 @@ fn poll_sign_in(app: AppHandle, provider: Arc<SidecarProvider>) {
                 }
             }
         }
+    }
+    if !current(&app) {
+        return;
     }
     let state = app.state::<AppState>();
     *state.ai.device.lock() = None;
@@ -238,12 +253,23 @@ pub async fn ai_sign_in(app: AppHandle, state: State<'_, AppState>) -> CmdResult
                 user_code: code.user_code,
                 verification_uri: code.verification_uri,
             });
+            let generation = state.ai.sign_in_gen.fetch_add(1, Ordering::SeqCst) + 1;
             let (app2, p) = (app.clone(), Arc::clone(&provider));
-            std::thread::spawn(move || poll_sign_in(app2, p));
+            std::thread::spawn(move || poll_sign_in(app2, p, generation));
             Ok(status(&state, Some(hint.into())))
         }
         Err(e) => Ok(status(&state, Some(format!("{e}")))),
     }
+}
+
+/// Stops waiting for a pending sign-in (the dialog was closed). A code approved on GitHub
+/// afterwards is not picked up; signing in again starts a new one.
+#[tauri::command]
+pub async fn ai_sign_in_cancel(state: State<'_, AppState>) -> CmdResult<AiStatus> {
+    state.ai.sign_in_gen.fetch_add(1, Ordering::SeqCst);
+    *state.ai.device.lock() = None;
+    *state.ai.notice.lock() = None;
+    Ok(status(&state, None))
 }
 
 #[tauri::command]

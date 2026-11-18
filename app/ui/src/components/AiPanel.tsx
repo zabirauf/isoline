@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { AiEstimate } from "../ipc/bindings/AiEstimate";
 import type { AiProgress } from "../ipc/bindings/AiProgress";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
-import { api, openExternal } from "../ipc/api";
+import { api } from "../ipc/api";
+import { SignInDialog } from "./SignInDialog";
 import { fmtInt, fmtUsd, num, plural } from "../lib/format";
 
 export function aiLabel(s: AiStatus | null): string {
@@ -17,8 +18,13 @@ export function aiLabel(s: AiStatus | null): string {
 
 export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 }: { status: AiStatus | null; setStatus(s: AiStatus): void; filePath: string | null; progress: AiProgress | null; openSignal?: number }) {
   const [open, setOpen] = useState(false);
+  // Signing in happens in a dialog; the popover holds what comes after.
+  const [dialog, setDialog] = useState(false);
+  const signedIn = !!status?.signedIn;
   useEffect(() => {
-    if (openSignal) setOpen(true);
+    if (!openSignal) return;
+    if (signedIn) setOpen(true);
+    else setDialog(true);
   }, [openSignal]);
   const [est, setEst] = useState<AiEstimate | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,7 +70,7 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
   const running = progress && !progress.finished;
   return (
     <div className="ai" ref={box}>
-      <button type="button" className={`iso-btn ai-btn${s?.signedIn && s.enabledForRepo ? " on" : ""}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(!open)}>
+      <button type="button" className={`iso-btn ai-btn${s?.signedIn && s.enabledForRepo ? " on" : ""}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => (signedIn ? setOpen(!open) : setDialog(true))}>
         {aiLabel(s)}
         {running ? ` · ${progress.done} / ${progress.total}` : ""}
       </button>
@@ -72,31 +78,17 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
         <div className="popover ai-pop" role="dialog" aria-label="AI summaries">
           <div className="eyebrow">AI summaries</div>
           {s.mock && <p className="caption">Mock backend: nothing leaves this machine.</p>}
-          {!s.signedIn && !s.deviceCode && (
-            <>
-              <p>Summaries come from your own GitHub Copilot account. Nothing is sent until you turn AI on for this repo.</p>
-              {s.message && <p className="caption">{s.message}</p>}
-              <button type="button" className="iso-btn" disabled={busy} onClick={() => run(() => api.aiSignIn().then(setStatus))}>
-                Sign in with GitHub
-              </button>
-            </>
-          )}
-          {!s.signedIn && s.deviceCode && (
-            <>
-              <p>
-                Enter <code className="devcode">{s.deviceCode.userCode}</code> at <code>{s.deviceCode.verificationUri}</code>.
-              </p>
-              {s.message && <p className="caption">{s.message}</p>}
-              <div className="row-btns">
-                <button type="button" className="iso-btn" onClick={() => void navigator.clipboard?.writeText(s.deviceCode!.userCode)}>
-                  Copy code
-                </button>
-                <button type="button" className="iso-btn" onClick={() => void openExternal(s.deviceCode!.verificationUri)}>
-                  Open GitHub
-                </button>
-              </div>
-              <p className="caption">Waiting for GitHub…</p>
-            </>
+          {!s.signedIn && (
+            <button
+              type="button"
+              className="iso-btn"
+              onClick={() => {
+                setOpen(false);
+                setDialog(true);
+              }}
+            >
+              Sign in with GitHub…
+            </button>
           )}
           {s.signedIn && (
             <>
@@ -138,6 +130,15 @@ export function AiPanel({ status, setStatus, filePath, progress, openSignal = 0 
           {err && <p className="err">{err}</p>}
         </div>
       )}
+      <SignInDialog
+        open={dialog}
+        status={status}
+        setStatus={setStatus}
+        onClose={(then) => {
+          setDialog(false);
+          if (then === "panel") setOpen(true);
+        }}
+      />
     </div>
   );
 }

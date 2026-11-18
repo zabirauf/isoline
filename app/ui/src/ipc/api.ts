@@ -64,6 +64,7 @@ export interface Backend {
   search(query: string, limit?: number): Promise<SearchHit[]>;
   aiStatus(): Promise<AiStatus>;
   aiSignIn(): Promise<AiStatus>;
+  aiSignInCancel(): Promise<AiStatus>;
   aiSignOut(): Promise<AiStatus>;
   aiEstimate(scope: AiScope, path?: string): Promise<AiEstimate>;
   aiRun(scope: AiScope, path: string | undefined, budgetUsd: number): Promise<AiRunHandle>;
@@ -108,6 +109,7 @@ async function createTauriBackend(): Promise<Backend> {
     search: (query, limit) => call("search", { query, limit: limit ?? null }),
     aiStatus: () => call("ai_status"),
     aiSignIn: () => call("ai_sign_in"),
+    aiSignInCancel: () => call("ai_sign_in_cancel"),
     aiSignOut: () => call("ai_sign_out"),
     aiEstimate: (scope, path) => call("ai_estimate", { scope, path: path ?? null }),
     aiRun: (scope, path, budgetUsd) => call("ai_run", { scope, path: path ?? null, budgetUsd }),
@@ -166,6 +168,7 @@ function createHttpBackend(): Backend {
     search: (query, limit) => call("search", { query, limit: limit ?? null }),
     aiStatus: () => call("ai_status"),
     aiSignIn: () => call("ai_sign_in"),
+    aiSignInCancel: () => call("ai_sign_in_cancel"),
     aiSignOut: () => call("ai_sign_out"),
     aiEstimate: (scope, path) => call("ai_estimate", { scope, path: path ?? null }),
     aiRun: (scope, path, budgetUsd) => call("ai_run", { scope, path: path ?? null, budgetUsd }),
@@ -235,6 +238,7 @@ export const api = {
   search: async (query: string, limit?: number) => (await backend()).search(query, limit),
   aiStatus: async () => (await backend()).aiStatus(),
   aiSignIn: async () => (await backend()).aiSignIn(),
+  aiSignInCancel: async () => (await backend()).aiSignInCancel(),
   aiSignOut: async () => (await backend()).aiSignOut(),
   aiEstimate: async (scope: AiScope, path?: string) => (await backend()).aiEstimate(scope, path),
   aiRun: async (scope: AiScope, path: string | undefined, budgetUsd: number) => (await backend()).aiRun(scope, path, budgetUsd),

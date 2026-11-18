@@ -276,6 +276,7 @@ pub fn run() {
             compare_file,
             ai::ai_status,
             ai::ai_sign_in,
+            ai::ai_sign_in_cancel,
             ai::ai_sign_out,
             ai::ai_enable,
             ai::ai_estimate,

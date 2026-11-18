@@ -63,6 +63,7 @@ function toModuleInfo(m: RawModuleInfo): ModuleInfo {
 
 export function createMockBackend(): Backend {
   const listeners = new Map<EventName, Set<(p: unknown) => void>>();
+  let signInTimer: ReturnType<typeof setTimeout> | undefined;
   const emit = <E extends EventName>(e: E, p: BackendEvents[E]) => listeners.get(e)?.forEach((cb) => cb(p));
 
   let tree: TreeNode = BIG_FILES ? generateTree(BIG_FILES) : clone(D.tree);
@@ -234,8 +235,9 @@ export function createMockBackend(): Backend {
     aiStatus: () => delay(() => clone(ai)),
     aiSignIn: () =>
       delay(() => {
-        ai = { ...ai, sidecar: "starting", deviceCode: { userCode: "MOCK-1234", verificationUri: "https://github.com/login/device" }, message: "Enter the code on GitHub to finish signing in. The mock signs in by itself in 3 seconds." };
-        setTimeout(() => {
+        ai = { ...ai, sidecar: "starting", deviceCode: { userCode: "MOCK-1234", verificationUri: "https://github.com/login/device" }, message: "The mock signs in by itself in 3 seconds." };
+        clearTimeout(signInTimer);
+        signInTimer = setTimeout(() => {
           ai = {
             ...ai,
             sidecar: "ready",
@@ -249,6 +251,12 @@ export function createMockBackend(): Backend {
             ],
           };
         }, 3000);
+        return clone(ai);
+      }),
+    aiSignInCancel: () =>
+      delay(() => {
+        clearTimeout(signInTimer);
+        ai = { ...ai, sidecar: "off", deviceCode: null, message: null };
         return clone(ai);
       }),
     aiSignOut: () => delay(() => (ai = { ...ai, sidecar: "off", signedIn: false, user: null, models: [], deviceCode: null, message: null, enabledForRepo: false })),

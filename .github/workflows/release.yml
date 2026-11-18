@@ -1,11 +1,15 @@
 name: release
 
 # Builds the desktop app and the iso-cli binary for macOS, Windows and Linux on arm64 and
-# x64. A pushed tag `v*` publishes them as a GitHub release; a manual run only uploads
-# workflow artifacts (or publishes, when given a tag).
+# x64. A pushed tag `v*` publishes them as a GitHub release. A push to main refreshes the
+# rolling `nightly` pre-release (stable file names, never marked Latest). A manual run only
+# uploads workflow artifacts (or publishes, when given a tag).
 on:
   push:
     tags: ["v*"]
+    branches: [main]
+    # Applies to branch pushes only; tag pushes always build.
+    paths-ignore: ["**.md", "docs/**", "eval/**", "fixtures/**", "LICENSE"]
   workflow_dispatch:
     inputs:
       tag:
@@ -15,6 +19,11 @@ on:
 
 permissions:
   contents: write
+
+# A newer push to main replaces a nightly build still in progress; tag builds always finish.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -142,4 +151,63 @@ jobs:
             gh release upload "$TAG" dist/* --clobber
           else
             gh release create "$TAG" dist/* --title "Isoline $TAG" --notes-file "$notes" --target "$GITHUB_SHA"
+          fi
+
+  nightly:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: nightly
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Stable file names
+        run: |
+          set -euo pipefail
+          cd dist
+          # Isoline_0.1.0_aarch64.dmg -> Isoline_nightly_aarch64.dmg, so links never change.
+          for f in *; do
+            n=$(echo "$f" | sed -E 's/[0-9]+\.[0-9]+\.[0-9]+/nightly/')
+            [ "$f" = "$n" ] || mv "$f" "$n"
+          done
+          sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Move the nightly tag to this commit
+        run: |
+          set -euo pipefail
+          if gh api "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" >/dev/null
+          fi
+      - name: Publish the nightly pre-release
+        run: |
+          set -euo pipefail
+          short=${GITHUB_SHA:0:7}
+          cat > notes.md <<NOTES
+          Built from [\`$short\`](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) on main, $(date -u '+%Y-%m-%d %H:%M UTC').
+          Rebuilt on every push to main, so it can be broken. The stable build is the latest \`v*\` release.
+
+          Update in place on macOS or Linux:
+
+          \`\`\`sh
+          curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/scripts/install.sh | sh
+          \`\`\`
+
+          File names don't change between builds, so direct links keep working, for example
+          https://github.com/$GITHUB_REPOSITORY/releases/download/nightly/Isoline_nightly_aarch64.dmg.
+          The app still reports the version in tauri.conf.json; the commit above is what was built.
+          NOTES
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --prerelease --title "Isoline nightly ($short)" --notes-file notes.md
+            gh release upload "$TAG" dist/* --clobber
+            # Drop files a past build had that this one doesn't.
+            gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r a; do
+              [ -e "dist/$a" ] || gh release delete-asset "$TAG" "$a" --yes
+            done
+          else
+            gh release create "$TAG" dist/* --prerelease --latest=false --title "Isoline nightly ($short)" --notes-file notes.md --verify-tag
           fi

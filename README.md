@@ -41,7 +41,18 @@ an installer `.exe` or `.msi` for Windows, and an `.AppImage`, `.deb` or `.rpm` 
 Each release also has the `iso-cli` binary for every target and a `SHA256SUMS.txt`. The builds
 are not code-signed yet; see the release notes for opening them the first time.
 
-With Nix (flakes), build from source:
+To try what's on `main` without waiting for a release, use the
+[nightly](https://github.com/zabirauf/isoline/releases/tag/nightly) pre-release. It is rebuilt
+on every push to `main`, keeps the same file names (`Isoline_nightly_aarch64.dmg` and so on),
+and is never marked Latest. On macOS or Linux, this installs it, or updates an existing install
+in place:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/zabirauf/isoline/main/scripts/install.sh | sh
+# --stable for the latest release instead, --cli to add iso-cli to ~/.local/bin
+```
+
+With Nix (flakes), build from source (the flake follows `main`):
 
 ```sh
 nix run github:zabirauf/isoline                 # the desktop app

@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/logo.svg" width="112" alt="Isoline logo: four contour rings around a peak"></p>
+
 # Isoline
 
 A desktop app for understanding code without reading every line. Open a repo and Isoline

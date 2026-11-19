@@ -106,6 +106,8 @@ struct Processed {
 impl Engine {
     /// Full index run: walk the repo and process every file that changed since the last run.
     pub fn index(self: &Arc<Self>) -> Result<IndexReport> {
+        // Every caller runs this on a thread of its own: indexing yields to the reader.
+        iso_jobs::background_thread();
         let _g = self.index_lock.lock();
         self.indexing.store(true, Ordering::Relaxed);
         let t0 = Instant::now();
@@ -310,6 +312,7 @@ impl Engine {
             let tx = tx.clone();
             let todo_map = Arc::clone(&todo_map);
             handles.push(std::thread::spawn(move || {
+                iso_jobs::background_thread();
                 while let Some((key, _prio)) = eng.queue.try_pop() {
                     if key.kind != JobKind::Parse {
                         eng.queue.finish(true);
@@ -413,6 +416,8 @@ impl Engine {
         for p in rx.iter() {
             done += 1;
             batch.push(p);
+            // Short write transactions: a file the reader opens mid-index is written on its
+            // own and waits for the current transaction to commit.
             if batch.len() >= 256 || last_emit.elapsed().as_millis() > 150 {
                 let current = batch.last().map(|p| p.row.path.clone());
                 flush(
@@ -540,26 +545,28 @@ impl Engine {
                 Ok(v)
             }
         })?;
-        let resolved: Vec<(i64, FileId, ResolvedTo)> = to_resolve
-            .par_iter()
-            .filter_map(|imp| {
-                let (lang, path) = lang_of.get(&imp.file_id)?;
-                let r = resolvers.resolve(*lang, path, &imp.as_fact());
-                let to = match r {
-                    Resolution::File(p) => {
-                        let id = FileId::of_path(&p);
-                        if !need_all || lang_of.contains_key(&id) {
-                            ResolvedTo::File(id)
-                        } else {
-                            ResolvedTo::Unresolved
+        let resolved: Vec<(i64, FileId, ResolvedTo)> = index_pool().install(|| {
+            to_resolve
+                .par_iter()
+                .filter_map(|imp| {
+                    let (lang, path) = lang_of.get(&imp.file_id)?;
+                    let r = resolvers.resolve(*lang, path, &imp.as_fact());
+                    let to = match r {
+                        Resolution::File(p) => {
+                            let id = FileId::of_path(&p);
+                            if !need_all || lang_of.contains_key(&id) {
+                                ResolvedTo::File(id)
+                            } else {
+                                ResolvedTo::Unresolved
+                            }
                         }
-                    }
-                    Resolution::External(e) => ResolvedTo::External(e),
-                    Resolution::Unresolved => ResolvedTo::Unresolved,
-                };
-                Some((imp.rowid, imp.file_id, to))
-            })
-            .collect();
+                        Resolution::External(e) => ResolvedTo::External(e),
+                        Resolution::Unresolved => ResolvedTo::Unresolved,
+                    };
+                    Some((imp.rowid, imp.file_id, to))
+                })
+                .collect()
+        });
         let mut resolved_files: HashSet<FileId> = HashSet::new();
         let mut resolution_changed: HashSet<FileId> = HashSet::new();
         let before: HashMap<i64, (Option<FileId>, Option<String>, bool)> = to_resolve
@@ -788,7 +795,10 @@ impl Engine {
     /// Process one file right away while a full run holds the index lock (the file the user
     /// just opened): read, hash, extract and store its row and facts. Its import resolution
     /// and edges arrive with the running full run.
-    pub(crate) fn index_one_now(&self, path: &str) -> Result<()> {
+    /// Parses one file now, while a full run is under way. Writes it when the writer is free;
+    /// otherwise returns the parsed row without waiting (the run writes the file in its own
+    /// batch, and the facts are already in the memory cache for the view).
+    pub(crate) fn index_one_now(&self, path: &str) -> Result<Option<FileRow>> {
         let md = std::fs::metadata(self.root.join(path))?;
         let mtime = md
             .modified()
@@ -803,7 +813,7 @@ impl Engine {
         };
         let old = self.index.read(|c| iso_index::file_by_path(c, path))?;
         let p = self.process_file(&w, old.as_ref())?;
-        self.index.write(|tx| {
+        let wrote = self.index.try_write(|tx| {
             iso_index::upsert_file(tx, &p.row)?;
             if let Some((key, bytes)) = &p.derived {
                 iso_index::derived_put(
@@ -818,7 +828,11 @@ impl Engine {
                 iso_index::replace_facts(tx, p.row.id, &p.row.path, f)?;
             }
             Ok(())
-        })
+        });
+        match wrote {
+            Some(r) => r.map(|_| None),
+            None => Ok(Some(p.row)),
+        }
     }
 
     /// Read, hash, classify and (if needed) extract one file.
@@ -962,16 +976,33 @@ impl Engine {
         }
         let read = iso_walk::read_file(&self.root, &row.path)?;
         let f = iso_parse::extract_file(std::path::Path::new(&row.path), row.lang, &read.text);
-        self.index.write(|tx| {
-            self.derived
-                .put(tx, DerivedKind::Facts, &read.hash, EXTRACTOR_VERSION, &f)
-        })?;
+        self.cache_derived(DerivedKind::Facts, &read.hash, EXTRACTOR_VERSION, &f)?;
         Ok(f)
+    }
+
+    /// Keeps a derived value in memory at once and writes it to the index when the writer is
+    /// free. A reader's request never waits on an index run's write batches; a value not
+    /// written now is computed again after a restart.
+    pub(crate) fn cache_derived<T: serde::Serialize>(
+        &self,
+        kind: DerivedKind,
+        content_hash: &str,
+        version: u32,
+        value: &T,
+    ) -> Result<()> {
+        let (key, bytes) = self.derived.remember(kind, content_hash, version, value)?;
+        if let Some(r) = self
+            .index
+            .try_write(|tx| iso_index::derived_put(tx, kind.as_str(), key, version, &bytes))
+        {
+            r?;
+        }
+        Ok(())
     }
 
     /// Repo summary from the index.
     pub fn summary(&self) -> Result<RepoSummary> {
-        let files = self.index.read(iso_index::files_all)?;
+        let counts = self.index.read(iso_index::file_counts)?;
         let root_hash = self.index.read(|c| iso_index::meta_get(c, "root_hash"))?;
         let mut tiers = iso_core::ipc::TierCounts {
             full: 0,
@@ -981,18 +1012,20 @@ impl Engine {
         let mut langs: HashMap<Language, (u32, u64)> = HashMap::new();
         let mut indexed = 0;
         let mut lines = 0u64;
-        for f in &files {
-            match f.tier {
-                Tier::Full => tiers.full += 1,
-                Tier::Outline => tiers.outline += 1,
-                Tier::Text => tiers.text += 1,
+        let mut total = 0u32;
+        for (lang, tier, pending, n, l) in counts {
+            match tier {
+                Tier::Full => tiers.full += n,
+                Tier::Outline => tiers.outline += n,
+                Tier::Text => tiers.text += n,
             }
-            let e = langs.entry(f.lang).or_default();
-            e.0 += 1;
-            e.1 += f.lines as u64;
-            lines += f.lines as u64;
-            if f.status != "pending" {
-                indexed += 1;
+            let e = langs.entry(lang).or_default();
+            e.0 += n;
+            e.1 += l;
+            lines += l;
+            total += n;
+            if !pending {
+                indexed += n;
             }
         }
         let mut languages: Vec<iso_core::ipc::LangCount> = langs
@@ -1008,7 +1041,7 @@ impl Engine {
         Ok(RepoSummary {
             root: self.root.to_string_lossy().into_owned(),
             name: self.name.clone(),
-            files: files.len() as u32,
+            files: total,
             lines,
             tiers,
             languages,
@@ -1017,4 +1050,18 @@ impl Engine {
             ai_enabled: self.ai_enabled(),
         })
     }
+}
+
+/// The thread pool for indexing's parallel stages, at background priority, so a cold index
+/// leaves the CPU to the reader. User-driven work (compare) keeps rayon's global pool.
+pub(crate) fn index_pool() -> &'static rayon::ThreadPool {
+    static POOL: std::sync::OnceLock<rayon::ThreadPool> = std::sync::OnceLock::new();
+    POOL.get_or_init(|| {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(iso_jobs::default_workers())
+            .thread_name(|i| format!("iso-index-{i}"))
+            .start_handler(|_| iso_jobs::background_thread())
+            .build()
+            .expect("index thread pool")
+    })
 }

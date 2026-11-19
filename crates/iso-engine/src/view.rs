@@ -108,8 +108,11 @@ impl Engine {
                 iso_core::jobs::Priority::VisibleFile,
             );
             if self.is_indexing() {
-                // A full run holds the index lock; the visible file does not wait for it.
-                self.index_one_now(path)?;
+                // A full run holds the index lock; the visible file does not wait for it, nor
+                // for the writer between the run's batches.
+                if let Some(row) = self.index_one_now(path)? {
+                    return Ok(row);
+                }
             } else {
                 self.index_paths(&[path.to_string()])?;
             }
@@ -129,9 +132,30 @@ impl Engine {
             std::fs::read_to_string(self.root.join(path)).unwrap_or_default()
         };
         let src_lines: Vec<&str> = source.lines().collect();
-        let imports = self
+        let mut imports = self
             .index
             .read(|c| iso_index::imports_for_file(c, row.id))?;
+        // Parsed mid-index and not written yet: its imports from the facts, unresolved until
+        // the run resolves them (the UI reloads the open file when the run ends).
+        if imports.is_empty() && !facts.imports.is_empty() {
+            imports = facts
+                .imports
+                .iter()
+                .enumerate()
+                .map(|(i, f)| iso_index::ImportRow {
+                    rowid: -(i as i64) - 1,
+                    file_id: row.id,
+                    specifier: f.specifier.clone(),
+                    kind: f.kind,
+                    resolved: None,
+                    external: None,
+                    unresolved: true,
+                    names: f.names.clone(),
+                    type_only: f.type_only,
+                    line: f.line,
+                })
+                .collect();
+        }
         let binds = bindings(&imports);
         let importer_rows = self.index.read(|c| iso_index::importers_of(c, row.id))?;
         let all_files: HashMap<FileId, String> = self.index.read(|c| {
@@ -695,15 +719,12 @@ impl Engine {
         let path = std::path::Path::new(&row.path);
         let units = std::panic::catch_unwind(|| iso_parse::flow_units(path, row.lang, source))
             .unwrap_or_default();
-        self.index.write(|tx| {
-            self.derived.put(
-                tx,
-                DerivedKind::Flow,
-                &row.content_hash,
-                FLOW_WALKER_VERSION,
-                &units,
-            )
-        })?;
+        self.cache_derived(
+            DerivedKind::Flow,
+            &row.content_hash,
+            FLOW_WALKER_VERSION,
+            &units,
+        )?;
         Ok(units)
     }
 
@@ -749,8 +770,25 @@ impl Engine {
         })
     }
 
-    /// Directory tree with module and color per file.
+    /// Directory tree with module and color per file. Kept until the index changes.
     pub fn tree(&self) -> Result<TreeNode> {
+        let generation = self.index.generation();
+        if let Some((g, t)) = self.tree_cache.lock().as_ref()
+            && *g == generation
+        {
+            return Ok(t.clone());
+        }
+        let t = self.tree_uncached()?;
+        *self.tree_cache.lock() = Some((generation, t.clone()));
+        Ok(t)
+    }
+
+    /// The tree in the packed form the UI loads (`get_tree_packed`).
+    pub fn tree_packed(&self) -> Result<iso_core::ipc::TreePacked> {
+        Ok(pack_tree(&self.tree()?))
+    }
+
+    fn tree_uncached(&self) -> Result<TreeNode> {
         let files = self.index.read(iso_index::files_all)?;
         let fm: HashMap<FileId, String> = self
             .index
@@ -1108,6 +1146,74 @@ fn param_type(signature: &str, name: &str) -> Option<String> {
 /// Supplies cached model output to file views. Implemented by the AI layer.
 pub trait AiHook: Send + Sync {
     fn cached(&self, row: &FileRow, facts: &FileFacts, flows: &[FlowUnit]) -> CachedAi;
+}
+
+/// Packs a tree into parallel arrays, depth first, parents before children.
+pub fn pack_tree(root: &TreeNode) -> iso_core::ipc::TreePacked {
+    use iso_core::Language;
+    let mut p = iso_core::ipc::TreePacked {
+        parent: Vec::new(),
+        names: Vec::new(),
+        flags: Vec::new(),
+        lang: Vec::new(),
+        langs: Vec::new(),
+        module: Vec::new(),
+        modules: Vec::new(),
+        colors: Vec::new(),
+        lines: Vec::new(),
+    };
+    let mut langs: HashMap<Language, u16> = HashMap::new();
+    let mut mods: HashMap<String, u32> = HashMap::new();
+    fn walk(
+        n: &TreeNode,
+        parent: u32,
+        p: &mut iso_core::ipc::TreePacked,
+        langs: &mut HashMap<Language, u16>,
+        mods: &mut HashMap<String, u32>,
+    ) {
+        let me = p.parent.len() as u32;
+        p.parent.push(parent);
+        p.names.push(n.name.clone());
+        let status = match n.status {
+            FileStatus::Indexed => 0,
+            FileStatus::Pending => 1,
+            FileStatus::Failed => 2,
+            FileStatus::Skipped => 3,
+        };
+        let tier = match n.tier {
+            None => 0,
+            Some(Tier::Full) => 1,
+            Some(Tier::Outline) => 2,
+            Some(Tier::Text) => 3,
+        };
+        p.flags.push(n.is_dir as u8 | (status << 1) | (tier << 3));
+        p.lang.push(match n.lang {
+            None => 0,
+            Some(l) => *langs.entry(l).or_insert_with(|| {
+                p.langs.push(l);
+                p.langs.len() as u16
+            }),
+        });
+        p.module.push(match &n.module {
+            None => 0,
+            Some(m) => match mods.get(m) {
+                Some(&i) => i,
+                None => {
+                    p.modules.push(m.clone());
+                    p.colors.push(n.color.clone().unwrap_or_default());
+                    let i = p.modules.len() as u32;
+                    mods.insert(m.clone(), i);
+                    i
+                }
+            },
+        });
+        p.lines.push(n.lines);
+        for c in &n.children {
+            walk(c, me, p, langs, mods);
+        }
+    }
+    walk(root, 0, &mut p, &mut langs, &mut mods);
+    p
 }
 
 #[cfg(test)]

@@ -116,6 +116,9 @@ pub struct Engine {
     pub root: PathBuf,
     pub name: String,
     pub index: Index,
+    /// `module_map` and `tree` for an index generation.
+    pub(crate) module_map_cache: parking_lot::Mutex<Option<(u64, iso_core::ipc::ModuleMap)>>,
+    pub(crate) tree_cache: parking_lot::Mutex<Option<(u64, iso_core::ipc::TreeNode)>>,
     pub derived: Derived,
     pub queue: JobQueue,
     pub(crate) sink: RwLock<Option<Sink>>,
@@ -168,6 +171,8 @@ impl Engine {
             root,
             name,
             index,
+            module_map_cache: Default::default(),
+            tree_cache: Default::default(),
             derived: Derived::new(2048),
             queue: JobQueue::new(),
             sink: RwLock::new(None),

@@ -79,6 +79,26 @@ ipc! {
         pub children: Vec<TreeNode>,
     }
 
+    /// Returned by `get_tree_packed`: the same tree as `get_tree` in parallel arrays, about a
+    /// sixth of the size (no repeated paths, colors or keys). Node 0 is the root; every other
+    /// node comes after its parent, children in order.
+    pub struct TreePacked {
+        /// Parent node of each node (0 for the root itself).
+        pub parent: Vec<u32>,
+        pub names: Vec<String>,
+        /// Bit 0: directory. Bits 1-2: status (indexed, pending, failed, skipped). Bits 3-4:
+        /// tier (none, full, outline, text).
+        pub flags: Vec<u8>,
+        /// 0: none; else 1 + an index into `langs`.
+        pub lang: Vec<u16>,
+        pub langs: Vec<Language>,
+        /// 0: none; else 1 + an index into `modules` and `colors`.
+        pub module: Vec<u32>,
+        pub modules: Vec<String>,
+        pub colors: Vec<String>,
+        pub lines: Vec<u32>,
+    }
+
     /// Returned by `get_file_view`: everything the reading list and the dependency map need.
     pub struct FileView {
         pub path: String,

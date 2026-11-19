@@ -71,32 +71,58 @@ pub(crate) fn assign_by_directory(eng: &Engine, paths: &[String]) -> Result<()> 
 }
 
 impl Engine {
-    /// Modules and the aggregated import edges between them.
+    /// Modules and the aggregated import edges between them. Kept until the index changes.
     pub fn module_map(&self) -> Result<ModuleMap> {
-        let files = self.index.read(iso_index::files_all)?;
+        let generation = self.index.generation();
+        if let Some((g, m)) = self.module_map_cache.lock().as_ref()
+            && *g == generation
+        {
+            return Ok(m.clone());
+        }
+        let m = self.module_map_uncached()?;
+        *self.module_map_cache.lock() = Some((generation, m.clone()));
+        Ok(m)
+    }
+
+    fn module_map_uncached(&self) -> Result<ModuleMap> {
         let mods = self.index.read(iso_index::modules_all)?;
-        let fm: HashMap<FileId, String> = self
+        let stats_rows = self.index.read(iso_index::module_stats)?;
+        let stats: HashMap<&str, (u32, u64)> = stats_rows
+            .iter()
+            .map(|(m, f, l)| (m.as_str(), (*f, *l)))
+            .collect();
+        // File to module index, and import pairs aggregated per module pair.
+        let mix: HashMap<&str, u32> = mods
+            .iter()
+            .enumerate()
+            .map(|(i, m)| (m.id.as_str(), i as u32))
+            .collect();
+        let fm: HashMap<i64, u32> = self
             .index
             .read(iso_index::file_modules)?
             .into_iter()
+            .filter_map(|(f, m)| mix.get(m.as_str()).map(|&i| (f.as_i64(), i)))
             .collect();
-        let edges = self.index.read(iso_index::file_import_edges)?;
-        let mut stats: HashMap<&str, (u32, u64)> = HashMap::new();
-        for f in &files {
-            if let Some(m) = fm.get(&f.id) {
-                let e = stats.entry(m.as_str()).or_default();
-                e.0 += 1;
-                e.1 += f.lines as u64;
-            }
-        }
-        let mut agg: HashMap<(String, String), u32> = HashMap::new();
-        for (a, b) in edges {
-            if let (Some(ma), Some(mb)) = (fm.get(&a), fm.get(&b))
+        let mut pairs = self.index.read(iso_index::file_import_pairs)?;
+        pairs.sort_unstable();
+        pairs.dedup();
+        let mut agg_ix: HashMap<(u32, u32), u32> = HashMap::new();
+        for (a, b) in pairs {
+            if let (Some(&ma), Some(&mb)) = (fm.get(&a), fm.get(&b))
                 && ma != mb
             {
-                *agg.entry((ma.clone(), mb.clone())).or_default() += 1;
+                *agg_ix.entry((ma, mb)).or_default() += 1;
             }
         }
+        let agg: HashMap<(String, String), u32> = agg_ix
+            .into_iter()
+            .map(|((a, b), w)| {
+                (
+                    (mods[a as usize].id.clone(), mods[b as usize].id.clone()),
+                    w,
+                )
+            })
+            .collect();
         let ix: HashMap<&str, usize> = mods
             .iter()
             .enumerate()

@@ -113,6 +113,7 @@ impl Engine {
                 std::thread::Builder::new()
                     .name("iso-switch-reindex".into())
                     .spawn(move || {
+                        iso_jobs::background_thread();
                         if let Ok(rep) = eng.index_paths(&paths) {
                             if rep.facts_changed > 0 || rep.added > 0 || rep.deleted > 0 {
                                 eng.emit(Event::FilesChanged(paths));

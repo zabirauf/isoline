@@ -97,6 +97,7 @@ code, .mono { font-family: var(--font-mono); }
 .fst-skipped { border: 1.5px dashed var(--line); }
 .row.dir .fst, .row.file .nm + .fst { margin-left: auto; }
 .side-empty { padding: 8px 12px; margin: 0; font-size: 12.5px; }
+.side-more { padding: 6px 12px; margin: 0; }
 
 /* ---------- start screen ---------- */
 .start { flex: 1; display: grid; place-items: center; padding: 20px; overflow: auto; }

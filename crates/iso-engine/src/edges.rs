@@ -241,17 +241,18 @@ pub(crate) fn rebuild(eng: &Engine, targets: &[FileId], preload: bool) -> Result
     } else {
         ExportTable::lazy(eng)
     };
-    let results: Vec<(FileId, Vec<EdgeRow>)> = rows
-        .par_iter()
-        .filter_map(|row| {
-            let facts = eng.facts_for(row).ok()?;
-            let imports = eng
-                .index
-                .read(|c| iso_index::imports_for_file(c, row.id))
-                .ok()?;
-            Some((row.id, build_edges(row, &facts, &imports, &table)))
-        })
-        .collect();
+    let results: Vec<(FileId, Vec<EdgeRow>)> = crate::indexer::index_pool().install(|| {
+        rows.par_iter()
+            .filter_map(|row| {
+                let facts = eng.facts_for(row).ok()?;
+                let imports = eng
+                    .index
+                    .read(|c| iso_index::imports_for_file(c, row.id))
+                    .ok()?;
+                Some((row.id, build_edges(row, &facts, &imports, &table)))
+            })
+            .collect()
+    });
     for chunk in results.chunks(500) {
         eng.index.write(|tx| {
             for (fid, edges) in chunk {

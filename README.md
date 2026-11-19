@@ -14,9 +14,13 @@ GitHub Copilot sign-in, and never before the user turns AI on for a repo.
 
 ## What it does
 
-- **Any repo, any size.** Indexes 14.6M lines (openclaw, 64k files) in about 45 s on a
+- **Any repo, any size.** Indexes 14.6M lines (openclaw, 64k files) in about 40 s on a
   laptop, reopens it in about 0.3 s, and opens a file in under 5 ms at the 95th percentile.
-  Reindexing after an edit takes about 20 ms and touches only that file.
+  Reindexing after an edit takes about 20 ms and touches only that file. The app stays
+  responsive while it indexes: a file opened mid-index is parsed on its own without waiting
+  for the index's writes (under 10 ms at the 95th percentile), index threads run below normal
+  priority on Windows and Linux, and the file tree reaches the UI in a packed form a fifth the
+  size of plain JSON.
 - **Three views per file**, from the prototype: function cards (summary, algorithm steps,
   notes, calls, imports, callers, code on demand), the dependency map (layers by longest call
   path, entry points left, external imports right, focus and transitive impact), and the call
@@ -142,6 +146,8 @@ cargo test --workspace                       # unit, golden and acceptance tests
 (cd sidecar/copilot && go vet ./... && go test ./...)
 (cd app/ui && npm run typecheck && npm test && npm run build)
 (cd app/ui && node scripts/screenshots.mjs)  # mock-data screenshots in light and dark
+(cd app/ui && node scripts/map-perf.mjs . "?files=100000&modules=1500&fanout=15&index=0")
+(cd app/ui && node scripts/index-perf.mjs /path/to/big/repo --cpu 4)  # responsiveness while indexing
 ```
 
 ## AI summaries

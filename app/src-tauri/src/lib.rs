@@ -94,6 +94,12 @@ async fn get_tree(state: State<'_, AppState>) -> CmdResult<TreeNode> {
 }
 
 #[tauri::command]
+async fn get_tree_packed(state: State<'_, AppState>) -> CmdResult<TreePacked> {
+    let e = engine(&state)?;
+    blocking(move || e.tree_packed()).await
+}
+
+#[tauri::command]
 async fn get_file_view(state: State<'_, AppState>, path: String) -> CmdResult<FileView> {
     let e = engine(&state)?;
     blocking(move || e.file_view(&path)).await
@@ -275,6 +281,7 @@ pub fn run() {
             get_impact,
             get_module_map,
             get_architecture,
+            get_tree_packed,
             search,
             get_jobs,
             rename_module,

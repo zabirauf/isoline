@@ -18,6 +18,7 @@ impl Engine {
         std::thread::Builder::new()
             .name("iso-reindex".into())
             .spawn(move || {
+                iso_jobs::background_thread();
                 while let Ok(batch) = rx.recv() {
                     let Some(eng) = weak.upgrade() else { return };
                     eng.fs_epoch

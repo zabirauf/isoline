@@ -38,6 +38,9 @@ pub struct Index {
     writer: Mutex<Connection>,
     /// A small pool of reader connections, so UI reads never queue behind indexing reads.
     readers: Vec<Mutex<Connection>>,
+    /// Bumped after every committed write: results derived from the whole index can be kept
+    /// until it moves.
+    generation: std::sync::atomic::AtomicU64,
 }
 
 fn configure(conn: &Connection) -> Result<()> {
@@ -79,6 +82,7 @@ impl Index {
             path: path.to_path_buf(),
             writer: Mutex::new(writer),
             readers,
+            generation: std::sync::atomic::AtomicU64::new(0),
         })
     }
 
@@ -92,7 +96,39 @@ impl Index {
         let tx = conn.transaction()?;
         let out = f(&tx)?;
         tx.commit()?;
+        self.generation
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         Ok(out)
+    }
+
+    /// Like [`Index::write`], but only when no other write is under way: `None` when the
+    /// writer is busy (a full index run holds it for whole batches).
+    pub fn try_write<T>(
+        &self,
+        f: impl FnOnce(&rusqlite::Transaction) -> Result<T>,
+    ) -> Option<Result<T>> {
+        let mut conn = match self.writer.try_lock() {
+            Ok(c) => c,
+            Err(std::sync::TryLockError::Poisoned(e)) => e.into_inner(),
+            Err(std::sync::TryLockError::WouldBlock) => return None,
+        };
+        let run = || -> Result<T> {
+            let tx = conn.transaction()?;
+            let out = f(&tx)?;
+            tx.commit()?;
+            Ok(out)
+        };
+        let out = run();
+        if out.is_ok() {
+            self.generation
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }
+        Some(out)
+    }
+
+    /// Changes after every committed write.
+    pub fn generation(&self) -> u64 {
+        self.generation.load(std::sync::atomic::Ordering::SeqCst)
     }
 
     /// Run `f` on the reader connection.
@@ -465,6 +501,55 @@ pub fn importers_of(conn: &Connection, file_id: FileId) -> Result<Vec<(FileId, u
 }
 
 /// File-level import graph: (importer, imported) pairs with a count.
+/// Language, tier, pending, files, lines.
+pub type FileCount = (Language, Tier, bool, u32, u64);
+
+/// Files and lines per language, tier and pending state, in one aggregate query: what the repo
+/// summary needs without loading every row.
+pub fn file_counts(conn: &Connection) -> Result<Vec<FileCount>> {
+    let mut st = conn.prepare_cached(
+        "SELECT lang, tier, status = 'pending', COUNT(*), COALESCE(SUM(lines), 0) FROM files GROUP BY 1, 2, 3",
+    )?;
+    Ok(st
+        .query_map([], |r| {
+            Ok((
+                Language::parse(&r.get::<_, String>(0)?),
+                Tier::parse(&r.get::<_, String>(1)?),
+                r.get::<_, bool>(2)?,
+                r.get::<_, i64>(3)? as u32,
+                r.get::<_, i64>(4)? as u64,
+            ))
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
+/// Files and lines per module, in one aggregate query.
+pub fn module_stats(conn: &Connection) -> Result<Vec<(String, u32, u64)>> {
+    let mut st = conn.prepare_cached(
+        "SELECT fm.module_id, COUNT(*), COALESCE(SUM(f.lines), 0) FROM file_modules fm JOIN files f ON f.id = fm.file_id GROUP BY fm.module_id",
+    )?;
+    Ok(st
+        .query_map([], |r| {
+            Ok((
+                r.get(0)?,
+                r.get::<_, i64>(1)? as u32,
+                r.get::<_, i64>(2)? as u64,
+            ))
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
+/// Resolved file-to-file imports, one row per import statement (not deduplicated: the
+/// caller does that faster than SQLite's DISTINCT).
+pub fn file_import_pairs(conn: &Connection) -> Result<Vec<(i64, i64)>> {
+    let mut st = conn.prepare_cached(
+        "SELECT file_id, resolved_file_id FROM imports WHERE resolved_file_id IS NOT NULL AND resolved_file_id != file_id",
+    )?;
+    Ok(st
+        .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
+        .collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
 pub fn file_import_edges(conn: &Connection) -> Result<Vec<(FileId, FileId)>> {
     let mut st = conn.prepare_cached(
         "SELECT DISTINCT file_id, resolved_file_id FROM imports WHERE resolved_file_id IS NOT NULL AND resolved_file_id != file_id",

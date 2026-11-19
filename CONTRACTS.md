@@ -141,6 +141,7 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `get_source` | `path`, `start?`, `end?` | `SourceSlice` | |
 | `get_impact` | `symbol` (hex id), `transitive` | `Impact` | |
 | `get_module_map` | | `ModuleMap` | |
+| `get_tree_packed` | | `TreePacked` | The tree of `get_tree` in parallel arrays (a sixth of the size); the UI loads this one. |
 | `get_architecture` | | `Architecture \| null` | The last repo pass: overview, layers and major flows. Never calls a model. |
 | `search` | `query`, `limit?` | `SearchHit[]` | |
 | `ai_status` / `ai_sign_in` / `ai_sign_out` | | `AiStatus` | |

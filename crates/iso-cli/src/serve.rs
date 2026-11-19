@@ -72,11 +72,18 @@ fn handle(st: &Arc<State>, ui: &Path, mut req: tiny_http::Request) -> Result<()>
         } else {
             serde_json::from_str(&body)?
         };
-        let resp = match dispatch(st, cmd, &args) {
+        let t = std::time::Instant::now();
+        let out = dispatch(st, cmd, &args);
+        let ms = t.elapsed().as_secs_f64() * 1000.0;
+        let resp = match out {
             Ok(v) => json_response(200, &v),
             Err(e) => json_response(400, &json!({ "error": format!("{e:#}") })),
         };
-        req.respond(resp)?;
+        // The engine's time for the command, apart from browser queueing and transfer.
+        let timing = format!("Server-Timing: engine;dur={ms:.1}")
+            .parse::<tiny_http::Header>()
+            .expect("header");
+        req.respond(resp.with_header(timing))?;
         return Ok(());
     }
     if url == "/events" {
@@ -200,6 +207,7 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
             serde_json::to_value(engine(st)?.impact(id, t)?)?
         }
         "get_module_map" => serde_json::to_value(engine(st)?.module_map()?)?,
+        "get_tree_packed" => serde_json::to_value(engine(st)?.tree_packed()?)?,
         "get_architecture" => serde_json::to_value(engine(st)?.architecture()?)?,
         "search" => serde_json::to_value(
             engine(st)?.search(&s(args, "query")?, u(args, "limit").unwrap_or(30) as usize)?,

@@ -198,6 +198,25 @@ fn priority_from(p: u8) -> Priority {
 }
 
 /// Worker count: all cores but one.
+/// Lowers the calling thread's scheduling priority, so background indexing yields the CPU to
+/// the UI and to the commands the reader is waiting for: nice 5 on Linux, below-normal on
+/// Windows. Both only matter when the CPU is contended. macOS keeps the default QoS: the
+/// utility class moves threads to the efficiency cores and made a cold index 38% slower
+/// without a measurable gain in responsiveness. Best effort: failures are ignored.
+pub fn background_thread() {
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    unsafe {
+        libc::setpriority(libc::PRIO_PROCESS, libc::gettid() as libc::id_t, 5);
+    }
+    #[cfg(windows)]
+    unsafe {
+        use windows_sys::Win32::System::Threading::{
+            GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_BELOW_NORMAL,
+        };
+        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    }
+}
+
 pub fn default_workers() -> usize {
     std::thread::available_parallelism()
         .map(|n| n.get())

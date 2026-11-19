@@ -22,6 +22,8 @@ import type { TreeNode } from "./bindings/TreeNode";
 import type { Comparison } from "./bindings/Comparison";
 import type { FileDiffText } from "./bindings/FileDiffText";
 import type { ChangeReview } from "./bindings/ChangeReview";
+import type { TreePacked } from "./bindings/TreePacked";
+import { unpackTree } from "../lib/packedTree";
 import type { ReviewState } from "./bindings/ReviewState";
 import type { GitRefs } from "./bindings/GitRefs";
 import type { GitStatus } from "./bindings/GitStatus";
@@ -119,7 +121,7 @@ async function createTauriBackend(): Promise<Backend> {
   return {
     kind: "tauri",
     openRepo: (path) => call("open_repo", { path }),
-    getTree: () => call("get_tree"),
+    getTree: async () => unpackTree(await call<TreePacked>("get_tree_packed")),
     getFileView: (path) => call("get_file_view", { path }),
     getFlow: (path, unit) => call("get_flow", { path, unit }),
     getSource: (path, start, end) => call("get_source", { path, start: start ?? null, end: end ?? null }),
@@ -181,7 +183,7 @@ function createHttpBackend(): Backend {
   return {
     kind: "http",
     openRepo: (path) => call("open_repo", { path }),
-    getTree: () => call("get_tree"),
+    getTree: async () => unpackTree(await call<TreePacked>("get_tree_packed")),
     getFileView: (path) => call("get_file_view", { path }),
     getFlow: (path, unit) => call("get_flow", { path, unit }),
     getSource: (path, start, end) => call("get_source", { path, start: start ?? null, end: end ?? null }),

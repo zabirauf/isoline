@@ -1,6 +1,6 @@
 // Source tree sidebar: virtualized (only visible rows are in the DOM), so 10k+ files scroll
 // smoothly. Each file shows its module color, tier and index status.
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { ModuleInfo } from "../ipc/bindings/ModuleInfo";
 import type { TreeNode } from "../ipc/bindings/TreeNode";
 import { dirname, fmtInt, middleEllipsis } from "../lib/format";
@@ -38,16 +38,34 @@ function flatten(root: TreeNode, expanded: Set<string>): Row[] {
   return out;
 }
 
-function filtered(root: TreeNode, q: string): Row[] {
-  const out: Row[] = [];
+/** Every file of a tree with its lowercased path, in tree order: built once per tree. */
+interface FileEntry {
+  node: TreeNode;
+  lower: string;
+}
+function fileList(root: TreeNode): FileEntry[] {
+  const out: FileEntry[] = [];
   const walk = (n: TreeNode) => {
     for (const c of n.children) {
       if (c.isDir) walk(c);
-      else if (c.path.toLowerCase().includes(q)) out.push({ node: c, depth: 0, open: false, dir: dirname(c.path) });
+      else out.push({ node: c, lower: c.path.toLowerCase() });
     }
   };
   walk(root);
   return out;
+}
+
+/** Filter results shown at most; the count says how many more matched. */
+export const FILTER_LIMIT = 2000;
+
+function filtered(files: FileEntry[], q: string): { rows: Row[]; matched: number } {
+  const rows: Row[] = [];
+  let matched = 0;
+  for (const f of files) {
+    if (!f.lower.includes(q)) continue;
+    if (matched++ < FILTER_LIMIT) rows.push({ node: f.node, depth: 0, open: false, dir: dirname(f.node.path) });
+  }
+  return { rows, matched };
 }
 
 /**
@@ -218,8 +236,31 @@ export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, o
     });
   }, [openPath]);
 
-  const query = q.trim().toLowerCase();
-  const rows = useMemo(() => (query ? filtered(tree, query) : flatten(tree, focusOpen ?? expanded)), [tree, expanded, focusOpen, query]);
+  // The input updates at once; the filtering follows at lower priority, so typing never waits
+  // on a scan of every path.
+  const query = useDeferredValue(q.trim().toLowerCase());
+  // The searchable list of every file, built once per tree: when the browser is idle after
+  // the tree arrives, or at the first keystroke if that comes sooner.
+  const [files, setFiles] = useState<{ tree: TreeNode; list: FileEntry[] } | null>(null);
+  const filesFor = (t: TreeNode) => (files?.tree === t ? files.list : null);
+  useEffect(() => {
+    if (filesFor(tree)) return;
+    const idle = (window as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const build = () => setFiles((cur) => (cur?.tree === tree ? cur : { tree, list: fileList(tree) }));
+    if (query) build();
+    else if (idle) {
+      const h = idle(build, { timeout: 3000 });
+      return () => (window as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback?.(h);
+    } else {
+      const h = setTimeout(build, 500);
+      return () => clearTimeout(h);
+    }
+  }, [tree, !!query]);
+  const result = useMemo(() => {
+    if (!query) return { rows: flatten(tree, focusOpen ?? expanded), matched: 0 };
+    return filtered(filesFor(tree) ?? fileList(tree), query);
+  }, [tree, expanded, focusOpen, query, files]);
+  const rows = result.rows;
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = 0;
   }, [focusId]);
@@ -356,6 +397,7 @@ export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, o
             );
           })}
         </div>
+        {result.matched > FILTER_LIMIT && <p className="caption side-more">The first {fmtInt(FILTER_LIMIT)} of {fmtInt(result.matched)} matches. Type more to narrow them.</p>}
         {rows.length === 0 && <p className="muted side-empty">{query ? `No file matches “${q}”.` : emptyText}</p>}
       </div>
     </nav>

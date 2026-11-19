@@ -19,8 +19,11 @@ export function pluralNoun(noun: string): string {
   return noun + "s";
 }
 
+// One formatter for every call: toLocaleString builds a new one each time, which showed up in
+// profiles of the file tree (a count on every folder row).
+const INT = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 export function fmtInt(n: number): string {
-  return Math.round(n).toLocaleString("en-US");
+  return INT.format(Math.round(n));
 }
 
 /** Line range as the cards show it: "L357–423", or "L50" for one line. */

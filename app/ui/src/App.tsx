@@ -315,6 +315,12 @@ function Shell() {
     [pushHere, peek],
   );
 
+  // A stable callback for the sidebar, so index progress (many events a second) does not
+  // re-render a 100k-file tree.
+  const openFileRef = useRef(openFile);
+  openFileRef.current = openFile;
+  const openFromTree = useCallback((p: string) => openFileRef.current(p), []);
+
   const travel = useCallback(
     (dir: "back" | "forward") => {
       const cur = here();
@@ -531,7 +537,7 @@ function Shell() {
         </div>
       </header>
       <div className={`body${repo && sidebar ? " with-side" : ""}`}>
-        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} moduleNames={moduleNames} focusModule={focusModule} onClearFocus={clearModFocus} />}
+        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={openFromTree} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} moduleNames={moduleNames} focusModule={focusModule} onClearFocus={clearModFocus} />}
         <main className="content">
           {!repo && <StartScreen recent={recent} onOpen={(p) => void openRepo(p)} onPick={() => void pickRepo()} busy={busy} error={openError} />}
           {repo && compareReq && (

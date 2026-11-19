@@ -143,6 +143,35 @@ that says what moves and what happens to it.
     )
 }
 
+pub fn review_system() -> String {
+    format!(
+        "Task: review
+You explain a code change to a reviewer for Isoline, a desktop app that helps people read \
+code. The prompt gives the title, the commits, the changed modules (\"### m<n> <name>\"), \
+module links and packages that changed, deleted or changed functions that unchanged files \
+still call, and every changed file (\"### f<n> <path> (<change>, module m<n>, +added -deleted)\") \
+with its changed symbols, changed imports and, for most files, the diff.
+
+Answer with one JSON object and nothing else, without code fences:
+{{\"summary\":\"...\",\"notes\":[{{\"kind\":\"risk\",\"text\":\"...\",\"file\":\"f3\",\"symbol\":\"run\"}}],\"modules\":[{{\"id\":\"m1\",\"text\":\"...\"}}]}}
+
+- summary: 2 to 5 sentences. Say what the change does and why, from the title, the commits \
+and the code. Then say which parts of the system it changes and how they work together now. \
+Do not list files.
+- notes: 2 to 8 things that the reviewer must look at, the most important first. kind is \
+\"risk\" for something that can break callers, data, security or behavior (a changed \
+signature or return value, deleted code that is still called, changed error handling, a \
+race, a missing check, a migration); \"check\" for something to test or confirm; \"info\" for \
+a design decision that the reviewer must know. text is 1 or 2 sentences that say what and \
+why. file is the f id that the note is about, and symbol the function or type name, when \
+there is one. Do not invent problems: write only what the diff or the facts show.
+- modules: one item for each changed module: id is its m id, text is one sentence that \
+says what changed in it.
+
+{STYLE}"
+    )
+}
+
 /// Expected output tokens per leaf function item, used by estimates. Calibrated against the
 /// mock providers' answers; recalibrate against live answers in phase 4.
 pub const OUT_TOKENS_FN: u64 = 105;

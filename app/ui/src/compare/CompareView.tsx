@@ -17,6 +17,9 @@ import { PrPicker, RefPicker } from "./Pickers";
 import { ChangeGraphLegend, ChangeGraphView } from "./ChangeGraphView";
 import { FileList } from "./FileList";
 import { DiffPane, type RevealRequest } from "./DiffPane";
+import { DependencyChanges, ModuleChanges, ReviewPanel } from "./ReviewPanels";
+import type { AiStatus } from "../ipc/bindings/AiStatus";
+import type { ChangeReview } from "../ipc/bindings/ChangeReview";
 
 /** What the branch menu asks for: compare `base` with `head` (null: the defaults). */
 export interface CompareRequest {
@@ -27,7 +30,8 @@ export interface CompareRequest {
 
 const CHANGE_WORD = { added: "added", deleted: "deleted", modified: "signature changed", renamed: "renamed" } as const;
 
-export function CompareView({ status, moduleMap, request, onOpenFile }: { status: GitStatus | null; moduleMap: ModuleMap | null; request: CompareRequest; onOpenFile(path: string, line?: number | null): void }) {
+export function CompareView({ status, moduleMap, request, onOpenFile, ai, onOpenAi }: { status: GitStatus | null; moduleMap: ModuleMap | null; request: CompareRequest; onOpenFile(path: string, line?: number | null): void; ai: AiStatus | null; onOpenAi(): void }) {
+  const [review, setReview] = useState<ChangeReview | null>(null);
   const [refs, setRefs] = useState<GitRefs | null>(null);
   const [base, setBase] = useState<string | null>(request.base);
   const [head, setHead] = useState<string | null>(request.head);
@@ -190,6 +194,28 @@ export function CompareView({ status, moduleMap, request, onOpenFile }: { status
                 </div>
               ) : (
                 <>
+                  <ReviewPanel
+                    result={result}
+                    ai={ai}
+                    onOpenAi={onOpenAi}
+                    review={review}
+                    setReview={setReview}
+                    onReveal={(path, symbol) => {
+                      setSelected(path);
+                      setPane("diff");
+                      if (symbol) setReveal({ path, symbol, nonce: Date.now() });
+                    }}
+                  />
+                  <ModuleChanges result={result} info={info} review={review} selected={moduleFilter} onSelect={setModuleFilter} />
+                  <DependencyChanges
+                    result={result}
+                    info={info}
+                    onSelectModule={(id) => setModuleFilter(id)}
+                    onOpenFileChange={(p) => {
+                      setSelected(p);
+                      setPane("diff");
+                    }}
+                  />
                   {result.impact.length > 0 && (
                     <section className="panel impact-panel" aria-label="Still called">
                       <div className="cmp-ph">

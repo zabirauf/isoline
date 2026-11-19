@@ -9,7 +9,10 @@ use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
 use iso_ai::{AiEngine, FileInput, FullReport, ModuleInput, Progress};
-use iso_core::ipc::{AiEstimate, AiScope, ArchFlow, ArchLayer, Architecture, ModuleEdge};
+use iso_core::ipc::{
+    AiEstimate, AiScope, ArchFlow, ArchLayer, Architecture, ChangeKind, ChangeReview, Comparison,
+    ModuleEdge, ModuleNote, ReviewKind, ReviewNote, ReviewState,
+};
 use iso_core::{FileFacts, FileId, FlowUnit, Tier};
 use iso_index::FileRow;
 
@@ -246,3 +249,308 @@ impl Engine {
 
 /// Index meta key of the stored architecture overview (JSON).
 const ARCHITECTURE_KEY: &str = "ai_architecture";
+
+// ------------------------------------------------------------------ change review
+
+/// Upper bound on the changed files whose diffs are read for a review.
+const REVIEW_MAX_FILES: usize = 300;
+/// Lines of an untracked file sent as its diff.
+const REVIEW_NEW_FILE_LINES: usize = 400;
+
+impl Engine {
+    /// What the review of a comparison is written from: the comparison's facts, module roles
+    /// from the index, and the diff of each changed file from git.
+    pub fn review_input(&self, cmp: &Comparison) -> Result<iso_ai::ReviewInput> {
+        use iso_ai::{ReviewFile, ReviewInput, ReviewModule};
+        let roles: HashMap<String, Option<String>> = self
+            .index
+            .read(iso_index::modules_all)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|m| (m.id, m.role))
+            .collect();
+        let name_of: HashMap<&str, &str> = cmp
+            .modules
+            .iter()
+            .map(|m| (m.id.as_str(), m.name.as_str()))
+            .collect();
+        let title = match &cmp.pr {
+            Some(p) => format!("#{} {}", p.number, p.title),
+            None => {
+                let mut t = format!("{} ← {}", cmp.base.label, cmp.head.label);
+                if let Some(s) = &cmp.head.subject {
+                    t.push_str(&format!(" ({s})"));
+                }
+                t
+            }
+        };
+        let base = cmp.merge_base.as_deref().unwrap_or(&cmp.base.sha);
+        let head = (cmp.head.sha != iso_git::WORKTREE).then_some(cmp.head.sha.as_str());
+        // Lockfiles change in bulk and say little: their diffs are not sent. Paths go to git in
+        // batches, so the command line stays short (Windows caps it at 32k characters).
+        let paths: Vec<String> = cmp
+            .files
+            .iter()
+            .filter(|f| !f.binary && !is_lockfile(&f.path))
+            .take(REVIEW_MAX_FILES)
+            .flat_map(|f| std::iter::once(f.path.clone()).chain(f.old_path.clone()))
+            .collect();
+        let mut patches: HashMap<String, String> = HashMap::new();
+        if let Ok(g) = self.git_or_err() {
+            for chunk in paths.chunks(100) {
+                if let Ok(p) = g.patches(base, head, chunk, 2) {
+                    patches.extend(p);
+                }
+            }
+        }
+        let sig = |s: &Option<String>| s.as_deref().unwrap_or("").to_string();
+        let files = cmp
+            .files
+            .iter()
+            .map(|f| {
+                let mut patch = patches.remove(&f.path).unwrap_or_default();
+                // Untracked files are not in git's diff: their first lines are the diff.
+                if patch.is_empty()
+                    && head.is_none()
+                    && !is_lockfile(&f.path)
+                    && f.change == ChangeKind::Added
+                    && !f.binary
+                    && let Ok(text) = std::fs::read_to_string(self.root.join(&f.path))
+                {
+                    patch = text
+                        .lines()
+                        .take(REVIEW_NEW_FILE_LINES)
+                        .map(|l| format!("+{l}\n"))
+                        .collect();
+                }
+                let change = match (f.change, &f.old_path) {
+                    (ChangeKind::Renamed, Some(o)) => format!("renamed from {o}"),
+                    (ChangeKind::Added, _) => "added".into(),
+                    (ChangeKind::Deleted, _) => "deleted".into(),
+                    (ChangeKind::Renamed, None) => "renamed".into(),
+                    (ChangeKind::Modified, _) => "modified".into(),
+                };
+                let symbols = f
+                    .symbols
+                    .iter()
+                    .map(|s| {
+                        let kind = format!("{:?}", s.kind).to_lowercase();
+                        let exp = if s.exported { "exported " } else { "" };
+                        match s.change {
+                            ChangeKind::Added => {
+                                format!("+ {exp}{kind} {}: {}", s.name, sig(&s.signature_after))
+                            }
+                            ChangeKind::Deleted => {
+                                format!("- {exp}{kind} {}: {}", s.name, sig(&s.signature_before))
+                            }
+                            _ if s.signature_before != s.signature_after => format!(
+                                "~ {exp}{kind} {}: signature {} → {}{}",
+                                s.name,
+                                sig(&s.signature_before),
+                                sig(&s.signature_after),
+                                if s.callers > 0 {
+                                    format!(" ({} callers in other files)", s.callers)
+                                } else {
+                                    String::new()
+                                }
+                            ),
+                            _ => format!("~ {exp}{kind} {}: body changed", s.name),
+                        }
+                    })
+                    .collect();
+                let imports = f
+                    .imports
+                    .iter()
+                    .map(|i| {
+                        let sign = if i.change == ChangeKind::Added {
+                            "+"
+                        } else {
+                            "-"
+                        };
+                        match (&i.file, &i.external) {
+                            (Some(p), _) => format!("{sign} {} ({p})", i.specifier),
+                            (None, Some(e)) => format!("{sign} {} (package {e})", i.specifier),
+                            _ => format!("{sign} {}", i.specifier),
+                        }
+                    })
+                    .collect();
+                ReviewFile {
+                    path: f.path.clone(),
+                    change,
+                    module: f.module.as_ref().map(|m| m.id.clone()),
+                    additions: f.additions,
+                    deletions: f.deletions,
+                    symbols,
+                    imports,
+                    patch,
+                }
+            })
+            .collect();
+        let links = cmp
+            .module_edges
+            .iter()
+            .map(|e| {
+                let n = |id: &str| {
+                    name_of
+                        .get(id)
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| self.module_name(id))
+                };
+                let what = if e.before == 0 {
+                    "new link"
+                } else if e.after == 0 {
+                    "link removed"
+                } else {
+                    "link changed"
+                };
+                format!(
+                    "{} → {}: {what}, {} → {} file imports",
+                    n(&e.from),
+                    n(&e.to),
+                    e.before,
+                    e.after
+                )
+            })
+            .collect();
+        let packages = cmp
+            .packages
+            .iter()
+            .map(|p| {
+                let files = p.files.len();
+                match (p.change, p.elsewhere) {
+                    (ChangeKind::Added, 0) => format!("{}: new to the repo, imported by {files} changed files", p.name),
+                    (ChangeKind::Added, n) => format!("{}: now also imported by {files} changed files ({n} other files import it)", p.name),
+                    (_, 0) => format!("{}: no longer imported anywhere", p.name),
+                    (_, n) => format!("{}: no longer imported by {files} changed files ({n} other files still import it)", p.name),
+                }
+            })
+            .collect();
+        let impact = cmp
+            .impact
+            .iter()
+            .map(|i| {
+                let what = if i.change == ChangeKind::Deleted {
+                    "deleted"
+                } else {
+                    "signature changed"
+                };
+                format!(
+                    "{} in {} ({what}): {} unchanged files use it",
+                    i.symbol, i.path, i.caller_files
+                )
+            })
+            .collect();
+        Ok(ReviewInput {
+            title,
+            commits: cmp.commits.iter().map(|c| c.subject.clone()).collect(),
+            modules: cmp
+                .modules
+                .iter()
+                .map(|m| ReviewModule {
+                    id: m.id.clone(),
+                    name: m.name.clone(),
+                    dir: m.dir.clone(),
+                    role: roles.get(&m.id).cloned().flatten(),
+                    files: m.files,
+                    additions: m.additions,
+                    deletions: m.deletions,
+                })
+                .collect(),
+            links,
+            packages,
+            impact,
+            files,
+        })
+    }
+
+    fn module_name(&self, id: &str) -> String {
+        self.index
+            .read(iso_index::modules_all)
+            .ok()
+            .and_then(|ms| ms.into_iter().find(|m| m.id == id).map(|m| m.name))
+            .unwrap_or_else(|| id.to_string())
+    }
+
+    /// The cached review of a comparison, else what writing one costs.
+    pub fn ai_review_state(&self, ai: &AiEngine, cmp: &Comparison) -> Result<ReviewState> {
+        self.require_ai()?;
+        let input = self.review_input(cmp)?;
+        if let Some(r) = ai.cached_review(&input) {
+            return Ok(ReviewState {
+                files_without_patch: r.files_without_patch,
+                model: r.model.clone(),
+                review: Some(review_ipc(r)),
+                cost_usd: 0.0,
+                tokens_in: 0,
+            });
+        }
+        let e = ai.estimate_review(&input);
+        Ok(ReviewState {
+            review: None,
+            cost_usd: e.pass.cost_usd,
+            tokens_in: e.pass.tokens_in,
+            model: e.pass.model,
+            files_without_patch: e.files_without_patch,
+        })
+    }
+
+    /// Writes the review of a comparison within a budget (or serves it from the cache).
+    pub fn ai_review_run(
+        &self,
+        ai: &AiEngine,
+        cmp: &Comparison,
+        budget_usd: f64,
+    ) -> Result<ChangeReview> {
+        self.require_ai()?;
+        let input = self.review_input(cmp)?;
+        let (r, _) = ai.review(&input, budget_usd).map_err(|e| anyhow!("{e}"))?;
+        Ok(review_ipc(r))
+    }
+}
+
+fn is_lockfile(path: &str) -> bool {
+    matches!(
+        path.rsplit('/').next().unwrap_or(path),
+        "package-lock.json"
+            | "npm-shrinkwrap.json"
+            | "yarn.lock"
+            | "pnpm-lock.yaml"
+            | "bun.lockb"
+            | "bun.lock"
+            | "Cargo.lock"
+            | "go.sum"
+            | "poetry.lock"
+            | "uv.lock"
+            | "Pipfile.lock"
+            | "composer.lock"
+            | "Gemfile.lock"
+            | "flake.lock"
+    )
+}
+
+fn review_ipc(r: iso_ai::ChangeReview) -> ChangeReview {
+    ChangeReview {
+        summary: r.summary,
+        notes: r
+            .notes
+            .into_iter()
+            .map(|n| ReviewNote {
+                kind: match n.kind {
+                    iso_ai::ReviewNoteKind::Risk => ReviewKind::Risk,
+                    iso_ai::ReviewNoteKind::Check => ReviewKind::Check,
+                    iso_ai::ReviewNoteKind::Info => ReviewKind::Info,
+                },
+                text: n.text,
+                path: n.path,
+                symbol: n.symbol,
+            })
+            .collect(),
+        modules: r
+            .modules
+            .into_iter()
+            .map(|(id, text)| ModuleNote { id, text })
+            .collect(),
+        model: r.model,
+        files_without_patch: r.files_without_patch,
+    }
+}

@@ -26,6 +26,8 @@ pub mod kind {
     pub const CLUSTER: &str = "cluster";
     /// The architecture overview.
     pub const REPO: &str = "repo";
+    /// Change reviews (compare, pull requests).
+    pub const REVIEW: &str = "review";
 }
 
 /// One stored answer.

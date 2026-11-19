@@ -3,11 +3,15 @@
 // URL parameters (all optional):
 //   files=12000    replace the repo tree with a generated one of that many files
 //   modules=5000   replace the module map with a generated one of that many modules
+//   fanout=2       average imports per generated module (real repos run 10 to 30)
 //   latency=15     milliseconds added to every call
 //   index=0        skip the simulated indexing run
+//   ai=on          start signed in, with AI on for the repo
 import type { Backend, BackendEvents, EventName } from "../api";
 import type { AiStatus } from "../bindings/AiStatus";
 import type { Architecture } from "../bindings/Architecture";
+import type { ChangeReview } from "../bindings/ChangeReview";
+import type { Comparison } from "../bindings/Comparison";
 import type { FileView } from "../bindings/FileView";
 import type { FlowUnit } from "../bindings/FlowUnit";
 import type { FnCard } from "../bindings/FnCard";
@@ -49,6 +53,7 @@ const params = new URLSearchParams(typeof location !== "undefined" ? location.se
 const LATENCY = Number(params.get("latency") ?? 15);
 const BIG_FILES = Number(params.get("files") ?? 0);
 const BIG_MODULES = Number(params.get("modules") ?? 0);
+const FANOUT = Number(params.get("fanout") ?? 2);
 const SIMULATE_INDEX = params.get("index") !== "0";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -68,12 +73,14 @@ export function createMockBackend(): Backend {
   const emit = <E extends EventName>(e: E, p: BackendEvents[E]) => listeners.get(e)?.forEach((cb) => cb(p));
 
   let tree: TreeNode = BIG_FILES ? generateTree(BIG_FILES) : clone(D.tree);
-  const moduleMap: RawModuleMap = BIG_MODULES ? generateModuleMap(BIG_MODULES) : clone(D.moduleMap);
+  const moduleMap: RawModuleMap = BIG_MODULES ? generateModuleMap(BIG_MODULES, FANOUT) : clone(D.moduleMap);
   let repo: RawRepo = BIG_FILES ? summarize(tree) : clone(D.repo);
   const files: Record<string, MockFile> = clone(D.files);
   let jobs: JobsState = { queued: 0, running: 0, done: 0, failed: 0, cacheHits: 0, cacheMisses: 0, hitRate: 0, pendingFiles: [] };
   let architecture: Architecture | null = null;
-  let ai: AiStatus = { sidecar: "off", signedIn: false, user: null, models: [], enabledForRepo: false, mock: true, deviceCode: null, message: null };
+  const reviews = new Map<string, ChangeReview>();
+  // ai=on: signed in with AI on for the repo, as after a sign-in in an earlier session.
+  let ai: AiStatus = params.get("ai") === "on" ? { sidecar: "ready", signedIn: true, user: "mock-user", models: [], enabledForRepo: true, mock: true, deviceCode: null, message: null } : { sidecar: "off", signedIn: false, user: null, models: [], enabledForRepo: false, mock: true, deviceCode: null, message: null };
   let nextJob = 1;
   let indexing = false;
   const git = createMockGit();
@@ -272,6 +279,23 @@ export function createMockBackend(): Backend {
         const tokensOut = left * 120;
         return { scope, symbols, cached, requests: Math.ceil(left / 8), tokensIn: big(tokensIn), tokensOut: big(tokensOut), costUsd: (tokensIn * 0.1 + tokensOut * 0.5) / 1e6, model: "mock-small" };
       }),
+    aiReview: (cmp) =>
+      delay(() => {
+        if (!ai.enabledForRepo) throw new Error("AI analysis is off for this repo. Turn it on first; no code leaves the machine until then.");
+        const review = reviews.get(cmp.base.sha + cmp.head.sha) ?? null;
+        return { review: review && clone(review), costUsd: review ? 0 : 0.012 + cmp.files.length * 0.0011, tokensIn: big(review ? 0 : 6000 + cmp.files.length * 900), model: "mock-large", filesWithoutPatch: 0 };
+      }),
+    aiReviewRun: (cmp, budgetUsd) =>
+      new Promise((resolve, fail) =>
+        setTimeout(() => {
+          if (!ai.enabledForRepo) return fail(new Error("AI analysis is off for this repo."));
+          const cost = 0.012 + cmp.files.length * 0.0011;
+          if (cost > budgetUsd) return fail(new Error(`The review is estimated at $${cost.toFixed(4)}, over the budget of $${budgetUsd.toFixed(4)}.`));
+          const r = mockReview(cmp);
+          reviews.set(cmp.base.sha + cmp.head.sha, r);
+          resolve(clone(r));
+        }, 1400),
+      ),
     aiRun: async (scope, path, budgetUsd) => {
       const estimate = await (async () => {
         const symbols = scope === "file" && path ? fileFor(path).view.functions.length : 120;
@@ -526,5 +550,25 @@ function mockArchitecture(map: RawModuleMap): Architecture {
     model: "mock-large",
     modules: ids.length,
     writtenAt: Math.floor(Date.now() / 1000),
+  };
+}
+
+/** A review that reads like the live one, built from the comparison's facts. */
+function mockReview(cmp: Comparison): ChangeReview {
+  const life = cmp.files.find((f) => f.path.endsWith("harness/lifecycle.ts"));
+  const retry = cmp.files.find((f) => f.path.endsWith("retry-policy.ts"));
+  const config = cmp.files.find((f) => f.path.endsWith("config/config.ts"));
+  const notes: ChangeReview["notes"] = [];
+  const legacy = cmp.impact.find((i) => i.symbol === "legacyAttemptTimeout");
+  if (legacy) notes.push({ kind: "risk", text: `The change deletes legacyAttemptTimeout, but ${legacy.callerFiles} unchanged files still call it. Those calls fail at build time.`, path: legacy.path, symbol: legacy.symbol });
+  if (config) notes.push({ kind: "risk", text: "getRuntimeConfigSnapshot now takes one options object. Callers that pass positional arguments get the defaults without a warning.", path: config.path, symbol: "getRuntimeConfigSnapshot" });
+  if (retry) notes.push({ kind: "check", text: "The retry policy waits longer after each failure. Make sure that the total wait stays under the attempt timeout.", path: retry.path, symbol: null });
+  if (life) notes.push({ kind: "info", text: "Finalization no longer takes the legacy flag: the lifecycle always runs the new cleanup order.", path: life.path, symbol: "runAgentHarnessLifecycleFinalization" });
+  return {
+    summary: `${cmp.pr ? `Pull request #${cmp.pr.number} ` : "The change "}adds a retry policy for harness attempts that fail for a temporary reason. The lifecycle asks the policy if it must try again and how long it must wait. The change also removes the legacy timeout path and moves configuration reads to one options object.`,
+    notes,
+    modules: cmp.modules.map((m) => ({ id: m.id, text: m.id === "agents-harness" ? "Gets the retry policy and a simpler finalization step." : m.id === "config" ? "Changes the snapshot call to take one options object." : `Changes ${m.files === 1 ? "one file" : `${m.files} files`}.` })),
+    model: "mock-large",
+    filesWithoutPatch: 0,
   };
 }

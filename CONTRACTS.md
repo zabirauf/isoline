@@ -147,6 +147,8 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `ai_estimate` | `scope`, `path?` | `AiEstimate` | |
 | `ai_run` | `scope`, `path?`, `budgetUsd` | `AiRunHandle` | `ai_progress: AiProgress`, `summary_ready: { path }`, `ai_job_done: { jobId, stored, failed, costUsd, error }` once per run. Scope `architecture` skips file summaries: cluster and repo passes only. |
 | `ai_enable` | `enabled` | `AiStatus` | |
+| `ai_review` | `comparison` (as `compare` returned it) | `ReviewState` | The cached review of the change, else its estimate. Never calls a model. |
+| `ai_review_run` | `comparison`, `budgetUsd` | `ChangeReview` | One request (the repo-pass model) with the change's facts and as much of the diff as fits 40k tokens; cached by prompt hash. |
 | `get_jobs` | | `JobsState` | `job_progress: JobsState` |
 | `rename_module` | `id`, `name?`, `color?` | `ModuleInfo` | |
 | `recent_repos` | | `string[]` | |
@@ -155,7 +157,7 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `git_switch` | `name`, `create` | `GitStatus`; reindexes the files that differ | `git_changed`, `files_changed`, `tree_changed`, `index_done` |
 | `git_fetch` | | `GitStatus` | `git_changed` |
 | `git_prs` | | `PullRequests` (`available: false` and a `message` without `gh`) | |
-| `compare` | `base`, `head`, `threeDot`, `pr?` | `Comparison` | |
+| `compare` | `base`, `head`, `threeDot`, `pr?` | `Comparison` | `packages`: packages that changed files start or stop importing, with how many unchanged files import them. |
 | `compare_file` | `base`, `head`, `path`, `oldPath?` | `FileDiffText` | |
 
 `tree_changed` (no payload) fires when the set of files changes: right after the first walk

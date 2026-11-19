@@ -29,6 +29,7 @@ pub mod tokens;
 
 mod cluster;
 mod leaf;
+pub mod review;
 
 pub use cache::AiCache;
 pub use engine::{
@@ -40,6 +41,9 @@ pub use mock::MockProvider;
 pub use palette::{ModuleColor, PALETTE};
 pub use pricing::{PricingTable, default_models};
 pub use prompts::PROMPT_VERSION;
+pub use review::{
+    ChangeReview, ReviewEstimate, ReviewFile, ReviewInput, ReviewModule, ReviewNote, ReviewNoteKind,
+};
 pub use sidecar::{DeviceCode, SidecarConfig, SidecarProvider, SidecarStatus};
 pub use skeleton::{FileSkeleton, SkeletonOptions, SymbolSkeleton, build_skeleton};
 pub use tokens::{Calibration, estimate_tokens};

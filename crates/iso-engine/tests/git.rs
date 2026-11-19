@@ -219,3 +219,72 @@ fn a_folder_outside_git() {
     assert!(!eng.git_prs().available);
     assert!(eng.compare("HEAD", "worktree", true, None).is_err());
 }
+
+#[test]
+fn review_of_a_comparison_sends_diffs_and_new_packages_and_is_cached() {
+    use iso_ai::{AiEngine, MockProvider};
+    if iso_git::find_exe("git").is_none() {
+        return;
+    }
+    let src = tempfile::tempdir().unwrap();
+    let r = src.path();
+    repo(r);
+    // A package new to the repo on the feature branch.
+    git(r, &["switch", "-q", "feature"]);
+    write(
+        r,
+        "util/log.ts",
+        "import chalk from \"chalk\";\n\nexport function log(msg: string) {\n  console.log(chalk.blue(msg));\n}\n",
+    );
+    git(r, &["commit", "-q", "-am", "colored log"]);
+    git(r, &["switch", "-q", "main"]);
+    let data = tempfile::tempdir().unwrap();
+    let eng = Engine::open_with_data(r, data.path()).unwrap();
+    eng.index().unwrap();
+    let c = eng.compare("main", "feature", true, None).unwrap();
+    let p = c
+        .packages
+        .iter()
+        .find(|p| p.name == "chalk")
+        .expect("chalk");
+    assert_eq!(p.change, ChangeKind::Added);
+    assert_eq!(p.elsewhere, 0);
+    assert_eq!(p.files, vec!["util/log.ts".to_string()]);
+
+    let input = eng.review_input(&c).unwrap();
+    let math = input
+        .files
+        .iter()
+        .find(|f| f.path == "lib/math.ts")
+        .unwrap();
+    assert!(
+        math.patch.contains("-export function sub"),
+        "{}",
+        math.patch
+    );
+    assert!(
+        math.symbols
+            .iter()
+            .any(|s| s.starts_with("- ") && s.contains("sub"))
+    );
+    assert!(input.packages[0].contains("new to the repo"));
+
+    let ai = AiEngine::in_memory(Arc::new(MockProvider::new())).unwrap();
+    assert!(
+        eng.ai_review_state(&ai, &c).is_err(),
+        "AI is off for the repo"
+    );
+    eng.set_ai_enabled(true).unwrap();
+    let st = eng.ai_review_state(&ai, &c).unwrap();
+    assert!(st.review.is_none() && st.cost_usd > 0.0);
+    assert!(
+        eng.ai_review_run(&ai, &c, st.cost_usd / 10.0).is_err(),
+        "over the budget"
+    );
+    let rv = eng.ai_review_run(&ai, &c, st.cost_usd * 2.0).unwrap();
+    assert!(rv.summary.contains("feature"), "{}", rv.summary);
+    assert!(rv.notes.iter().any(|n| n.path.is_some()));
+    assert!(!rv.modules.is_empty());
+    let again = eng.ai_review_state(&ai, &c).unwrap();
+    assert_eq!(again.review, Some(rv));
+}

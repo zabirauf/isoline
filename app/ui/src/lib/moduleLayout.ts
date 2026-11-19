@@ -71,33 +71,74 @@ export interface ModuleLayout {
   H: number;
 }
 
-/** Longest dependency path to a module with no dependencies; back edges of cycles are ignored. */
-export function moduleLevels(n: number, out: number[][]): Int32Array {
-  const level = new Int32Array(n).fill(-1);
-  const state = new Uint8Array(n); // 0 new, 1 on stack, 2 done
+/**
+ * Strongly connected components (iterative Tarjan): `comp[v]` numbers each module's cycle group.
+ * Components come out in reverse topological order: a component's dependencies come first.
+ */
+export function components(n: number, out: number[][]): { comp: Int32Array; count: number } {
+  const comp = new Int32Array(n).fill(-1);
+  const idx = new Int32Array(n).fill(-1);
+  const low = new Int32Array(n);
+  const onStack = new Uint8Array(n);
+  const stack: number[] = [];
+  let next = 0;
+  let count = 0;
   for (let root = 0; root < n; root++) {
-    if (state[root]) continue;
-    const stack: [number, number][] = [[root, 0]];
-    state[root] = 1;
-    while (stack.length) {
-      const top = stack[stack.length - 1];
-      const [v, i] = top;
-      if (i < out[v].length) {
-        top[1]++;
-        const w = out[v][i];
-        if (state[w] === 0) {
-          state[w] = 1;
-          stack.push([w, 0]);
-        }
+    if (idx[root] >= 0) continue;
+    const call: [number, number][] = [[root, 0]];
+    idx[root] = low[root] = next++;
+    stack.push(root);
+    onStack[root] = 1;
+    while (call.length) {
+      const top = call[call.length - 1];
+      const v = top[0];
+      if (top[1] < out[v].length) {
+        const w = out[v][top[1]++];
+        if (idx[w] < 0) {
+          idx[w] = low[w] = next++;
+          stack.push(w);
+          onStack[w] = 1;
+          call.push([w, 0]);
+        } else if (onStack[w]) low[v] = Math.min(low[v], idx[w]);
         continue;
       }
-      let l = 0;
-      for (const w of out[v]) if (state[w] === 2) l = Math.max(l, level[w] + 1);
-      level[v] = l;
-      state[v] = 2;
-      stack.pop();
+      call.pop();
+      if (call.length) {
+        const u = call[call.length - 1][0];
+        low[u] = Math.min(low[u], low[v]);
+      }
+      if (low[v] === idx[v]) {
+        let w: number;
+        do {
+          w = stack.pop()!;
+          onStack[w] = 0;
+          comp[w] = count;
+        } while (w !== v);
+        count++;
+      }
     }
   }
+  return { comp, count };
+}
+
+/**
+ * Longest dependency path to a module with no dependencies. Modules in one import cycle share a
+ * depth: without that, every cycle in a large repo adds columns and the map becomes a thin
+ * strip hundreds of columns wide.
+ */
+export function moduleLevels(n: number, out: number[][]): Int32Array {
+  const { comp, count } = components(n, out);
+  const members: number[][] = Array.from({ length: count }, () => []);
+  for (let v = 0; v < n; v++) members[comp[v]].push(v);
+  // Reverse topological order: every dependency's component is numbered before its users'.
+  const cl = new Int32Array(count);
+  for (let c = 0; c < count; c++) {
+    let l = 0;
+    for (const v of members[c]) for (const w of out[v]) if (comp[w] !== c) l = Math.max(l, cl[comp[w]] + 1);
+    cl[c] = l;
+  }
+  const level = new Int32Array(n);
+  for (let v = 0; v < n; v++) level[v] = cl[comp[v]];
   return level;
 }
 

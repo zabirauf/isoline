@@ -10,10 +10,18 @@ const big = (n: number): ModuleMap => {
 };
 
 describe("module map layout", () => {
-  it("computes depth by longest path and ignores cycle back edges", () => {
-    const lv = moduleLevels(4, [[1], [2], [0], [0]]);
-    expect([...lv].every((v) => v >= 0)).toBe(true);
-    expect(lv[3]).toBeGreaterThan(lv[0]);
+  it("computes depth by longest path and puts a cycle in one column", () => {
+    // 3 -> 0 -> 1 -> 2 -> 0 (cycle of 0, 1, 2); 4 is a leaf that 2 imports.
+    const lv = moduleLevels(5, [[1], [2], [0, 4], [0], []]);
+    expect([...lv]).toEqual([1, 1, 1, 2, 0]);
+  });
+
+  it("keeps a dense graph with many cycles to a few dozen columns", () => {
+    const raw = generateModuleMap(1500, 15);
+    const map = { ...raw, modules: raw.modules.map((m) => ({ ...m, lines: Number(m.lines) })) };
+    const L = layoutModules(map);
+    expect(L.columns.length).toBeLessThan(40);
+    expect(L.W / L.H).toBeLessThan(8);
   });
 
   it("lays out 5,000 modules quickly and deterministically, without overlaps", () => {

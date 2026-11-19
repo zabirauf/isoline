@@ -210,6 +210,35 @@ func MockAnswer(system, prompt string) string {
 			"overview": fmt.Sprintf("The repository is split into %d modules. Each module groups the files of one directory, and the module graph shows how they depend on each other.", len(items)),
 			"layers":   []map[string]any{{"name": "Core", "modules": ids}},
 		}
+	case "review":
+		title := "the change"
+		if m := regexp.MustCompile(`(?m)^Title: (.*)$`).FindStringSubmatch(prompt); m != nil {
+			title = strings.TrimSpace(m[1])
+		}
+		var files []mockItem
+		mods := []map[string]any{}
+		for _, it := range items {
+			if strings.HasPrefix(it.id, "f") {
+				files = append(files, it)
+			} else if strings.HasPrefix(it.id, "m") {
+				mods = append(mods, map[string]any{"id": it.id, "text": fmt.Sprintf("Changes the code of %s.", it.name)})
+			}
+		}
+		notes := []map[string]any{}
+		if len(files) > 0 {
+			name := strings.Fields(files[0].name)
+			first := files[0].name
+			if len(name) > 0 {
+				first = name[0]
+			}
+			notes = append(notes, map[string]any{"kind": "risk", "text": fmt.Sprintf("Changes %s the most. Read its diff first.", first), "file": files[0].id})
+		}
+		notes = append(notes, map[string]any{"kind": "check", "text": "Run the tests of the changed modules."})
+		out = map[string]any{
+			"summary": fmt.Sprintf("The change is about \"%s\". It edits %d files in %d modules.", title, len(files), len(mods)),
+			"notes":   notes,
+			"modules": mods,
+		}
 	default:
 		return "Mock reply for a prompt of " + fmt.Sprint(Tokens(prompt)) + " tokens."
 	}

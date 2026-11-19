@@ -170,7 +170,10 @@ for (const scheme of ["light", "dark"]) {
   const dt = Date.now() - t0;
   const stats = await page.evaluate(() => window.__isolineMapStats?.() ?? null);
   console.log(`scale: pan of 60 moves took ${dt} ms; canvas frame stats ${JSON.stringify(stats)}`);
-  if (stats && stats.worstMs > 16) problems.push(`slowest module-map frame took ${stats.worstMs} ms`);
+  // Pan frames move the cached base bitmap; a frame that draws the base again (after a zoom, or
+  // a pan past its margin) also rasterizes every visible edge, so it gets a looser bound.
+  if (stats && stats.worstBlitMs > 16) problems.push(`slowest module-map pan frame took ${stats.worstBlitMs} ms`);
+  if (stats && stats.worstMs > 120) problems.push(`slowest module-map frame took ${stats.worstMs} ms`);
   await page.close();
 }
 

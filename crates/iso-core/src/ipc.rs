@@ -565,12 +565,63 @@ ipc! {
         pub module_edges: Vec<ModuleEdgeChange>,
         /// Deleted or re-signatured functions that unchanged files still call.
         pub impact: Vec<ImpactItem>,
+        /// Packages that changed files start or stop importing.
+        #[serde(default)]
+        pub packages: Vec<PackageChange>,
         /// Commits on the head side that the base side lacks, newest first (at most 200).
         pub commits: Vec<GitCommit>,
         #[cfg_attr(feature = "ts", ts(type = "number"))]
         pub elapsed_ms: u64,
         /// Too many changed files: symbols were compared for the first ones only.
         pub truncated: bool,
+    }
+
+    /// A package (external dependency) that the change starts or stops importing.
+    pub struct PackageChange {
+        pub name: String,
+        /// `added`: imported by changed files that did not import it before; `deleted`: the
+        /// other way round.
+        pub change: ChangeKind,
+        /// The changed files.
+        pub files: Vec<String>,
+        /// Unchanged files that import it. 0 for an added package: new to the repo; 0 for a
+        /// deleted one: the repo no longer uses it.
+        pub elsewhere: u32,
+    }
+
+    /// Returned by `ai_review` and `ai_review_run`: the AI review of a comparison.
+    pub struct ChangeReview {
+        /// What the change does and why, 2 to 5 sentences.
+        pub summary: String,
+        /// What the reviewer must look at, risks first.
+        pub notes: Vec<ReviewNote>,
+        /// One sentence for each changed module.
+        pub modules: Vec<ModuleNote>,
+        pub model: String,
+        /// Changed files whose diff was too large to send.
+        pub files_without_patch: u32,
+    }
+
+    pub struct ReviewNote {
+        pub kind: ReviewKind,
+        pub text: String,
+        pub path: Option<String>,
+        pub symbol: Option<String>,
+    }
+
+    pub struct ModuleNote {
+        pub id: String,
+        pub text: String,
+    }
+
+    /// Returned by `ai_review`: the cached review, else what writing one costs.
+    pub struct ReviewState {
+        pub review: Option<ChangeReview>,
+        pub cost_usd: f64,
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub tokens_in: u64,
+        pub model: String,
+        pub files_without_patch: u32,
     }
 
     pub struct FileChange {
@@ -687,6 +738,7 @@ ipc_enum! {
     pub enum AiScope { File, Module, Repo, Architecture }
     pub enum SymbolOrigin { Local, Imported, External, Builtin }
     pub enum ChangeKind { Added, Modified, Deleted, Renamed }
+    pub enum ReviewKind { Risk, Check, Info }
 }
 
 #[cfg(all(test, feature = "ts"))]

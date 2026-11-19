@@ -6,6 +6,7 @@ import type { GitCommit } from "./GitCommit";
 import type { ImpactItem } from "./ImpactItem";
 import type { ModuleChange } from "./ModuleChange";
 import type { ModuleEdgeChange } from "./ModuleEdgeChange";
+import type { PackageChange } from "./PackageChange";
 import type { PullRequest } from "./PullRequest";
 
 /**
@@ -28,6 +29,10 @@ moduleEdges: Array<ModuleEdgeChange>,
  * Deleted or re-signatured functions that unchanged files still call.
  */
 impact: Array<ImpactItem>, 
+/**
+ * Packages that changed files start or stop importing.
+ */
+packages: Array<PackageChange>, 
 /**
  * Commits on the head side that the base side lacks, newest first (at most 200).
  */

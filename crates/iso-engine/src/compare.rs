@@ -8,7 +8,7 @@
 //! on one side only still resolves there. Module dependencies count the changed files' imports
 //! on each side on top of the unchanged files' imports from the index.
 
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
@@ -16,7 +16,8 @@ use std::time::Instant;
 use anyhow::Result;
 use iso_core::ipc::{
     ChangeKind, CompareRev, CompareTotals, Comparison, FileChange, FileDiffText, FileRef,
-    ImpactItem, ImportChange, LineRange, ModuleChange, ModuleEdgeChange, ModuleRef, SymbolChange,
+    ImpactItem, ImportChange, LineRange, ModuleChange, ModuleEdgeChange, ModuleRef, PackageChange,
+    SymbolChange,
 };
 use iso_core::{FileFacts, FileId, ImportFact, Language, SymbolFact, SymbolId, SymbolKind, Tier};
 use iso_git::{RawChange, WORKTREE};
@@ -673,6 +674,7 @@ impl Engine {
 
         // ---- impact: deleted or re-signatured exported symbols unchanged files still use
         let impact = self.impact_of(&files, &changed_ids)?;
+        let packages = self.package_changes(&files);
 
         Ok(Comparison {
             base: CompareRev {
@@ -694,6 +696,7 @@ impl Engine {
             modules: modules_out,
             module_edges,
             impact,
+            packages,
             commits: Vec::new(),
             elapsed_ms: 0,
             truncated,
@@ -790,6 +793,63 @@ impl Engine {
                 .then_with(|| a.symbol.cmp(&b.symbol))
         });
         Ok(out)
+    }
+
+    /// Packages that changed files start or stop importing, with how many unchanged files
+    /// import each (from the index).
+    fn package_changes(&self, files: &[FileChange]) -> Vec<PackageChange> {
+        let mut by: BTreeMap<(String, bool), BTreeSet<String>> = BTreeMap::new();
+        for f in files {
+            for i in &f.imports {
+                if let Some(p) = &i.external {
+                    let added = i.change == ChangeKind::Added;
+                    by.entry((p.clone(), added))
+                        .or_default()
+                        .insert(f.path.clone());
+                }
+            }
+        }
+        // A package added in one changed file and deleted in another moved: not a change.
+        let names: Vec<String> = by
+            .keys()
+            .filter(|(n, added)| !by.contains_key(&(n.clone(), !added)))
+            .map(|(n, _)| n.clone())
+            .collect();
+        let changed: HashSet<&str> = files
+            .iter()
+            .flat_map(|f| std::iter::once(f.path.as_str()).chain(f.old_path.as_deref()))
+            .collect();
+        let users = self
+            .index
+            .read(|conn| iso_index::files_importing_packages(conn, &names))
+            .unwrap_or_default();
+        let mut out: Vec<PackageChange> = by
+            .into_iter()
+            .filter(|((n, _), _)| names.contains(n))
+            .map(|((name, added), fs)| {
+                let elsewhere = users.get(&name).map_or(0, |v| {
+                    v.iter().filter(|p| !changed.contains(p.as_str())).count()
+                }) as u32;
+                PackageChange {
+                    name,
+                    change: if added {
+                        ChangeKind::Added
+                    } else {
+                        ChangeKind::Deleted
+                    },
+                    files: fs.into_iter().collect(),
+                    elsewhere,
+                }
+            })
+            .collect();
+        // New to the repo first, then by how many files.
+        out.sort_by(|a, b| {
+            (a.elsewhere > 0)
+                .cmp(&(b.elsewhere > 0))
+                .then(b.files.len().cmp(&a.files.len()))
+                .then(a.name.cmp(&b.name))
+        });
+        out
     }
 
     /// Both versions of one file for the diff view. `head` may be `worktree`.

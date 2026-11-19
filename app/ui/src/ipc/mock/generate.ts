@@ -72,7 +72,7 @@ export function generateTree(count: number): TreeNode {
   return root;
 }
 
-export function generateModuleMap(n: number): RawModuleMap {
+export function generateModuleMap(n: number, fanout = 2): RawModuleMap {
   const r = rng(n * 7 + 1);
   const modules = Array.from({ length: n }, (_, i) => {
     const w = WORDS[i % WORDS.length];
@@ -96,7 +96,7 @@ export function generateModuleMap(n: number): RawModuleMap {
   for (let i = 0; i < n; i++) {
     const l = layerOf(i);
     if (l === layers - 1) continue;
-    const k = 1 + Math.floor(r() * 3);
+    const k = 1 + Math.floor(r() * (2 * fanout - 1));
     for (let j = 0; j < k; j++) {
       const tl = Math.min(layers - 1, l + 1 + Math.floor(r() * r() * 3));
       const a = firstOf(tl);

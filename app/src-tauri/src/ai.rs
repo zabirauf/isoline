@@ -101,7 +101,36 @@ pub(crate) fn attach(app: &AppHandle, eng: &Arc<Engine>) {
     }
 }
 
-fn status(state: &AppState, message: Option<String>) -> AiStatus {
+/// The GitHub login of the last sign-in, kept beside the AI cache so the app knows it is
+/// signed in without starting the sidecar (the token itself stays in the OS keychain).
+fn account_file() -> PathBuf {
+    iso_engine::data_dir().join("ai_account")
+}
+
+fn remembered_account() -> Option<String> {
+    let s = std::fs::read_to_string(account_file()).ok()?;
+    let s = s.trim();
+    (!s.is_empty()).then(|| s.to_string())
+}
+
+fn remember_account(user: Option<&str>) {
+    let path = account_file();
+    match user {
+        Some(u) if !u.is_empty() => {
+            if remembered_account().as_deref() != Some(u) {
+                if let Some(dir) = path.parent() {
+                    let _ = std::fs::create_dir_all(dir);
+                }
+                let _ = std::fs::write(&path, u);
+            }
+        }
+        _ => {
+            let _ = std::fs::remove_file(&path);
+        }
+    }
+}
+
+pub(crate) fn status(state: &AppState, message: Option<String>) -> AiStatus {
     let enabled = state.engine.read().as_ref().is_some_and(|e| e.ai_enabled());
     let device_code = state.ai.device.lock().clone();
     let mut s = AiStatus {
@@ -123,6 +152,12 @@ fn status(state: &AppState, message: Option<String>) -> AiStatus {
         .as_ref()
         .is_some_and(|(p, _)| p.is_running());
     if !enabled && s.device_code.is_none() && !running {
+        // Not started: report the sign-in from an earlier session, so turning AI on for
+        // this repo is one click and needs no new sign-in.
+        if let Some(user) = remembered_account() {
+            s.signed_in = true;
+            s.user = Some(user);
+        }
         return s;
     }
     let Ok((provider, ai)) = state.ai.get() else {
@@ -136,6 +171,12 @@ fn status(state: &AppState, message: Option<String>) -> AiStatus {
             s.signed_in = st.signed_in;
             s.user = st.user;
             s.mock = st.mock;
+            if !st.mock {
+                remember_account(
+                    st.signed_in
+                        .then_some(s.user.as_deref().unwrap_or("GitHub")),
+                );
+            }
             if st.signed_in {
                 *state.ai.device.lock() = None;
                 s.device_code = None;
@@ -277,6 +318,7 @@ pub async fn ai_sign_out(state: State<'_, AppState>) -> CmdResult<AiStatus> {
     if let Ok((p, _)) = state.ai.get() {
         let _ = p.sign_out();
     }
+    remember_account(None);
     *state.ai.device.lock() = None;
     *state.ai.notice.lock() = None;
     Ok(status(&state, None))
@@ -291,6 +333,29 @@ pub async fn ai_estimate(
     let eng = crate::engine(&state)?;
     let (_, ai) = state.ai.get().map_err(err)?;
     blocking(move || eng.ai_estimate(&ai, scope, path.as_deref())).await
+}
+
+/// The cached AI review of a comparison (the payload `compare` returned), else its cost.
+#[tauri::command]
+pub async fn ai_review(
+    state: State<'_, AppState>,
+    comparison: Comparison,
+) -> CmdResult<ReviewState> {
+    let eng = crate::engine(&state)?;
+    let (_, ai) = state.ai.get().map_err(err)?;
+    blocking(move || eng.ai_review_state(&ai, &comparison)).await
+}
+
+/// Writes the AI review of a comparison within the budget: one request, answered when done.
+#[tauri::command]
+pub async fn ai_review_run(
+    state: State<'_, AppState>,
+    comparison: Comparison,
+    budget_usd: f64,
+) -> CmdResult<ChangeReview> {
+    let eng = crate::engine(&state)?;
+    let (_, ai) = state.ai.get().map_err(err)?;
+    blocking(move || eng.ai_review_run(&ai, &comparison, budget_usd)).await
 }
 
 #[tauri::command]

@@ -384,6 +384,11 @@ function Shell() {
   useEffect(() => {
     if (jobDone != null) refreshRepoData();
   }, [jobDone, refreshRepoData]);
+  // The module selected on the repo page: the map focuses on it and the sidebar shows its files.
+  const [modFocus, setModFocus] = useState<string | null>(null);
+  useEffect(() => setModFocus(null), [repo?.root]);
+  const clearModFocus = useCallback(() => setModFocus(null), []);
+  const focusModule = useMemo(() => moduleMap?.modules.find((m) => m.id === modFocus) ?? null, [moduleMap, modFocus]);
   const moduleNames = useMemo(() => new Map((moduleMap?.modules ?? []).map((m) => [m.id, m.name])), [moduleMap]);
   const indexing = !!progress && progress.phase !== "done";
   const justIndexed = !!progress && progress.phase === "done";
@@ -526,15 +531,15 @@ function Shell() {
         </div>
       </header>
       <div className={`body${repo && sidebar ? " with-side" : ""}`}>
-        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} moduleNames={moduleNames} />}
+        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={(p) => openFile(p)} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} moduleNames={moduleNames} focusModule={focusModule} onClearFocus={clearModFocus} />}
         <main className="content">
           {!repo && <StartScreen recent={recent} onOpen={(p) => void openRepo(p)} onPick={() => void pickRepo()} busy={busy} error={openError} />}
           {repo && compareReq && (
             <div className="compare-host" hidden={!compareOn}>
-              <CompareView status={git} moduleMap={moduleMap} request={compareReq} onOpenFile={(p, line) => openFile(p, { line })} />
+              <CompareView status={git} moduleMap={moduleMap} request={compareReq} onOpenFile={(p, line) => openFile(p, { line })} ai={ai} onOpenAi={() => setAiOpen((n) => n + 1)} />
             </div>
           )}
-          {repo && !compareOn && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} ai={{ arch: architecture, status: ai, job: aiRuns.job, onRun: aiRuns.run, onOpenAi: () => setAiOpen((n) => n + 1) }} />}
+          {repo && !compareOn && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} ai={{ arch: architecture, status: ai, job: aiRuns.job, onRun: aiRuns.run, onOpenAi: () => setAiOpen((n) => n + 1) }} sel={modFocus} setSel={setModFocus} />}
           {repo && !compareOn && file && viewError && (
             <div className="start">
               <p className="err">

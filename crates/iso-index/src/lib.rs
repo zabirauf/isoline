@@ -4,6 +4,7 @@
 //! UI can read while background indexing writes. All query helpers take a `&Connection`, so
 //! they work on either connection and inside a transaction.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -564,6 +565,29 @@ pub fn external_caller_count(conn: &Connection, sym: SymbolId, own_file: FileId)
         "SELECT COUNT(DISTINCT from_symbol) FROM edges WHERE to_symbol = ?1 AND from_file != ?2 AND kind = 'call'",
     )?;
     Ok(st.query_row(params![sym.as_i64(), own_file.as_i64()], |r| r.get(0))?)
+}
+
+/// Files that import each of these packages, by package name (one scan of the imports).
+pub fn files_importing_packages(
+    conn: &Connection,
+    names: &[String],
+) -> Result<HashMap<String, Vec<String>>> {
+    let mut out: HashMap<String, Vec<String>> = HashMap::new();
+    if names.is_empty() {
+        return Ok(out);
+    }
+    let marks = vec!["?"; names.len()].join(",");
+    let mut st = conn.prepare(&format!(
+        "SELECT DISTINCT i.external, f.path FROM imports i JOIN files f ON f.id = i.file_id WHERE i.external IN ({marks})"
+    ))?;
+    let rows = st.query_map(rusqlite::params_from_iter(names.iter()), |r| {
+        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+    })?;
+    for r in rows {
+        let (name, path) = r?;
+        out.entry(name).or_default().push(path);
+    }
+    Ok(out)
 }
 
 pub fn edge_count(conn: &Connection) -> Result<u64> {

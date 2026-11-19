@@ -512,6 +512,37 @@ impl Repo {
         Ok(changes)
     }
 
+    /// Unified diffs from `base` to `head` (`None`: the working tree) for `paths`, by path on
+    /// the head side (the base side for deleted files). Hunks only, without the headers.
+    /// Untracked files are not in it.
+    pub fn patches(
+        &self,
+        base: &str,
+        head: Option<&str>,
+        paths: &[String],
+        context: u32,
+    ) -> Result<HashMap<String, String>> {
+        if paths.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let u = format!("-U{context}");
+        let mut args = vec![
+            "diff",
+            u.as_str(),
+            "-M",
+            "--relative",
+            "--no-ext-diff",
+            "--no-color",
+            base,
+        ];
+        if let Some(h) = head {
+            args.push(h);
+        }
+        args.push("--");
+        args.extend(paths.iter().map(String::as_str));
+        Ok(parse_patches(&self.git(&args)?))
+    }
+
     /// Every file at a revision (`None`: tracked and untracked files in the working tree),
     /// relative to the opened folder.
     pub fn files_at(&self, rev: Option<&str>) -> Result<Vec<String>> {
@@ -857,6 +888,53 @@ pub fn parse_name_status(out: &[u8]) -> Vec<RawChange> {
 }
 
 /// `git diff -z --numstat -M`: `a\td\tpath\0`, renames `a\td\t\0old\0new\0`; `-` for binary.
+/// Splits `git diff` output into hunks per file (head path, or base path when deleted).
+pub fn parse_patches(out: &[u8]) -> HashMap<String, String> {
+    let text = String::from_utf8_lossy(out);
+    let mut map = HashMap::new();
+    let mut cur: Option<(Option<String>, Option<String>, String)> = None;
+    let mut flush = |c: Option<(Option<String>, Option<String>, String)>| {
+        if let Some((old, new, body)) = c
+            && let Some(p) = new.or(old)
+            && !body.is_empty()
+        {
+            map.insert(p, body);
+        }
+    };
+    for line in text.split_inclusive('\n') {
+        if line.starts_with("diff --git ") {
+            flush(cur.take());
+            cur = Some((None, None, String::new()));
+            continue;
+        }
+        let Some((old, new, body)) = cur.as_mut() else {
+            continue;
+        };
+        if body.is_empty() {
+            let l = line.trim_end_matches(['\n', '\r']);
+            if let Some(p) = l.strip_prefix("--- a/") {
+                *old = Some(unquote(p));
+                continue;
+            }
+            if let Some(p) = l.strip_prefix("+++ b/") {
+                *new = Some(unquote(p));
+                continue;
+            }
+            if !line.starts_with("@@") {
+                continue;
+            }
+        }
+        body.push_str(line);
+    }
+    flush(cur);
+    map
+}
+
+/// Git quotes paths with unusual characters; only the plain form is handled.
+fn unquote(p: &str) -> String {
+    p.trim_matches('"').to_string()
+}
+
 pub fn parse_numstat(out: &[u8]) -> HashMap<String, (u32, u32, bool)> {
     let mut m = HashMap::new();
     let mut it = out.split(|&b| b == 0);
@@ -889,6 +967,15 @@ pub fn parse_numstat(out: &[u8]) -> HashMap<String, (u32, u32, bool)> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn patches_split_per_file() {
+        let out = b"diff --git a/a.ts b/a.ts\nindex 1..2 100644\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-x\n+y\ndiff --git a/gone.ts b/gone.ts\ndeleted file mode 100644\n--- a/gone.ts\n+++ /dev/null\n@@ -1 +0,0 @@\n-z\ndiff --git a/new.ts b/new.ts\nnew file mode 100644\n--- /dev/null\n+++ b/new.ts\n@@ -0,0 +1 @@\n+w\n";
+        let m = super::parse_patches(out);
+        assert_eq!(m["a.ts"], "@@ -1 +1 @@\n-x\n+y\n");
+        assert_eq!(m["gone.ts"], "@@ -1 +0,0 @@\n-z\n");
+        assert_eq!(m["new.ts"], "@@ -0,0 +1 @@\n+w\n");
+    }
+
     use super::*;
 
     #[test]

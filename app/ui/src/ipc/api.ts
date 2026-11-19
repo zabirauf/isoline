@@ -21,6 +21,8 @@ import type { SourceSlice } from "./bindings/SourceSlice";
 import type { TreeNode } from "./bindings/TreeNode";
 import type { Comparison } from "./bindings/Comparison";
 import type { FileDiffText } from "./bindings/FileDiffText";
+import type { ChangeReview } from "./bindings/ChangeReview";
+import type { ReviewState } from "./bindings/ReviewState";
 import type { GitRefs } from "./bindings/GitRefs";
 import type { GitStatus } from "./bindings/GitStatus";
 import type { PullRequests } from "./bindings/PullRequests";
@@ -96,6 +98,10 @@ export interface Backend {
   /** `head` may be "worktree"; with `pr`, base and head are ignored. */
   compare(base: string, head: string, threeDot: boolean, pr?: number): Promise<Comparison>;
   compareFile(base: string, head: string, path: string, oldPath?: string): Promise<FileDiffText>;
+  /** The cached AI review of a comparison, else its cost. Never calls a model. */
+  aiReview(comparison: Comparison): Promise<ReviewState>;
+  /** Writes the AI review of a comparison within the budget. */
+  aiReviewRun(comparison: Comparison, budgetUsd: number): Promise<ChangeReview>;
   /** Folder picker: the dialog plugin in Tauri, a fixed answer in the mock. */
   pickFolder(): Promise<string | null>;
   listen<E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void): Promise<Unlisten>;
@@ -138,6 +144,8 @@ async function createTauriBackend(): Promise<Backend> {
     gitPrs: () => call("git_prs"),
     compare: (base, head, threeDot, pr) => call("compare", { base, head, threeDot, pr: pr ?? null }),
     compareFile: (base, head, path, oldPath) => call("compare_file", { base, head, path, oldPath: oldPath ?? null }),
+    aiReview: (comparison) => call("ai_review", { comparison }),
+    aiReviewRun: (comparison, budgetUsd) => call("ai_review_run", { comparison, budgetUsd }),
     launchArgs: () => call("launch_args"),
     pickFolder: async () => {
       const { open } = await import("@tauri-apps/plugin-dialog");
@@ -198,6 +206,8 @@ function createHttpBackend(): Backend {
     gitPrs: () => call("git_prs"),
     compare: (base, head, threeDot, pr) => call("compare", { base, head, threeDot, pr: pr ?? null }),
     compareFile: (base, head, path, oldPath) => call("compare_file", { base, head, path, oldPath: oldPath ?? null }),
+    aiReview: (comparison) => call("ai_review", { comparison }),
+    aiReviewRun: (comparison, budgetUsd) => call("ai_review_run", { comparison, budgetUsd }),
     launchArgs: async () => urlLaunchArgs(),
     pickFolder: async () => window.prompt("Repo folder") || null,
     listen: async (event, cb) => {
@@ -270,6 +280,8 @@ export const api = {
   gitPrs: async () => (await backend()).gitPrs(),
   compare: async (base: string, head: string, threeDot: boolean, pr?: number) => (await backend()).compare(base, head, threeDot, pr),
   compareFile: async (base: string, head: string, path: string, oldPath?: string) => (await backend()).compareFile(base, head, path, oldPath),
+  aiReview: async (comparison: Comparison) => (await backend()).aiReview(comparison),
+  aiReviewRun: async (comparison: Comparison, budgetUsd: number) => (await backend()).aiReviewRun(comparison, budgetUsd),
   launchArgs: async () => (await backend()).launchArgs(),
   listen: async <E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void) => (await backend()).listen(event, cb),
 };

@@ -1,6 +1,7 @@
 // Source tree sidebar: virtualized (only visible rows are in the DOM), so 10k+ files scroll
 // smoothly. Each file shows its module color, tier and index status.
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import type { ModuleInfo } from "../ipc/bindings/ModuleInfo";
 import type { TreeNode } from "../ipc/bindings/TreeNode";
 import { dirname, fmtInt, middleEllipsis } from "../lib/format";
 import { ModuleDot } from "./ui";
@@ -44,6 +45,34 @@ function filtered(root: TreeNode, q: string): Row[] {
       if (c.isDir) walk(c);
       else if (c.path.toLowerCase().includes(q)) out.push({ node: c, depth: 0, open: false, dir: dirname(c.path) });
     }
+  };
+  walk(root);
+  return out;
+}
+
+/**
+ * The tree cut down to one module's files and the folders that hold them. Folders keep their
+ * own module color only when it is this module.
+ */
+export function moduleTree(root: TreeNode, id: string): TreeNode | null {
+  const walk = (n: TreeNode): TreeNode | null => {
+    if (!n.isDir) return n.module === id ? n : null;
+    const children = n.children.map(walk).filter((c): c is TreeNode => c !== null);
+    if (!children.length && n.path !== "") return null;
+    return { ...n, children, color: n.module === id ? n.color : null };
+  };
+  return walk(root);
+}
+
+/** Every folder path in a tree. */
+function allDirs(root: TreeNode): Set<string> {
+  const out = new Set<string>();
+  const walk = (n: TreeNode) => {
+    for (const c of n.children)
+      if (c.isDir) {
+        out.add(c.path);
+        walk(c);
+      }
   };
   walk(root);
   return out;
@@ -134,9 +163,24 @@ export interface SidebarProps {
   emptyText?: string;
   /** Module names by id, for the color dots' titles. */
   moduleNames?: ReadonlyMap<string, string>;
+  /** Show only this module's files (selected on the repo page), every folder open. */
+  focusModule?: ModuleInfo | null;
+  onClearFocus?(): void;
 }
 
-export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emptyText = "Listing files…", moduleNames }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, onOpen, emptyText = "Listing files…", moduleNames, focusModule, onClearFocus }: SidebarProps) {
+  const focusId = focusModule?.id ?? null;
+  const focusTree = useMemo(() => (focusId ? moduleTree(fullTree, focusId) : null), [fullTree, focusId]);
+  const tree = focusTree ?? fullTree;
+  // In focus mode every folder starts open; folders the reader closes are kept here.
+  const [focusClosed, setFocusClosed] = useState<Set<string>>(new Set());
+  useEffect(() => setFocusClosed(new Set()), [focusId]);
+  const focusOpen = useMemo(() => {
+    if (!focusTree) return null;
+    const s = allDirs(focusTree);
+    for (const p of focusClosed) s.delete(p);
+    return s;
+  }, [focusTree, focusClosed]);
   const [expanded, setExpanded] = useState<Set<string>>(() => loadExpanded(repo) ?? defaultExpanded(tree));
   // The tree usually arrives empty (the walk has not listed the files yet): the default
   // expansion is applied when the first files show up, unless the reader had their own.
@@ -175,7 +219,10 @@ export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emp
   }, [openPath]);
 
   const query = q.trim().toLowerCase();
-  const rows = useMemo(() => (query ? filtered(tree, query) : flatten(tree, expanded)), [tree, expanded, query]);
+  const rows = useMemo(() => (query ? filtered(tree, query) : flatten(tree, focusOpen ?? expanded)), [tree, expanded, focusOpen, query]);
+  useEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [focusId]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -205,7 +252,7 @@ export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emp
   const last = Math.min(rows.length, Math.ceil((scroll + height) / ROW) + OVERSCAN);
 
   const toggle = (path: string) =>
-    setExpanded((s) => {
+    (focusOpen ? setFocusClosed : setExpanded)((s) => {
       const n = new Set(s);
       if (n.has(path)) n.delete(path);
       else n.add(path);
@@ -231,6 +278,18 @@ export const Sidebar = memo(function Sidebar({ repo, tree, openPath, onOpen, emp
         <span className="eyebrow">Files</span>
         <span className="caption">{fmtInt(total)}</span>
       </div>
+      {focusModule && (
+        <div className="side-focus" role="status">
+          <ModuleDot color={focusModule.color} />
+          <span className="nm" title={focusModule.dir}>
+            {focusModule.name}
+          </span>
+          <span className="caption">{fmtInt(total)} files</span>
+          <button type="button" className="link-quiet" onClick={onClearFocus} title="Show every file again">
+            Show all
+          </button>
+        </div>
+      )}
       <input className="search side-filter" type="search" placeholder="Filter files" aria-label="Filter files" value={q} onChange={(e) => setQ(e.target.value)} />
       <div
         className="tree"

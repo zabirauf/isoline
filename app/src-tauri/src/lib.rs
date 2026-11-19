@@ -58,6 +58,13 @@ async fn open_repo(
     })));
     *state.engine.write() = Some(Arc::clone(&eng));
     ai::attach(&app, &eng);
+    // AI status depends on the repo (on or off for it); starting the sidecar can take a
+    // second, so the new status comes as an event.
+    let h = app.clone();
+    std::thread::spawn(move || {
+        let st = ai::status(&h.state::<AppState>(), None);
+        let _ = h.emit("ai_status", st);
+    });
     let bg = Arc::clone(&eng);
     std::thread::Builder::new()
         .name("iso-index".into())
@@ -288,6 +295,8 @@ pub fn run() {
             ai::ai_enable,
             ai::ai_estimate,
             ai::ai_run,
+            ai::ai_review,
+            ai::ai_review_run,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Isoline");

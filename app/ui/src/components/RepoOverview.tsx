@@ -17,6 +17,8 @@ import type { AiJob } from "../lib/aiRuns";
 
 const SOURCE_TEXT = { cluster: "grouped by directory and imports", ai: "named by AI", user: "named by you" } as const;
 const LIST_LIMIT = 200;
+/** Modules listed before "Show all". */
+const MODS_SHORT = 6;
 const TOP_LANGS = 5;
 const PHASE_TEXT = { walk: "walking", parse: "parsing", resolve: "resolving imports", graph: "building the graph", done: "done" } as const;
 
@@ -28,8 +30,9 @@ export interface RepoAi {
   onOpenAi(): void;
 }
 
-export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai }: { repo: RepoSummary; moduleMap: ModuleMap | null; progress: IndexProgress | null; onModuleRenamed(): void; ai: RepoAi }) {
-  const [sel, setSel] = useState<string | null>(null);
+export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai, sel, setSel }: { repo: RepoSummary; moduleMap: ModuleMap | null; progress: IndexProgress | null; onModuleRenamed(): void; ai: RepoAi; /** The selected module: focused in the map and, in the sidebar, its files only. */ sel: string | null; setSel(id: string | null): void }) {
+  const [modsOpen, setModsOpen] = useState(false);
+  const [modQ, setModQ] = useState("");
   const [renaming, setRenaming] = useState<string | null>(null);
   const [allLangs, setAllLangs] = useState(false);
   const [tiersOpen, setTiersOpen] = useState(false);
@@ -37,6 +40,16 @@ export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai }:
   const maxLines = Math.max(1, ...repo.languages.map((l) => num(l.lines)));
   const mods = useMemo(() => (moduleMap ? [...moduleMap.modules].sort((a, b) => num(b.lines) - num(a.lines)) : []), [moduleMap]);
   const selected = moduleMap?.modules.find((m) => m.id === sel) ?? null;
+  const matchedMods = useMemo(() => {
+    const q = modQ.trim().toLowerCase();
+    return q ? mods.filter((m) => m.name.toLowerCase().includes(q) || m.dir.toLowerCase().includes(q)) : mods;
+  }, [mods, modQ]);
+  // Short: the largest few, and the selected one if it is not among them.
+  const shownMods = useMemo(() => {
+    const list = matchedMods.slice(0, modsOpen ? LIST_LIMIT : MODS_SHORT);
+    if (selected && !list.some((m) => m.id === selected.id)) list.unshift(selected);
+    return list;
+  }, [matchedMods, modsOpen, selected]);
   const byId = useMemo(() => new Map((moduleMap?.modules ?? []).map((m) => [m.id, m])), [moduleMap]);
   const deps = moduleMap && sel ? moduleMap.edges.filter((e) => e.from === sel).length : 0;
   const users = moduleMap && sel ? moduleMap.edges.filter((e) => e.to === sel).length : 0;
@@ -89,6 +102,10 @@ export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai }:
                   <i style={{ background: "var(--user)" }} />
                   used by {plural(users, "module")}
                 </span>
+                <span className="caption">The file tree shows this module's files.</span>
+                <button type="button" className="link-quiet" onClick={() => setSel(null)}>
+                  Clear
+                </button>
               </div>
             )}
           </div>
@@ -148,10 +165,16 @@ export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai }:
             )}
           </section>
           {moduleMap && (
-            <section className="panel short">
-              <div className="eyebrow">Modules</div>
-              <ul className={`modlist${mods.length > 4 ? " scrolls" : ""}`}>
-                {mods.slice(0, LIST_LIMIT).map((m) => (
+            <section className={`panel short mods${modsOpen ? " open" : ""}`} aria-labelledby="mods-h">
+              <div className="mods-h">
+                <div className="eyebrow" id="mods-h">
+                  Modules
+                </div>
+                <span className="caption">{fmtInt(mods.length)}</span>
+                {modsOpen && <input className="search" type="search" placeholder="Filter by name or folder" aria-label="Filter modules" value={modQ} onChange={(e) => setModQ(e.target.value)} autoFocus />}
+              </div>
+              <ul className="modlist">
+                {shownMods.map((m) => (
                   <li key={m.id} className={m.id === sel ? "on" : ""}>
                     <ModuleDot color={m.color} />
                     {renaming === m.id ? (
@@ -172,12 +195,12 @@ export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai }:
                         </button>
                       </form>
                     ) : (
-                      <button type="button" className="modname" onClick={() => setSel(m.id === sel ? null : m.id)} aria-pressed={m.id === sel}>
+                      <button type="button" className="modname" onClick={() => setSel(m.id === sel ? null : m.id)} aria-pressed={m.id === sel} title={m.id === sel ? "Show every file again" : "Focus the map and the file tree on this module"}>
                         {m.name}
                       </button>
                     )}
                     <span className="caption">
-                      <code>{m.dir}</code> · {plural(m.files, "file")} · {SOURCE_TEXT[m.source]}
+                      <code>{m.dir || "/"}</code> · {plural(m.files, "file")} · {SOURCE_TEXT[m.source]}
                     </span>
                     {renaming !== m.id && (
                       <button type="button" className="iso-btn-drill rename-btn" onClick={() => setRenaming(m.id)}>
@@ -187,7 +210,13 @@ export function RepoOverview({ repo, moduleMap, progress, onModuleRenamed, ai }:
                   </li>
                 ))}
               </ul>
-              {mods.length > LIST_LIMIT && <p className="caption">The {fmtInt(LIST_LIMIT)} largest of {plural(mods.length, "module")}. The map shows them all.</p>}
+              {modsOpen && matchedMods.length === 0 && <p className="caption">No module matches “{modQ}”.</p>}
+              {modsOpen && matchedMods.length > LIST_LIMIT && <p className="caption">The {fmtInt(LIST_LIMIT)} largest of {fmtInt(matchedMods.length)}. Filter to find the others; the map shows them all.</p>}
+              {mods.length > MODS_SHORT && (
+                <button type="button" className="link-quiet" aria-expanded={modsOpen} onClick={() => (setModsOpen(!modsOpen), setModQ(""))}>
+                  {modsOpen ? "Show fewer" : `Show all ${fmtInt(mods.length)} modules ›`}
+                </button>
+              )}
             </section>
           )}
         </div>

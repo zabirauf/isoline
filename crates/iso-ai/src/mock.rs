@@ -322,6 +322,28 @@ pub fn mock_answer(system: &str, prompt: &str) -> String {
                 "flows": [{"name": "Main flow", "text": "Data moves from the first module to the last.", "modules": [ids.first(), ids.last()]}],
             })
         }
+        Some("review") => {
+            let title = prompt
+                .lines()
+                .find_map(|l| l.strip_prefix("Title: "))
+                .unwrap_or("the change");
+            let files: Vec<&Item> = items.iter().filter(|i| i.id.starts_with('f')).collect();
+            let mods: Vec<Value> = items
+                .iter()
+                .filter(|i| i.id.starts_with('m'))
+                .map(|i| json!({"id": i.id, "text": format!("Changes the code of {}.", i.name)}))
+                .collect();
+            let mut notes = Vec::new();
+            if let Some(f) = files.first() {
+                notes.push(json!({"kind": "risk", "text": format!("Changes {} the most. Read its diff first.", f.name.split_whitespace().next().unwrap_or(f.name)), "file": f.id}));
+            }
+            notes.push(json!({"kind": "check", "text": "Run the tests of the changed modules."}));
+            json!({
+                "summary": format!("The change is about \"{}\". It edits {} files in {} modules.", title.trim(), files.len(), mods.len()),
+                "notes": notes,
+                "modules": mods,
+            })
+        }
         _ => {
             return format!(
                 "Mock reply for a prompt of {} tokens.",

@@ -394,6 +394,12 @@ function comparison(base: string, head: string, threeDot: boolean, pr: number | 
         : []),
       ...(touched.has("config") ? [{ symbol: "getRuntimeConfigSnapshot", path: CONFIG, change: "modified" as const, signatureBefore: "export function getRuntimeConfigSnapshot(...args: unknown[]): unknown", signatureAfter: "export function getRuntimeConfigSnapshot(opts: SnapshotOptions = {}): unknown", callers: [{ path: "src/cli/run.ts", line: 17 }, { path: "src/gateway/server.ts", line: 30 }, { path: "src/context-engine/host-compat.ts", line: 8 }, ...["src/channels/slack/adapter.ts", "src/channels/discord/adapter.ts", "src/plugins/loader.ts", "src/gateway/ws.ts", "src/cli/index.ts", "src/infra/diagnostic-events.ts", "src/agents/harness/types.ts"].map((path, i) => ({ path, line: 10 + i * 7 }))], callerFiles: 214, byImport: false }] : []),
     ],
+    packages: harnessTouched
+      ? [
+          { name: "p-retry", change: "added" as const, files: files.filter((f) => f.path === RETRY).map((f) => f.path), elsewhere: 0 },
+          { name: "zod", change: "added" as const, files: files.filter((f) => f.path === CONFIG).map((f) => f.path), elsewhere: 41 },
+        ].filter((x) => x.files.length > 0)
+      : [],
     commits: same ? [] : (p?.number === 479 ? COMMITS.slice(2, 3) : COMMITS).map(([subject, author, age]) => {
       const s = sha(subject);
       return { sha: s, short: s.slice(0, 7), subject, author, date: NOW - age, refs: [] };

@@ -30,7 +30,15 @@ GitHub Copilot sign-in, and never before the user turns AI on for a repo.
   indexers (rust-analyzer, scip-typescript, scip-python) upgrade edges when installed.
 - **Modules and colors**: the source tree is clustered into modules from directories and the
   import graph, colored, and renamable. Files and folders in the tree carry their module's
-  color.
+  color, and selecting a module on the repo page cuts the file tree down to its files. The
+  module map puts each import cycle in one column and keeps panning to a bitmap move, so a
+  100k-file repo with tens of thousands of module links stays smooth.
+- **Compare and pull requests**: any two revisions, the working tree, or a GitHub pull request,
+  in the map's terms: the change by module, module links and packages that appear or go
+  (packages new to the repo are marked), deleted or re-signatured functions that unchanged
+  files still call, every changed symbol, and a side-by-side diff. With AI on, one request
+  writes a review: what the change does, the risks and checks to look at (each one opens the
+  diff at its symbol), and a sentence for each changed module.
 - **Architecture**: with AI on, one run names every module and writes the repo's
   architecture: what the system does, its layers from entry points to foundations, and the
   major flows of requests and data between modules, shown as colored module chains above the
@@ -142,12 +150,15 @@ Off by default, per repo. Turning it on starts the sidecar; nothing leaves the m
 that. Once it is on, a file is summarized when it opens if its estimate is under $0.05 (about
 a tenth of a cent is typical; this can be switched off in the AI panel), with progress at the
 top of the file. A module or the whole repo is summarized from the AI panel, which shows the
-estimate first, as does the architecture overview on the repo page. Requests go out six at a
+estimate first, as does the architecture overview on the repo page and the review of a
+change in Compare (one request with the change's facts and as much of the diff as fits 40k
+tokens, cached per version of the change). Requests go out six at a
 time. Every run has a budget it cannot exceed. Model text is written in ASD-STE100
 Simplified Technical English: short sentences, the active voice, one meaning for each word. Sign in
 with a GitHub account that has a Copilot plan (device flow through Isoline's OAuth app; the
 token stays in the OS keychain). Release builds embed the Copilot CLI, whose license ships in
-the app as `licenses/github-copilot-cli.txt`. `ISOLINE_GITHUB_CLIENT_ID` overrides the OAuth
+the app as `licenses/github-copilot-cli.txt`. The app remembers the GitHub login name (not the
+token) next to its data, so it shows the sign-in without starting the sidecar. `ISOLINE_GITHUB_CLIENT_ID` overrides the OAuth
 app.
 `ISOLINE_SIDECAR_MOCK=1` runs the full pipeline against the sidecar's deterministic mock.
 

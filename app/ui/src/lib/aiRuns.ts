@@ -7,12 +7,19 @@ import type { AiScope } from "../ipc/bindings/AiScope";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
 import type { FileView } from "../ipc/bindings/FileView";
 import { api, type AiJobDone } from "../ipc/api";
+import { getPrefs, type Prefs } from "./prefs";
 
 /** What a run covers, in words. */
 export const SCOPE_TEXT: Record<AiScope, string> = { file: "this file", module: "this module", repo: "the repo", architecture: "the architecture" };
 
 /** The largest estimate a file is summarized at without asking. */
 export const AUTO_MAX_USD = 0.05;
+
+/** A run of this estimate asks first: always when costs are confirmed, else over the limit. */
+export const asksFirst = (costUsd: number, p: Prefs = getPrefs()) => p.confirmCost || costUsd > p.askAboveUsd;
+
+/** The largest estimate a file is summarized at when it opens, without asking. */
+export const autoMaxUsd = (p: Prefs = getPrefs()) => (p.confirmCost ? AUTO_MAX_USD : Math.max(AUTO_MAX_USD, p.askAboveUsd));
 
 /** The budget a run gets: twice the estimate, and at least five cents. */
 export const budgetFor = (est: AiEstimate) => Math.max(0.05, est.costUsd * 2);
@@ -114,7 +121,7 @@ export function useAiRuns({ status, view, repoRoot, auto }: { status: AiStatus |
       try {
         const est = await api.aiEstimate("file", path);
         if (est.requests === 0) setCheck({ path, kind: "none" });
-        else if (force || (auto && est.costUsd <= AUTO_MAX_USD)) {
+        else if (force || (auto && est.costUsd <= autoMaxUsd())) {
           setCheck({ path, kind: "none" });
           await run("file", path, budgetFor(est));
         } else setCheck({ path, kind: "offer", est });

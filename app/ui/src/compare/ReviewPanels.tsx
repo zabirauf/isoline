@@ -1,7 +1,9 @@
 // The top of the compare view, for a reviewer: what the change does and what to look at (one AI
 // request, cached per version of the change), the change module by module, and the new
 // dependencies: module links that appear or go, and packages the change starts or stops using.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { getPrefs, subscribePrefs } from "../lib/prefs";
+import { asksFirst } from "../lib/aiRuns";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
 import type { ChangeReview } from "../ipc/bindings/ChangeReview";
 import type { Comparison } from "../ipc/bindings/Comparison";
@@ -20,6 +22,7 @@ const reviewBudget = (cost: number) => Math.max(0.05, cost * 2);
 /** What the change does and what the reviewer must look at, written by a model on request. */
 export function ReviewPanel({ result, ai, onOpenAi, onReveal, review, setReview }: { result: Comparison; ai: AiStatus | null; onOpenAi(): void; onReveal(path: string, symbol: string | null): void; review: ChangeReview | null; setReview(r: ChangeReview | null): void }) {
   const on = !!ai?.signedIn && !!ai.enabledForRepo;
+  const prefs = useSyncExternalStore(subscribePrefs, getPrefs);
   const [state, setState] = useState<ReviewState | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -109,7 +112,7 @@ export function ReviewPanel({ result, ai, onOpenAi, onReveal, review, setReview 
       ) : state ? (
         <div className="review-actions">
           <button type="button" className="iso-btn primary" onClick={() => void write()}>
-            Write the review · about {fmtUsd(state.costUsd)}
+            {asksFirst(state.costUsd, prefs) ? `Write the review · about ${fmtUsd(state.costUsd)}` : "Write the review"}
           </button>
           <span className="caption">
             One request to {state.model}, about {fmtInt(Number(state.tokensIn))} tokens{state.filesWithoutPatch > 0 ? `; ${plural(state.filesWithoutPatch, "file")} too large to send in full` : ""}. Up to {fmtUsd(reviewBudget(state.costUsd))}.

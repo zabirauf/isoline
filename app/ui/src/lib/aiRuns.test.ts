@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
 import type { FileView } from "../ipc/bindings/FileView";
-import { fileAiState, type AiJob } from "./aiRuns";
+import { AUTO_MAX_USD, asksFirst, autoMaxUsd, fileAiState, type AiJob } from "./aiRuns";
+import { DEFAULT_PREFS, PREFS_KEY, loadPrefs, savePrefs } from "./prefs";
 
 const view = (over: Partial<FileView> = {}) => ({ path: "src/a.ts", tier: "full", overview: null, ...over }) as unknown as FileView;
 const status = (over: Partial<AiStatus> = {}) => ({ signedIn: true, enabledForRepo: true, ...over }) as AiStatus;
@@ -33,5 +34,28 @@ describe("fileAiState", () => {
   it("offers an expensive file with its estimate, for the open file only", () => {
     expect(fileAiState(view(), status(), null, { path: "src/a.ts", kind: "offer", est })).toEqual({ kind: "offer", est });
     expect(fileAiState(view(), status(), null, { path: "src/b.ts", kind: "offer", est }).kind).toBe("none");
+  });
+});
+
+describe("cost confirmation", () => {
+  const p = (confirmCost: boolean, askAboveUsd = 1) => ({ ...DEFAULT_PREFS, confirmCost, askAboveUsd });
+  it("asks before every run when costs are confirmed", () => {
+    expect(asksFirst(0.001, p(true))).toBe(true);
+    expect(autoMaxUsd(p(true))).toBe(AUTO_MAX_USD);
+  });
+  it("asks only over the limit when they are not", () => {
+    expect(asksFirst(0.9, p(false))).toBe(false);
+    expect(asksFirst(1.2, p(false))).toBe(true);
+    expect(asksFirst(0, p(false, 0))).toBe(false);
+    expect(autoMaxUsd(p(false, 2))).toBe(2);
+    expect(autoMaxUsd(p(false, 0))).toBe(AUTO_MAX_USD);
+  });
+  it("keeps the setting across loads", () => {
+    const s = new Map<string, string>();
+    const kv = { getItem: (k: string) => s.get(k) ?? null, setItem: (k: string, v: string) => void s.set(k, v) };
+    savePrefs({ ...DEFAULT_PREFS, confirmCost: false, askAboveUsd: 2.5 }, kv);
+    expect(loadPrefs(kv)).toMatchObject({ confirmCost: false, askAboveUsd: 2.5 });
+    kv.setItem(PREFS_KEY, JSON.stringify({ confirmCost: "no", askAboveUsd: -1 }));
+    expect(loadPrefs(kv)).toMatchObject({ confirmCost: true, askAboveUsd: 1 });
   });
 });

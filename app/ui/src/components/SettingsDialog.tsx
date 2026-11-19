@@ -7,7 +7,8 @@ import type { AiModel } from "../ipc/bindings/AiModel";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
 import type { AiTask } from "../ipc/bindings/AiTask";
 import { api } from "../ipc/api";
-import { fmtInt } from "../lib/format";
+import { fmtInt, fmtUsd } from "../lib/format";
+import { getPrefs, setPrefs } from "../lib/prefs";
 import { Seg } from "./ui";
 
 export const TASK_TEXT: Record<AiTask, { name: string; help: string }> = {
@@ -21,9 +22,14 @@ interface Draft {
   models: Record<AiTask, string>;
   prompts: Record<AiTask, string>;
   economy: boolean;
+  /** UI preferences, kept in this browser profile: show the cost and ask before a run. */
+  confirmCost: boolean;
+  askAboveUsd: number;
 }
 
 const draftOf = (c: AiConfig): Draft => ({
+  confirmCost: getPrefs().confirmCost,
+  askAboveUsd: getPrefs().askAboveUsd,
   models: Object.fromEntries(c.tasks.map((t) => [t.task, t.model])) as Record<AiTask, string>,
   prompts: Object.fromEntries(c.tasks.map((t) => [t.task, t.prompt])) as Record<AiTask, string>,
   economy: c.economy,
@@ -76,6 +82,7 @@ export function SettingsDialog({ open, onClose, ai, onSignIn, onOpenDev }: { ope
     setBusy(true);
     setErr(null);
     try {
+      setPrefs({ confirmCost: draft.confirmCost, askAboveUsd: draft.askAboveUsd });
       const c = await api.aiSetConfig({
         economy: draft.economy,
         tasks: cfg.tasks.map((t) => ({ task: t.task, model: draft.models[t.task], prompt: draft.prompts[t.task] === t.defaultPrompt ? null : draft.prompts[t.task] })),
@@ -115,7 +122,7 @@ export function SettingsDialog({ open, onClose, ai, onSignIn, onOpenDev }: { ope
         <div className="settings-body">
           <div className="settings-head">
             <h2 id="settings-title">Settings</h2>
-            <button type="button" className="iso-btn quiet" aria-label="Close" onClick={close}>
+            <button type="button" className="iso-btn quiet" aria-label="Close settings" onClick={close}>
               ×
             </button>
           </div>
@@ -181,6 +188,40 @@ export function SettingsDialog({ open, onClose, ai, onSignIn, onOpenDev }: { ope
                     );
                   })}
                 </ul>
+              )}
+            </section>
+
+            <section className="settings-sec" aria-labelledby="set-cost">
+              <div className="eyebrow" id="set-cost">
+                Costs
+              </div>
+              {draft && (
+                <>
+                  <label className="ai-check set-adv">
+                    <input type="checkbox" checked={draft.confirmCost} onChange={(e) => set((d) => ({ ...d, confirmCost: e.target.checked }))} />
+                    <span>Show the cost and ask before each AI run</span>
+                  </label>
+                  <p className="caption">
+                    {draft.confirmCost
+                      ? `Each run shows its estimate first and starts when you confirm it. Files that cost less than ${fmtUsd(0.05)} are summarized when they open.`
+                      : "Runs start at once, without a step to confirm the cost. Every run still has a budget of twice its estimate, and files are summarized when they open up to the limit below."}
+                  </p>
+                  {!draft.confirmCost && (
+                    <label className="set-limit">
+                      Still ask when a run is estimated over $
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.25}
+                        value={draft.askAboveUsd}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          if (Number.isFinite(v) && v >= 0) set((d) => ({ ...d, askAboveUsd: v }));
+                        }}
+                      />
+                    </label>
+                  )}
+                </>
               )}
             </section>
 

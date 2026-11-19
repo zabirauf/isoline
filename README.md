@@ -171,7 +171,10 @@ app.
 **Settings** (⌘, or Ctrl+,) sets the model of each task: summaries, module names,
 architecture and change review. Under Advanced, it shows each task's system prompt and lets
 you change it. A changed prompt keeps its own cached answers; resetting it brings the earlier
-ones back. The settings apply to every repo (`<data>/ai_settings.json`).
+ones back. The settings apply to every repo (`<data>/ai_settings.json`). Under Costs, "Show the cost and
+ask before each AI run" can be turned off: runs then start at once (each still has a budget
+of twice its estimate), files are summarized when they open up to a limit, and only a run
+estimated over that limit (default $1) asks first.
 
 **Developer panel** (⌘⇧D or Ctrl+Shift+D, or from Settings): every model request of the
 session with its system prompt, prompt, answer, tokens, cost and time; every backend call

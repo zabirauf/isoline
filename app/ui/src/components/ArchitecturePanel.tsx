@@ -2,14 +2,15 @@
 // requests and data through the modules, and the layers. A model writes it once from the module
 // graph and the module summaries (the repo pass); module chips carry the same colors as the
 // map and the file tree, and select the module in the map.
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { getPrefs, subscribePrefs } from "../lib/prefs";
 import type { AiEstimate } from "../ipc/bindings/AiEstimate";
 import type { AiScope } from "../ipc/bindings/AiScope";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
 import type { Architecture } from "../ipc/bindings/Architecture";
 import type { ModuleInfo } from "../ipc/bindings/ModuleInfo";
 import { api } from "../ipc/api";
-import { budgetFor, type AiJob } from "../lib/aiRuns";
+import { asksFirst, budgetFor, type AiJob } from "../lib/aiRuns";
 import { fmtInt, fmtUsd, plural } from "../lib/format";
 import { AiMark, ModuleDot } from "./ui";
 
@@ -34,6 +35,7 @@ export function ArchitecturePanel({
   onSelect(id: string): void;
   selected: string | null;
 }) {
+  const prefs = useSyncExternalStore(subscribePrefs, getPrefs);
   const [est, setEst] = useState<AiEstimate | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -46,7 +48,10 @@ export function ArchitecturePanel({
     setBusy(true);
     setErr(null);
     try {
-      setEst(await api.aiEstimate("architecture"));
+      const e = await api.aiEstimate("architecture");
+      // Costs not confirmed: start at once, unless it is over the limit.
+      if (!asksFirst(e.costUsd, prefs)) await onRun("architecture", null, budgetFor(e));
+      else setEst(e);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -88,6 +93,7 @@ export function ArchitecturePanel({
       ) : est ? (
         <>
           <span className="caption">
+            {!prefs.confirmCost && `Over your limit of ${fmtUsd(prefs.askAboveUsd)} for runs without asking. `}
             {plural(est.symbols, "module")} to name ({fmtInt(est.cached)} cached) and one overview · about {fmtUsd(est.costUsd)}
           </span>
           <button type="button" className="iso-btn primary" disabled={busy} onClick={() => void write()}>
@@ -99,7 +105,7 @@ export function ArchitecturePanel({
         </>
       ) : (
         <button type="button" className={arch ? "link-quiet" : "iso-btn"} disabled={busy} onClick={() => void estimate()}>
-          {busy ? "Estimating…" : arch ? "Rewrite…" : "Write the architecture overview…"}
+          {busy ? (prefs.confirmCost ? "Estimating…" : "Starting…") : (arch ? "Rewrite" : "Write the architecture overview") + (prefs.confirmCost ? "…" : "")}
         </button>
       )}
       {failed && !running && <span className="err">Stopped: {failed}</span>}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { AiEstimate } from "../ipc/bindings/AiEstimate";
 import type { AiScope } from "../ipc/bindings/AiScope";
 import type { AiStatus } from "../ipc/bindings/AiStatus";
-import { AUTO_MAX_USD, SCOPE_TEXT as scopeText, budgetFor, type AiJob } from "../lib/aiRuns";
+import { SCOPE_TEXT as scopeText, asksFirst, autoMaxUsd, budgetFor, type AiJob } from "../lib/aiRuns";
 import { getPrefs, setPrefs, subscribePrefs } from "../lib/prefs";
 import { api } from "../ipc/api";
 import { SignInDialog } from "./SignInDialog";
@@ -115,16 +115,30 @@ export function AiPanel({ status, setStatus, filePath, job, onRun, openSignal = 
                 <div className="ai-file">
                   <label className="ai-check">
                     <input type="checkbox" checked={prefs.aiAuto} onChange={(e) => setPrefs({ aiAuto: e.target.checked })} />
-                    Summarize files as I open them (up to {fmtUsd(AUTO_MAX_USD)} each)
+                    Summarize files as I open them (up to {fmtUsd(autoMaxUsd(prefs))} each)
                   </label>
                   <div className="caption">Summarize now</div>
                   <Seg label="What to summarize" value={scopeShown} options={SCOPES.filter((x) => !x.needsFile || filePath).map((x) => [x.scope, x.label] as [AiScope, string])} onChange={setScope} />
                   {!est ? (
-                    <button type="button" className="iso-btn" disabled={busy} onClick={() => run(() => api.aiEstimate(scopeShown, scopeShown === "repo" || scopeShown === "architecture" ? undefined : (filePath ?? undefined)).then(setEst))}>
-                      {busy ? "Estimating…" : "Estimate the cost"}
+                    <button
+                      type="button"
+                      className="iso-btn"
+                      disabled={busy || running}
+                      onClick={() =>
+                        run(async () => {
+                          const target = scopeShown === "repo" || scopeShown === "architecture" ? null : filePath;
+                          const e = await api.aiEstimate(scopeShown, target ?? undefined);
+                          // Costs not confirmed: start at once, unless it is over the limit.
+                          if (!prefs.confirmCost && e.requests > 0 && !asksFirst(e.costUsd, prefs)) await onRun(scopeShown, target, budgetFor(e));
+                          else setEst(e);
+                        })
+                      }
+                    >
+                      {busy ? (prefs.confirmCost ? "Estimating…" : "Starting…") : prefs.confirmCost ? "Estimate the cost" : "Summarize"}
                     </button>
                   ) : (
                     <>
+                      {!prefs.confirmCost && est.requests > 0 && <p className="caption">Over your limit of {fmtUsd(prefs.askAboveUsd)} for runs without asking.</p>}
                       <p className="caption">
                         {plural(est.symbols, "item")}, {fmtInt(est.cached)} cached · {plural(est.requests, "request")} · {fmtInt(num(est.tokensIn))} tokens in, {fmtInt(num(est.tokensOut))} out · about {fmtUsd(est.costUsd)} with {est.model}
                       </p>

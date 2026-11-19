@@ -16,10 +16,14 @@ export interface Prefs {
   aiAuto: boolean;
   /** The developer panel is open. */
   devPanel: boolean;
+  /** Show the cost and ask before every AI run. Off: runs start at once, up to askAboveUsd. */
+  confirmCost: boolean;
+  /** With confirmCost off, still ask before a run estimated over this, in USD. */
+  askAboveUsd: number;
 }
 
 export const PREFS_KEY = "isoline.prefs.v1";
-export const DEFAULT_PREFS: Prefs = { detail: "read", mapExternal: false, flowKeySeen: false, hintSeen: false, aiNoticeHidden: false, aiAuto: true, devPanel: false };
+export const DEFAULT_PREFS: Prefs = { detail: "read", mapExternal: false, flowKeySeen: false, hintSeen: false, aiNoticeHidden: false, aiAuto: true, devPanel: false, confirmCost: true, askAboveUsd: 1 };
 
 /** The subset of Storage the prefs need, so tests can pass a plain object. */
 export interface KeyValueStore {
@@ -47,7 +51,8 @@ export function loadPrefs(s: KeyValueStore | null = store()): Prefs {
   if (raw && typeof raw === "object") {
     const r = raw as Record<string, unknown>;
     if (r.detail === "glance" || r.detail === "read" || r.detail === "dig") p.detail = r.detail;
-    for (const k of ["mapExternal", "flowKeySeen", "hintSeen", "aiNoticeHidden", "aiAuto", "devPanel"] as const) if (typeof r[k] === "boolean") p[k] = r[k] as boolean;
+    if (typeof r.askAboveUsd === "number" && Number.isFinite(r.askAboveUsd) && r.askAboveUsd >= 0) p.askAboveUsd = r.askAboveUsd;
+    for (const k of ["mapExternal", "flowKeySeen", "hintSeen", "aiNoticeHidden", "aiAuto", "devPanel", "confirmCost"] as const) if (typeof r[k] === "boolean") p[k] = r[k] as boolean;
   }
   return p;
 }

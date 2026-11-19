@@ -7,7 +7,10 @@
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use parking_lot::Mutex;
+use std::borrow::Cow;
+use std::collections::HashMap;
+
+use parking_lot::{Mutex, RwLock};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -42,6 +45,9 @@ pub struct CacheEntry {
 /// The shared AI cache.
 pub struct AiCache {
     conn: Mutex<Connection>,
+    /// Per kind: the hash of a prompt the user wrote. It is added to the content hash, so
+    /// answers to a changed prompt never mix with the default prompt's answers.
+    salts: RwLock<HashMap<String, String>>,
 }
 
 fn now() -> i64 {
@@ -81,11 +87,30 @@ impl AiCache {
         conn.execute_batch(SCHEMA)?;
         Ok(AiCache {
             conn: Mutex::new(conn),
+            salts: RwLock::new(HashMap::new()),
         })
+    }
+
+    /// Keeps the answers of one kind apart for a changed prompt (`salt` is its hash), or
+    /// back with the default prompt's answers (`None`).
+    pub fn set_salt(&self, kind: &str, salt: Option<String>) {
+        let mut g = self.salts.write();
+        match salt {
+            Some(s) => g.insert(kind.to_string(), s),
+            None => g.remove(kind),
+        };
+    }
+
+    fn salted<'a>(&self, content_hash: &'a str, kind: &str) -> Cow<'a, str> {
+        match self.salts.read().get(kind) {
+            Some(s) => Cow::Owned(format!("{content_hash}~p{s}")),
+            None => Cow::Borrowed(content_hash),
+        }
     }
 
     /// The stored answer for this content, model and kind under the current prompt version.
     pub fn get(&self, content_hash: &str, model: &str, kind: &str) -> Option<CacheEntry> {
+        let content_hash = &*self.salted(content_hash, kind);
         let conn = self.conn.lock();
         conn.query_row(
             "SELECT output_json, tokens_in, tokens_out, created_at FROM ai_cache
@@ -137,6 +162,7 @@ impl AiCache {
         tokens_in: u64,
         tokens_out: u64,
     ) -> rusqlite::Result<()> {
+        let content_hash = &*self.salted(content_hash, kind);
         let conn = self.conn.lock();
         conn.execute(
             "INSERT OR REPLACE INTO ai_cache
@@ -218,5 +244,20 @@ mod tests {
         let v: serde_json::Value = c.get_json("h1", "m", kind::LEAF).unwrap();
         assert_eq!(v["a"], 2);
         assert_eq!(c.prune_old_versions().unwrap(), 0);
+        // A changed prompt keeps its own answers; resetting it brings the old ones back.
+        c.set_salt(kind::LEAF, Some("abc".into()));
+        assert!(c.get("h1", "m", kind::LEAF).is_none());
+        c.put("h1", "m", kind::LEAF, "{\"a\":3}", 1, 1).unwrap();
+        assert_eq!(
+            c.get_json::<serde_json::Value>("h1", "m", kind::LEAF)
+                .unwrap()["a"],
+            3
+        );
+        c.set_salt(kind::LEAF, None);
+        assert_eq!(
+            c.get_json::<serde_json::Value>("h1", "m", kind::LEAF)
+                .unwrap()["a"],
+            2
+        );
     }
 }

@@ -644,6 +644,73 @@ ipc! {
         pub files_without_patch: u32,
     }
 
+    /// One AI task: the model it uses and its system prompt. Returned by `ai_config`.
+    pub struct AiTaskConfig {
+        pub task: AiTask,
+        pub model: String,
+        /// The model Isoline picks for this task from the listed models.
+        pub default_model: String,
+        /// The system message every request of this task starts with.
+        pub prompt: String,
+        pub default_prompt: String,
+        /// The prompt is the user's, not the default.
+        pub custom_prompt: bool,
+    }
+
+    /// Returned by `ai_config` and `ai_set_config`.
+    pub struct AiConfig {
+        pub tasks: Vec<AiTaskConfig>,
+        /// Name modules with the summaries model.
+        pub economy: bool,
+        /// Models to choose from: the account's list when signed in, else the defaults.
+        pub models: Vec<AiModel>,
+        /// `models` came from the account (false: the built-in defaults).
+        pub models_listed: bool,
+    }
+
+    /// One task's settings in `ai_set_config`. A null prompt means the default prompt.
+    pub struct AiTaskUpdate {
+        pub task: AiTask,
+        pub model: String,
+        pub prompt: Option<String>,
+    }
+
+    pub struct AiConfigUpdate {
+        pub tasks: Vec<AiTaskUpdate>,
+        pub economy: bool,
+    }
+
+    /// One model request in this session, for the developer panel (`ai_requests`).
+    pub struct AiRequestRow {
+        pub id: u32,
+        pub task: AiTask,
+        pub model: String,
+        /// Unix time in milliseconds.
+        #[cfg_attr(feature = "ts", ts(type = "number"))]
+        pub started_ms: u64,
+        /// Null while the request runs.
+        pub duration_ms: Option<u32>,
+        pub state: AiRequestState,
+        pub tokens_in: u32,
+        pub tokens_out: u32,
+        pub cached_tokens_in: u32,
+        pub cost_usd: f64,
+        pub max_tokens: u32,
+        pub system_chars: u32,
+        pub prompt_chars: u32,
+        pub answer_chars: u32,
+        pub error: Option<String>,
+    }
+
+    /// Returned by `ai_request`: one request in full.
+    pub struct AiRequestDetail {
+        pub row: AiRequestRow,
+        pub system: String,
+        pub prompt: String,
+        /// The model's answer, as it came back.
+        pub answer: String,
+    }
+
     pub struct FileChange {
         pub path: String,
         /// Path on the base side, for renames.
@@ -759,6 +826,8 @@ ipc_enum! {
     pub enum SymbolOrigin { Local, Imported, External, Builtin }
     pub enum ChangeKind { Added, Modified, Deleted, Renamed }
     pub enum ReviewKind { Risk, Check, Info }
+    pub enum AiTask { Summaries, Modules, Architecture, Review }
+    pub enum AiRequestState { Running, Done, Failed }
 }
 
 #[cfg(all(test, feature = "ts"))]

@@ -9,6 +9,18 @@
 //! Bump [`PROMPT_VERSION`] whenever a prompt or a skeleton format changes: it is part of
 //! every cache key, so old answers are not reused for new prompts.
 
+use iso_core::ipc::AiTask;
+
+/// The built-in system message of a task.
+pub fn default_system(task: AiTask) -> String {
+    match task {
+        AiTask::Summaries => leaf_system(),
+        AiTask::Modules => cluster_system(),
+        AiTask::Architecture => repo_system(),
+        AiTask::Review => review_system(),
+    }
+}
+
 /// Version of the prompts and skeleton formats. Part of every `ai_cache` key.
 pub const PROMPT_VERSION: u32 = 2;
 

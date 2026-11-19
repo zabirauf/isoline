@@ -304,6 +304,11 @@ pub fn run() {
             ai::ai_run,
             ai::ai_review,
             ai::ai_review_run,
+            ai::ai_config,
+            ai::ai_set_config,
+            ai::ai_requests,
+            ai::ai_request,
+            ai::ai_requests_clear,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Isoline");

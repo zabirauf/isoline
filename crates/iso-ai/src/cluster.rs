@@ -18,11 +18,11 @@ use crate::engine::{
 use crate::palette::{assign_colors, dark_variant};
 use crate::prompts::{
     OUT_TOKENS_ENVELOPE, OUT_TOKENS_MODULE, OUT_TOKENS_REPO, OUT_TOKENS_REPO_PER_MODULE,
-    cluster_system, repo_system,
 };
 use crate::skeleton::clip;
 use crate::tokens::estimate_tokens;
 use crate::{AiError, CompletionRequest, parse};
+use iso_core::ipc::AiTask;
 
 const EPS: f64 = 1e-12;
 
@@ -194,8 +194,8 @@ impl AiEngine {
             .iter()
             .map(|m| (m.id.as_str(), m.dir.as_str()))
             .collect();
-        let system = cluster_system();
         let s = self.settings();
+        let system = s.system(AiTask::Modules);
         modules
             .iter()
             .enumerate()
@@ -385,7 +385,7 @@ impl AiEngine {
                     m.report.stopped_by_budget = true;
                     break;
                 }
-                let answers = self.complete_many(&wave);
+                let answers = self.complete_many(AiTask::Modules, &wave);
                 let mut stop = None;
                 for (it, answer) in pending[next..].iter().zip(answers) {
                     self.cluster_answer(&mut m, &model, &modules[it.index], it, answer, &mut stop);
@@ -529,7 +529,7 @@ impl AiEngine {
         let est_out = OUT_TOKENS_REPO + OUT_TOKENS_REPO_PER_MODULE * modules.len() as u64;
         let req = CompletionRequest {
             model: s.repo_model.clone(),
-            system: repo_system(),
+            system: s.system(AiTask::Architecture),
             prompt,
             max_tokens: crate::tokens::output_limit(est_out, s.max_output_tokens),
         };
@@ -652,7 +652,7 @@ impl AiEngine {
         );
         m.report.items = 1;
         let mut overview = None;
-        match self.provider.complete(&m.capped(&req)) {
+        match self.complete(AiTask::Architecture, &m.capped(&req)) {
             Ok(c) => {
                 m.record(&req, &c);
                 let keys: HashMap<String, &str> = modules

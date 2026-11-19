@@ -28,6 +28,7 @@ import type { LangCount } from "../bindings/LangCount";
 import data from "./data/mock.json";
 import { generateModuleMap, generateTree } from "./generate";
 import { createMockGit } from "./git";
+import { createMockAiDev } from "./aiDev";
 
 /** The JSON stores u64 fields as plain numbers; these are the raw shapes before conversion. */
 export type RawLangCount = Omit<LangCount, "lines"> & { lines: number };
@@ -79,6 +80,7 @@ export function createMockBackend(): Backend {
   let jobs: JobsState = { queued: 0, running: 0, done: 0, failed: 0, cacheHits: 0, cacheMisses: 0, hitRate: 0, pendingFiles: [] };
   let architecture: Architecture | null = null;
   const reviews = new Map<string, ChangeReview>();
+  const aiDev = createMockAiDev(() => ai.signedIn);
   // ai=on: signed in with AI on for the repo, as after a sign-in in an earlier session.
   let ai: AiStatus = params.get("ai") === "on" ? { sidecar: "ready", signedIn: true, user: "mock-user", models: [], enabledForRepo: true, mock: true, deviceCode: null, message: null } : { sidecar: "off", signedIn: false, user: null, models: [], enabledForRepo: false, mock: true, deviceCode: null, message: null };
   let nextJob = 1;
@@ -292,6 +294,7 @@ export function createMockBackend(): Backend {
           const cost = 0.012 + cmp.files.length * 0.0011;
           if (cost > budgetUsd) return fail(new Error(`The review is estimated at $${cost.toFixed(4)}, over the budget of $${budgetUsd.toFixed(4)}.`));
           const r = mockReview(cmp);
+          aiDev.request("review", `Task: review\nExplain the change below.\n\n${cmp.files.map((f, i) => `### f${i + 1} ${f.path} (${f.change}, +${f.additions} -${f.deletions})`).join("\n")}\n`, JSON.stringify({ summary: r.summary, notes: r.notes, modules: r.modules }, null, 1), 1300);
           reviews.set(cmp.base.sha + cmp.head.sha, r);
           resolve(clone(r));
         }, 1400),
@@ -303,6 +306,9 @@ export function createMockBackend(): Backend {
       })();
       const jobId = big(nextJob++);
       const total = estimate.symbols;
+      for (let i = 0; i < Math.min(4, estimate.requests); i++)
+        aiDev.request("summaries", `Task: leaf\nSummarize the items below.\n\n## file ${path ?? "src/index.ts"} (typescript)\n### f${i * 8 + 1} handler\nfunction handler(req, res)  // 14 lines\ncalls: parse, respond\n`, JSON.stringify({ items: [{ id: `f${i * 8 + 1}`, desc: "Handles one request and sends the answer.", algo: ["Parse the request.", "Send the answer."], notes: [] }] }), 600 + i * 250);
+      if (scope === "architecture" || scope === "repo") aiDev.request("architecture", "Task: repo\nWrite the architecture overview.\n\n### m1 Core\n", '{"overview":"Mock overview.","layers":[],"flows":[]}', 1800);
       let done = 0;
       const tick = () => {
         done = Math.min(total, done + Math.max(1, Math.ceil(total / 6)));
@@ -326,6 +332,11 @@ export function createMockBackend(): Backend {
       await wait(LATENCY);
       return { jobId, estimate };
     },
+    aiConfig: () => delay(() => aiDev.config()),
+    aiSetConfig: (u) => delay(() => aiDev.setConfig(u)),
+    aiRequests: () => delay(() => aiDev.rows()),
+    aiRequest: (id) => delay(() => aiDev.detail(id)),
+    aiRequestsClear: () => delay(() => aiDev.clear()),
     aiEnable: (enabled) => delay(() => (ai = { ...ai, enabledForRepo: enabled })),
     getJobs: () => delay(() => clone(jobs)),
     renameModule: (id, name, color) =>

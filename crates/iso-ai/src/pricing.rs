@@ -33,18 +33,28 @@ pub fn default_models() -> Vec<ModelInfo> {
 #[derive(Clone, Debug, Default)]
 pub struct PricingTable {
     models: Vec<ModelInfo>,
+    /// The table came from a non-empty `listModels`.
+    listed: bool,
 }
 
 impl PricingTable {
     /// A table from `listModels`, topped up with the defaults for ids it lacks.
     pub fn new(models: Vec<ModelInfo>) -> Self {
+        let listed = !models.is_empty();
         let mut all = models;
         for d in default_models() {
             if !all.iter().any(|m| m.id == d.id) {
                 all.push(d);
             }
         }
-        PricingTable { models: all }
+        PricingTable {
+            models: all,
+            listed,
+        }
+    }
+
+    pub fn listed(&self) -> bool {
+        self.listed
     }
 
     pub fn models(&self) -> &[ModelInfo] {

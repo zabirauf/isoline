@@ -4,13 +4,14 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
-use iso_core::ipc::{AiEstimate, AiProgress, AiScope, AiText, ModuleEdge, Summary};
+use iso_core::ipc::{AiEstimate, AiProgress, AiScope, AiTask, AiText, ModuleEdge, Summary};
 use iso_core::{FileFacts, FlowUnit, Language, SymbolFact};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 
 use crate::cache::{AiCache, kind};
 use crate::leaf;
+use crate::log::RequestLog;
 use crate::pricing::{
     DEFAULT_CLUSTER_MODEL, DEFAULT_LEAF_MODEL, DEFAULT_REPO_MODEL, PricingTable, cost_usd,
 };
@@ -107,6 +108,10 @@ pub struct AiSettings {
     pub leaf_model: String,
     pub cluster_model: String,
     pub repo_model: String,
+    /// The model of change reviews (compare, pull requests).
+    pub review_model: String,
+    /// System messages the user wrote, by task. A task that is not here uses its default.
+    pub prompts: HashMap<AiTask, String>,
     /// Run the cluster pass on the leaf model (the analysis plan's biggest cost lever).
     pub economy: bool,
     /// Files per leaf request.
@@ -131,6 +136,8 @@ impl Default for AiSettings {
             leaf_model: DEFAULT_LEAF_MODEL.into(),
             cluster_model: DEFAULT_CLUSTER_MODEL.into(),
             repo_model: DEFAULT_REPO_MODEL.into(),
+            review_model: DEFAULT_REPO_MODEL.into(),
+            prompts: HashMap::new(),
             // The analysis plan defaults new repos to Economy.
             economy: true,
             files_per_batch: 20,
@@ -146,6 +153,33 @@ impl Default for AiSettings {
 }
 
 impl AiSettings {
+    /// The model a task uses, as set (for modules, also in Economy).
+    pub fn model_for(&self, task: AiTask) -> &str {
+        match task {
+            AiTask::Summaries => &self.leaf_model,
+            AiTask::Modules => &self.cluster_model,
+            AiTask::Architecture => &self.repo_model,
+            AiTask::Review => &self.review_model,
+        }
+    }
+
+    pub fn set_model(&mut self, task: AiTask, model: String) {
+        match task {
+            AiTask::Summaries => self.leaf_model = model,
+            AiTask::Modules => self.cluster_model = model,
+            AiTask::Architecture => self.repo_model = model,
+            AiTask::Review => self.review_model = model,
+        }
+    }
+
+    /// The system message of a task: the user's, else the default.
+    pub fn system(&self, task: AiTask) -> String {
+        self.prompts
+            .get(&task)
+            .cloned()
+            .unwrap_or_else(|| crate::prompts::default_system(task))
+    }
+
     /// The model the cluster pass uses: the leaf model in Economy.
     pub fn effective_cluster_model(&self) -> &str {
         if self.economy {
@@ -200,6 +234,11 @@ impl AiSettings {
             && let Some(m) = newest(&["claude-opus", "claude-sonnet"]).or_else(priciest)
         {
             self.repo_model = m;
+        }
+        if !has(&self.review_model)
+            && let Some(m) = newest(&["claude-opus", "claude-sonnet"]).or_else(priciest)
+        {
+            self.review_model = m;
         }
         self
     }
@@ -613,6 +652,7 @@ pub struct AiEngine {
     pub(crate) provider: Arc<dyn Provider>,
     settings: RwLock<AiSettings>,
     pricing: RwLock<Option<PricingTable>>,
+    log: RequestLog,
 }
 
 impl AiEngine {
@@ -632,6 +672,7 @@ impl AiEngine {
             provider,
             settings: RwLock::new(AiSettings::default()),
             pricing: RwLock::new(None),
+            log: RequestLog::default(),
         }
     }
 
@@ -648,8 +689,67 @@ impl AiEngine {
         self.settings.read().clone()
     }
 
+    /// Sets the models and prompts. A task with its own prompt keeps its own answers in the
+    /// cache, so the default prompt's answers come back when the prompt is reset.
     pub fn set_settings(&self, s: AiSettings) {
+        for (task, kinds) in [
+            (AiTask::Summaries, &[kind::LEAF, kind::FILE][..]),
+            (AiTask::Modules, &[kind::CLUSTER][..]),
+            (AiTask::Architecture, &[kind::REPO][..]),
+            (AiTask::Review, &[kind::REVIEW][..]),
+        ] {
+            let salt = s
+                .prompts
+                .get(&task)
+                .map(|p| format!("{:016x}", iso_core::hash64(p.as_bytes())));
+            for k in kinds {
+                self.cache.set_salt(k, salt.clone());
+            }
+        }
         *self.settings.write() = s;
+    }
+
+    /// The models known for estimates and settings: the provider's list when it was read,
+    /// else the defaults. The flag says the list came from the provider.
+    pub fn known_models(&self) -> (Vec<ModelInfo>, bool) {
+        match self.pricing.read().as_ref() {
+            Some(t) if t.listed() => (t.models().to_vec(), true),
+            _ => (crate::pricing::default_models(), false),
+        }
+    }
+
+    /// Model requests of this session, newest first.
+    pub fn requests(&self) -> Vec<iso_core::ipc::AiRequestRow> {
+        self.log.rows()
+    }
+
+    pub fn request(&self, id: u32) -> Option<iso_core::ipc::AiRequestDetail> {
+        self.log.detail(id)
+    }
+
+    pub fn clear_requests(&self) {
+        self.log.clear()
+    }
+
+    /// Sends one request and logs it.
+    pub(crate) fn complete(
+        &self,
+        task: AiTask,
+        req: &CompletionRequest,
+    ) -> Result<Completion, AiError> {
+        let id = self.log.start(task, req);
+        let res = self.provider.complete(req);
+        let cost = match &res {
+            Ok(c) => cost_usd(
+                &self.price(&c.model),
+                c.tokens_in,
+                c.cached_tokens_in,
+                c.tokens_out,
+            ),
+            Err(_) => 0.0,
+        };
+        self.log.finish(id, &res, cost);
+        res
     }
 
     /// Lists models from the provider and keeps their prices. On failure the analysis
@@ -828,7 +928,7 @@ impl AiEngine {
                 m.report.stopped_by_budget = true;
                 break;
             }
-            let answers = self.complete_many(&wave);
+            let answers = self.complete_many(AiTask::Summaries, &wave);
             let mut stop = None;
             for (batch, answer) in plan.batches[next..].iter().zip(answers) {
                 self.leaf_answer(&mut m, &s, batch, answer, &mut paths, &mut stop);
@@ -899,15 +999,16 @@ impl AiEngine {
     /// Sends the requests at once and returns the answers in the same order.
     pub(crate) fn complete_many(
         &self,
+        task: AiTask,
         reqs: &[CompletionRequest],
     ) -> Vec<Result<Completion, AiError>> {
         if reqs.len() == 1 {
-            return vec![self.provider.complete(&reqs[0])];
+            return vec![self.complete(task, &reqs[0])];
         }
         std::thread::scope(|scope| {
             let handles: Vec<_> = reqs
                 .iter()
-                .map(|r| scope.spawn(move || self.provider.complete(r)))
+                .map(|r| scope.spawn(move || self.complete(task, r)))
                 .collect();
             handles
                 .into_iter()

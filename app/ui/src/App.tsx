@@ -1,7 +1,10 @@
 // App shell: top bar, source-tree sidebar and the main area (start screen, repo overview, or a
 // file). Holds the repo-level state and listens to the backend's events.
 import { useAiRuns } from "./lib/aiRuns";
-import { getPrefs, subscribePrefs } from "./lib/prefs";
+import { getPrefs, setPrefs, subscribePrefs } from "./lib/prefs";
+import { recordEvent } from "./lib/devlog";
+import { SettingsDialog } from "./components/SettingsDialog";
+import { DevPanel } from "./components/DevPanel";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { AiStatus } from "./ipc/bindings/AiStatus";
 import type { Architecture } from "./ipc/bindings/Architecture";
@@ -13,7 +16,7 @@ import type { RepoSummary } from "./ipc/bindings/RepoSummary";
 import type { SearchHit } from "./ipc/bindings/SearchHit";
 import type { TreeNode } from "./ipc/bindings/TreeNode";
 import type { GitStatus } from "./ipc/bindings/GitStatus";
-import { api, backend, invalidate } from "./ipc/api";
+import { api, backend, invalidate, EVENT_NAMES } from "./ipc/api";
 import { fmtInt, fmtMs, num, plural } from "./lib/format";
 import { applyThemeChoice, loadThemeChoice, type ThemeChoice } from "./lib/theme";
 import { Sidebar } from "./components/Sidebar";
@@ -109,6 +112,7 @@ function Shell() {
   const [history, setHistory] = useState<History>(EMPTY_HISTORY);
   const [aiOpen, setAiOpen] = useState(0);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const locationOf = useRef<(() => WorkbenchLocation) | null>(null);
   const pickRepoRef = useRef<() => Promise<void>>(async () => {});
   const peek = usePeek();
@@ -204,6 +208,8 @@ function Shell() {
         }
       }),
       api.listen("ai_status", setAi),
+      // Every event, for the developer panel.
+      ...EVENT_NAMES.map((n) => api.listen(n, (p) => recordEvent(n, p))),
       api.listen("summary_ready", ({ path }) => {
         invalidate(path);
         if (fileRef.current?.path === path) void api.getFileView(path).then(setView);
@@ -339,7 +345,9 @@ function Shell() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
-      if (e.key === "[") (e.preventDefault(), travel("back"));
+      if (e.shiftKey && e.key.toLowerCase() === "d") (e.preventDefault(), setPrefs({ devPanel: !getPrefs().devPanel }));
+      else if (e.key === ",") (e.preventDefault(), setSettingsOpen(true));
+      else if (e.key === "[") (e.preventDefault(), travel("back"));
       else if (e.key === "]") (e.preventDefault(), travel("forward"));
       else if (e.key === "o") (e.preventDefault(), void pickRepoRef.current());
     };
@@ -513,6 +521,9 @@ function Shell() {
           )}
         </div>
         {repo && <AiPanel status={ai} setStatus={setAi} filePath={file?.path ?? null} job={aiRuns.job} onRun={aiRuns.run} openSignal={aiOpen} />}
+        <button type="button" className="iso-btn quiet" aria-haspopup="dialog" onClick={() => setSettingsOpen(true)} title={`Settings (${navigator.platform.includes("Mac") ? "⌘," : "Ctrl+,"})`}>
+          Settings
+        </button>
         <div className="theme-wrap">
           <button type="button" className="iso-btn quiet" aria-expanded={themeOpen} onClick={() => setThemeOpen(!themeOpen)}>
             Theme
@@ -574,6 +585,24 @@ function Shell() {
           {!compareOn && showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} ai={aiRuns.fileAi} onOpenAi={() => setAiOpen((n) => n + 1)} onSummarize={aiRuns.summarizeFile} />}
         </main>
       </div>
+      {prefs.devPanel && <DevPanel onClose={() => setPrefs({ devPanel: false })} ai={ai} repo={repo} />}
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        ai={ai}
+        onSignIn={
+          repo
+            ? () => {
+                setSettingsOpen(false);
+                setAiOpen((n) => n + 1);
+              }
+            : null
+        }
+        onOpenDev={() => {
+          setSettingsOpen(false);
+          setPrefs({ devPanel: true });
+        }}
+      />
     </div>
   );
 }

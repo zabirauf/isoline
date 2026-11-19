@@ -149,7 +149,12 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `ai_run` | `scope`, `path?`, `budgetUsd` | `AiRunHandle` | `ai_progress: AiProgress`, `summary_ready: { path }`, `ai_job_done: { jobId, stored, failed, costUsd, error }` once per run. Scope `architecture` skips file summaries: cluster and repo passes only. |
 | `ai_enable` | `enabled` | `AiStatus` | |
 | `ai_review` | `comparison` (as `compare` returned it) | `ReviewState` | The cached review of the change, else its estimate. Never calls a model. |
-| `ai_review_run` | `comparison`, `budgetUsd` | `ChangeReview` | One request (the repo-pass model) with the change's facts and as much of the diff as fits 40k tokens; cached by prompt hash. |
+| `ai_review_run` | `comparison`, `budgetUsd` | `ChangeReview` | One request (the review model) with the change's facts and as much of the diff as fits 40k tokens; cached by prompt hash. |
+| `ai_config` | | `AiConfig` | Each task's model (summaries, modules, architecture, review) and system prompt with its default, and the models to choose from. Lists the account's models when signed in; sends no code. |
+| `ai_set_config` | `update: AiConfigUpdate` | `AiConfig` | Saves models, prompts (null: the default) and Economy to `<data>/ai_settings.json`, for every repo. |
+| `ai_requests` | | `AiRequestRow[]` | Model requests of this session, newest first (in memory, at most 300). |
+| `ai_request` | `id` | `AiRequestDetail \| null` | One request with its system message, prompt and answer. |
+| `ai_requests_clear` | | `null` | Empties the request log. |
 | `get_jobs` | | `JobsState` | `job_progress: JobsState` |
 | `rename_module` | `id`, `name?`, `color?` | `ModuleInfo` | |
 | `recent_repos` | | `string[]` | |
@@ -177,7 +182,9 @@ extractors. `compare_file` takes the resolved `Comparison.base.sha` and `head.sh
 ## 5. Cache keys and job kinds
 
 `iso_core::cache`: `derived_key(kind, content_hash, version)` for `facts`, `flow`, `graph`;
-`ai_key(content_hash, prompt_version, model, kind)` for the AI cache. `EXTRACTOR_VERSION`
+`ai_key(content_hash, prompt_version, model, kind)` for the AI cache. When a task has a
+prompt the user wrote, `iso-ai` appends `~p<prompt hash>` to the content hash of that task's
+kinds, so its answers never mix with the default prompt's. `EXTRACTOR_VERSION`
 and `FLOW_WALKER_VERSION` invalidate only their own rows.
 
 `iso_core::jobs`: `JobKind { parse, resolve, graph, precise, ai_leaf, ai_cluster, ai_repo }`,

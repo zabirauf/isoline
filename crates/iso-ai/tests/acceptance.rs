@@ -500,3 +500,79 @@ fn missing_models_fall_back_within_the_family() {
     let s = AiSettings::default().fitted_to(&[m("auto", 0.0), m("a", 1.0), m("b", 3.0)]);
     assert_eq!((s.leaf_model.as_str(), s.repo_model.as_str()), ("a", "b"));
 }
+
+#[test]
+fn custom_prompts_and_models_are_used_logged_and_cached_apart() {
+    use iso_core::ipc::{AiRequestState, AiTask};
+    let dir = tempfile::tempdir().unwrap();
+    let files = common::repo(4, 0);
+    let modules = common::modules(&files);
+    let edges = common::edges();
+    let mock = Arc::new(MockProvider::new());
+    let e = engine_at(&dir.path().join("ai_cache.sqlite"), &mock);
+    let run = |e: &AiEngine| {
+        e.run(
+            &files,
+            &modules,
+            &edges,
+            &HashMap::new(),
+            AiScope::Repo,
+            10.0,
+            &mut noop(),
+        )
+        .unwrap()
+    };
+
+    // Default prompts: every request is logged with its task, prompt and answer.
+    run(&e);
+    let rows = e.requests();
+    assert_eq!(rows.len() as u64, mock.calls());
+    assert!(rows.iter().all(|r| r.state == AiRequestState::Done));
+    assert!(rows.iter().any(|r| r.task == AiTask::Summaries));
+    assert!(rows.iter().any(|r| r.task == AiTask::Modules));
+    assert!(rows.iter().any(|r| r.task == AiTask::Architecture));
+    let d = e.request(rows[0].id).unwrap();
+    assert!(!d.prompt.is_empty() && !d.answer.is_empty());
+    assert_eq!(d.system, iso_ai::prompts::default_system(d.row.task));
+
+    // A changed summaries prompt and repo model: the cached answers of the default prompt
+    // do not count for it, so the leaf pass asks again, with the new prompt and model.
+    let mut s = e.settings();
+    let custom = format!(
+        "{}\nKeep it short.",
+        iso_ai::prompts::default_system(AiTask::Summaries)
+    );
+    s.prompts.insert(AiTask::Summaries, custom.clone());
+    s.repo_model = "claude-sonnet-5.5".into();
+    e.set_settings(s);
+    e.clear_requests();
+    mock.reset_counts();
+    run(&e);
+    let reqs = mock.requests();
+    let leaf: Vec<_> = reqs
+        .iter()
+        .filter(|r| r.prompt.starts_with("Task: leaf"))
+        .collect();
+    assert!(!leaf.is_empty());
+    assert!(leaf.iter().all(|r| r.system == custom));
+    // Unchanged modules prompt and model: still cached. The repo pass has a new model.
+    assert!(!reqs.iter().any(|r| r.prompt.starts_with("Task: cluster")));
+    assert!(
+        reqs.iter()
+            .any(|r| r.prompt.starts_with("Task: repo") && r.model == "claude-sonnet-5.5")
+    );
+    assert_eq!(e.requests().len(), reqs.len());
+
+    // Back to the default prompt: the first answers are still there.
+    let mut s = e.settings();
+    s.prompts.clear();
+    e.set_settings(s);
+    mock.reset_counts();
+    run(&e);
+    assert!(
+        !mock
+            .requests()
+            .iter()
+            .any(|r| r.prompt.starts_with("Task: leaf"))
+    );
+}

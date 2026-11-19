@@ -28,6 +28,11 @@ import type { ReviewState } from "./bindings/ReviewState";
 import type { GitRefs } from "./bindings/GitRefs";
 import type { GitStatus } from "./bindings/GitStatus";
 import type { PullRequests } from "./bindings/PullRequests";
+import type { AiConfig } from "./bindings/AiConfig";
+import type { AiConfigUpdate } from "./bindings/AiConfigUpdate";
+import type { AiRequestRow } from "./bindings/AiRequestRow";
+import type { AiRequestDetail } from "./bindings/AiRequestDetail";
+import { traceCall } from "../lib/devlog";
 
 export interface AiJobDone {
   jobId: number;
@@ -56,6 +61,8 @@ export interface BackendEvents {
   ai_status: AiStatus;
 }
 export type EventName = keyof BackendEvents;
+/** Every event name, for listeners that take them all (the developer panel). */
+export const EVENT_NAMES: EventName[] = ["index_progress", "index_done", "ai_progress", "ai_job_done", "summary_ready", "job_progress", "files_changed", "tree_changed", "git_changed", "ai_status"];
 export type Unlisten = () => void;
 export interface LaunchArgs {
   repo: string | null;
@@ -104,6 +111,14 @@ export interface Backend {
   aiReview(comparison: Comparison): Promise<ReviewState>;
   /** Writes the AI review of a comparison within the budget. */
   aiReviewRun(comparison: Comparison, budgetUsd: number): Promise<ChangeReview>;
+  /** Each AI task's model and prompt, and the models to choose from (Settings). */
+  aiConfig(): Promise<AiConfig>;
+  /** Saves models and prompts for every repo. */
+  aiSetConfig(update: AiConfigUpdate): Promise<AiConfig>;
+  /** Model requests of this session, newest first (developer panel). */
+  aiRequests(): Promise<AiRequestRow[]>;
+  aiRequest(id: number): Promise<AiRequestDetail | null>;
+  aiRequestsClear(): Promise<void>;
   /** Folder picker: the dialog plugin in Tauri, a fixed answer in the mock. */
   pickFolder(): Promise<string | null>;
   listen<E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void): Promise<Unlisten>;
@@ -148,6 +163,11 @@ async function createTauriBackend(): Promise<Backend> {
     compareFile: (base, head, path, oldPath) => call("compare_file", { base, head, path, oldPath: oldPath ?? null }),
     aiReview: (comparison) => call("ai_review", { comparison }),
     aiReviewRun: (comparison, budgetUsd) => call("ai_review_run", { comparison, budgetUsd }),
+    aiConfig: () => call("ai_config"),
+    aiSetConfig: (update) => call("ai_set_config", { update }),
+    aiRequests: () => call("ai_requests"),
+    aiRequest: (id) => call("ai_request", { id }),
+    aiRequestsClear: () => call("ai_requests_clear"),
     launchArgs: () => call("launch_args"),
     pickFolder: async () => {
       const { open } = await import("@tauri-apps/plugin-dialog");
@@ -210,6 +230,11 @@ function createHttpBackend(): Backend {
     compareFile: (base, head, path, oldPath) => call("compare_file", { base, head, path, oldPath: oldPath ?? null }),
     aiReview: (comparison) => call("ai_review", { comparison }),
     aiReviewRun: (comparison, budgetUsd) => call("ai_review_run", { comparison, budgetUsd }),
+    aiConfig: () => call("ai_config"),
+    aiSetConfig: (update) => call("ai_set_config", { update }),
+    aiRequests: () => call("ai_requests"),
+    aiRequest: (id) => call("ai_request", { id }),
+    aiRequestsClear: () => call("ai_requests_clear"),
     launchArgs: async () => urlLaunchArgs(),
     pickFolder: async () => window.prompt("Repo folder") || null,
     listen: async (event, cb) => {
@@ -284,9 +309,22 @@ export const api = {
   compareFile: async (base: string, head: string, path: string, oldPath?: string) => (await backend()).compareFile(base, head, path, oldPath),
   aiReview: async (comparison: Comparison) => (await backend()).aiReview(comparison),
   aiReviewRun: async (comparison: Comparison, budgetUsd: number) => (await backend()).aiReviewRun(comparison, budgetUsd),
+  aiConfig: async () => (await backend()).aiConfig(),
+  aiSetConfig: async (update: AiConfigUpdate) => (await backend()).aiSetConfig(update),
+  aiRequests: async () => (await backend()).aiRequests(),
+  aiRequest: async (id: number) => (await backend()).aiRequest(id),
+  aiRequestsClear: async () => (await backend()).aiRequestsClear(),
   launchArgs: async () => (await backend()).launchArgs(),
   listen: async <E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void) => (await backend()).listen(event, cb),
 };
+
+// Every call is timed for the developer panel, except its own polling and `listen`.
+const UNTRACED = new Set(["listen", "aiRequests", "aiRequest"]);
+for (const k of Object.keys(api) as (keyof typeof api)[]) {
+  if (UNTRACED.has(k)) continue;
+  const f = api[k] as (...a: unknown[]) => Promise<unknown>;
+  (api as Record<string, unknown>)[k] = (...a: unknown[]) => traceCall(k, a, () => f(...a));
+}
 
 // ---------- caches for data that does not change while a file's content hash is the same ----------
 const sourceCache = new Map<string, Promise<SourceSlice>>();

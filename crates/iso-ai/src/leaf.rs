@@ -10,9 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::cache::{AiCache, kind};
 use crate::engine::{AiSettings, FileInput};
-use crate::prompts::{
-    OUT_TOKENS_ENVELOPE, OUT_TOKENS_FN, OUT_TOKENS_OVERVIEW, OUT_TOKENS_TYPE, leaf_system,
-};
+use crate::prompts::{OUT_TOKENS_ENVELOPE, OUT_TOKENS_FN, OUT_TOKENS_OVERVIEW, OUT_TOKENS_TYPE};
 use crate::skeleton::{build_skeleton, file_outline, type_skeletons};
 use crate::tokens::estimate_tokens;
 use crate::{CompletionRequest, parse};
@@ -278,7 +276,7 @@ fn build_batch(
         items: out_items,
         request: CompletionRequest {
             model: model.to_string(),
-            system: leaf_system(),
+            system: settings.system(iso_core::ipc::AiTask::Summaries),
             prompt,
             max_tokens,
         },

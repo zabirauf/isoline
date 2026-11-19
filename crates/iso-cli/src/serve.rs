@@ -262,6 +262,13 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
             "enabledForRepo": false, "mock": false, "deviceCode": null,
             "message": "AI summaries are not available over the HTTP bridge."
         }),
+        "ai_requests" => json!([]),
+        "ai_request" | "ai_requests_clear" => Value::Null,
+        "ai_config" | "ai_set_config" => {
+            return Err(anyhow!(
+                "AI settings are not available over the HTTP bridge."
+            ));
+        }
         other => return Err(anyhow!("unknown command {other}")),
     })
 }

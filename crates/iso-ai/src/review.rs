@@ -16,9 +16,10 @@ use crate::cache::kind;
 use crate::engine::{
     AiEngine, Meter, Pass, PassEstimate, Planned, Progress, RunReport, sum_requests,
 };
-use crate::prompts::{STE_REMINDER, review_system};
+use crate::prompts::STE_REMINDER;
 use crate::tokens::{estimate_tokens, output_limit};
 use crate::{AiError, parse};
+use iso_core::ipc::AiTask;
 
 /// Upper bound on the review prompt, in estimated tokens.
 pub const REVIEW_MAX_PROMPT_TOKENS: u64 = 40_000;
@@ -255,8 +256,8 @@ impl AiEngine {
         let content = format!("review1:{:016x}", hash64(p.as_bytes()));
         let est_out = OUT_TOKENS_REVIEW + OUT_TOKENS_REVIEW_PER_MODULE * modules.len() as u64;
         let req = crate::CompletionRequest {
-            model: s.repo_model.clone(),
-            system: review_system(),
+            model: s.review_model.clone(),
+            system: s.system(AiTask::Review),
             prompt: p,
             max_tokens: output_limit(est_out, s.max_output_tokens),
         };
@@ -350,7 +351,7 @@ impl AiEngine {
             &mut sink,
         );
         m.report.items = 1;
-        let c = self.provider.complete(&m.capped(&b.req))?;
+        let c = self.complete(AiTask::Review, &m.capped(&b.req))?;
         m.record(&b.req, &c);
         let v = parse::extract_json(&c.text)
             .map_err(|e| AiError::Provider(format!("the review answer could not be read: {e}")))?;

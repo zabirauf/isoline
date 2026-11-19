@@ -18,9 +18,11 @@ use serde::{Deserialize, Serialize};
 
 pub mod cache;
 pub mod engine;
+pub mod log;
 pub mod mock;
 pub mod palette;
 pub mod parse;
+pub mod prefs;
 pub mod pricing;
 pub mod prompts;
 pub mod sidecar;
@@ -39,6 +41,7 @@ pub use engine::{
 };
 pub use mock::MockProvider;
 pub use palette::{ModuleColor, PALETTE};
+pub use prefs::AiPrefs;
 pub use pricing::{PricingTable, default_models};
 pub use prompts::PROMPT_VERSION;
 pub use review::{

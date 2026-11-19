@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use iso_ai::{AiEngine, AiSettings, SidecarConfig, SidecarProvider};
+use iso_ai::{AiEngine, AiPrefs, AiSettings, SidecarConfig, SidecarProvider};
 use iso_core::ipc::*;
 use iso_engine::{AiLayer, Engine};
 use parking_lot::Mutex;
@@ -87,6 +87,8 @@ impl AiState {
             &iso_engine::data_dir().join("ai_cache.sqlite"),
             provider.clone(),
         )?);
+        // The models and prompts chosen in Settings, for every repo.
+        ai.set_settings(AiPrefs::load(&prefs_file()).apply(ai.settings()));
         *g = Some((provider.clone(), ai.clone()));
         Ok((provider, ai))
     }
@@ -99,6 +101,11 @@ pub(crate) fn attach(app: &AppHandle, eng: &Arc<Engine>) {
     if let Ok((_, ai)) = st.ai.get() {
         eng.set_ai_hook(Some(Arc::new(AiLayer { ai })));
     }
+}
+
+/// Models and prompts chosen in Settings.
+fn prefs_file() -> PathBuf {
+    iso_engine::data_dir().join("ai_settings.json")
 }
 
 /// The GitHub login of the last sign-in, kept beside the AI cache so the app knows it is
@@ -439,4 +446,54 @@ pub async fn ai_run(
         let _ = app.emit("ai_job_done", done);
     });
     Ok(AiRunHandle { job_id, estimate })
+}
+
+/// What Settings shows: each task's model and prompt, and the models to choose from. Lists
+/// the account's models when signed in (this starts the sidecar but sends no code).
+#[tauri::command]
+pub async fn ai_config(state: State<'_, AppState>) -> CmdResult<AiConfig> {
+    let (provider, ai) = state.ai.get().map_err(err)?;
+    let signed_in = remembered_account().is_some() || provider.is_running() || mock_mode();
+    blocking(move || {
+        if signed_in && !ai.known_models().1 && provider.status().is_ok_and(|s| s.signed_in) {
+            let _ = ai.refresh_models();
+        }
+        let (models, listed) = ai.known_models();
+        Ok(iso_ai::prefs::config(&ai.settings(), &models, listed))
+    })
+    .await
+}
+
+/// Saves the models and prompts for every repo; the next request uses them.
+#[tauri::command]
+pub async fn ai_set_config(
+    state: State<'_, AppState>,
+    update: AiConfigUpdate,
+) -> CmdResult<AiConfig> {
+    let (_, ai) = state.ai.get().map_err(err)?;
+    let (s, prefs) = AiPrefs::update(ai.settings(), &update);
+    prefs.save(&prefs_file()).map_err(err)?;
+    ai.set_settings(s);
+    let (models, listed) = ai.known_models();
+    Ok(iso_ai::prefs::config(&ai.settings(), &models, listed))
+}
+
+/// The model requests of this session, newest first (developer panel).
+#[tauri::command]
+pub async fn ai_requests(state: State<'_, AppState>) -> CmdResult<Vec<AiRequestRow>> {
+    let (_, ai) = state.ai.get().map_err(err)?;
+    Ok(ai.requests())
+}
+
+#[tauri::command]
+pub async fn ai_request(state: State<'_, AppState>, id: u32) -> CmdResult<Option<AiRequestDetail>> {
+    let (_, ai) = state.ai.get().map_err(err)?;
+    Ok(ai.request(id))
+}
+
+#[tauri::command]
+pub async fn ai_requests_clear(state: State<'_, AppState>) -> CmdResult<()> {
+    let (_, ai) = state.ai.get().map_err(err)?;
+    ai.clear_requests();
+    Ok(())
 }

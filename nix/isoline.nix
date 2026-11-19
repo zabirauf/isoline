@@ -16,6 +16,7 @@
   openssl,
   sqlite,
   copilot-sidecar,
+  ghostty-vt-release,
 }:
 rustPlatform.buildRustPackage {
   pname = "isoline";
@@ -44,6 +45,11 @@ rustPlatform.buildRustPackage {
     librsvg
     openssl
   ];
+
+  # The terminal's native parser (libghostty-vt), prebuilt, on macOS.
+  env = lib.optionalAttrs stdenv.hostPlatform.isDarwin {
+    GHOSTTY_RELEASE_DIR = "${ghostty-vt-release}";
+  };
 
   # `tauri build` runs in app/src-tauri; the workspace target dir stays at the root.
   buildAndTestSubdir = "app/src-tauri";

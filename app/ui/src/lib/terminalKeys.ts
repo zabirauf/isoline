@@ -2,7 +2,7 @@
 // Windows Terminal elsewhere, so the shell keeps every Ctrl key it uses (Ctrl+C, Ctrl+W,
 // Ctrl+T, Ctrl+K ...). Matched on `code`, so they work in any keyboard layout.
 
-export type TermAction = { kind: "new" | "close" | "next" | "prev" | "clear" | "copy" | "paste" | "toggle" } | { kind: "goto"; index: number };
+export type TermAction = { kind: "new" | "close" | "next" | "prev" | "clear" | "copy" | "paste" | "selectAll" | "toggle" } | { kind: "goto"; index: number };
 
 export interface KeyLike {
   code: string;
@@ -28,6 +28,9 @@ export function terminalAction(e: KeyLike, mac: boolean): TermAction | null {
     if (e.code === "KeyT") return { kind: "new" };
     if (e.code === "KeyW") return { kind: "close" };
     if (e.code === "KeyK") return { kind: "clear" };
+    if (e.code === "KeyC") return { kind: "copy" };
+    if (e.code === "KeyV") return { kind: "paste" };
+    if (e.code === "KeyA") return { kind: "selectAll" };
     if (digit) return { kind: "goto", index: Number(digit[1]) - 1 };
     return null;
   }
@@ -41,6 +44,7 @@ export function terminalAction(e: KeyLike, mac: boolean): TermAction | null {
   if (e.code === "KeyC") return { kind: "copy" };
   if (e.code === "KeyV") return { kind: "paste" };
   if (e.code === "KeyK") return { kind: "clear" };
+  if (e.code === "KeyA") return { kind: "selectAll" };
   return null;
 }
 

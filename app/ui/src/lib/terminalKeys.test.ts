@@ -11,6 +11,9 @@ describe("terminalAction", () => {
     expect(terminalAction(k("BracketLeft", { metaKey: true, shiftKey: true }), true)).toEqual({ kind: "prev" });
     expect(terminalAction(k("Digit3", { metaKey: true }), true)).toEqual({ kind: "goto", index: 2 });
     expect(terminalAction(k("KeyK", { metaKey: true }), true)).toEqual({ kind: "clear" });
+    expect(terminalAction(k("KeyC", { metaKey: true }), true)).toEqual({ kind: "copy" });
+    expect(terminalAction(k("KeyV", { metaKey: true }), true)).toEqual({ kind: "paste" });
+    expect(terminalAction(k("KeyA", { metaKey: true }), true)).toEqual({ kind: "selectAll" });
     for (const c of ["KeyC", "KeyW", "KeyT", "KeyK", "KeyR", "KeyD"]) expect(terminalAction(k(c, { ctrlKey: true }), true)).toBeNull();
   });
 
@@ -21,6 +24,7 @@ describe("terminalAction", () => {
     expect(terminalAction(k("KeyV", { ctrlKey: true, shiftKey: true }), false)).toEqual({ kind: "paste" });
     expect(terminalAction(k("PageDown", { ctrlKey: true }), false)).toEqual({ kind: "next" });
     expect(terminalAction(k("Digit1", { altKey: true }), false)).toEqual({ kind: "goto", index: 0 });
+    expect(terminalAction(k("KeyA", { ctrlKey: true, shiftKey: true }), false)).toEqual({ kind: "selectAll" });
     for (const c of ["KeyC", "KeyW", "KeyT", "KeyK", "KeyV"]) expect(terminalAction(k(c, { ctrlKey: true }), false)).toBeNull();
   });
 

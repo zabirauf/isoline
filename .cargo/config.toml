@@ -1,2 +1,12 @@
 [env]
 TS_RS_EXPORT_DIR = { value = "app/ui/src/ipc/bindings", relative = true }
+# libghostty-vt (the terminal's native parser) on Windows: link the official prebuilt
+# library. It is a GNU-ABI archive that Microsoft's link.exe rejects, so the MSVC targets
+# link with rust-lld (lld-link), which Rust ships; no Zig needed.
+GHOSTTY_VT_PREBUILT_MSVC = "1"
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld"
+
+[target.aarch64-pc-windows-msvc]
+linker = "rust-lld"

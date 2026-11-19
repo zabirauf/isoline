@@ -3,6 +3,7 @@
 // (Ghostty's VT parser as WebAssembly) draws it. Tabs stay alive while the panel is hidden.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FitAddon, ITheme, Terminal } from "ghostty-web";
+import { NativeTermView, type TermHandle, type TermViewProps } from "./NativeTermView";
 import { api } from "../ipc/api";
 import { shortcutText, terminalAction, type TermAction } from "../lib/terminalKeys";
 
@@ -79,6 +80,15 @@ export function TerminalPanel({ open, cwd, dock, size, focusSignal, onHide, onDo
   const nextKey = useRef(0);
   const theme = useTermTheme();
   const keys = shortcutText(MAC);
+  // Native frames from libghostty-vt in the backend (macOS, Windows), or raw bytes for
+  // ghostty-web (Linux, the mock): asked once.
+  const [native, setNative] = useState<boolean | null>(null);
+  useEffect(() => {
+    void api
+      .termNative()
+      .then(setNative)
+      .catch(() => setNative(false));
+  }, []);
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
 
@@ -119,7 +129,7 @@ export function TerminalPanel({ open, cwd, dock, size, focusSignal, onHide, onDo
   }, [closeTab]);
 
   const act = useCallback(
-    (a: TermAction, term: Terminal | null): boolean => {
+    (a: TermAction, h: TermHandle): boolean => {
       const list = tabsRef.current;
       const i = list.findIndex((t) => t.key === active);
       switch (a.kind) {
@@ -140,18 +150,16 @@ export function TerminalPanel({ open, cwd, dock, size, focusSignal, onHide, onDo
           if (list[a.index]) setActive(list[a.index].key);
           return true;
         case "clear":
-          term?.clear();
+          h.clear();
           return true;
-        case "copy": {
-          const s = term?.getSelection();
-          if (s) void navigator.clipboard?.writeText(s).catch(() => {});
+        case "copy":
+          h.copy();
           return true;
-        }
         case "paste":
-          void navigator.clipboard
-            ?.readText()
-            .then((s) => s && term?.paste(s))
-            .catch(() => {});
+          h.paste();
+          return true;
+        case "selectAll":
+          h.selectAll();
           return true;
       }
     },
@@ -222,10 +230,13 @@ export function TerminalPanel({ open, cwd, dock, size, focusSignal, onHide, onDo
         </button>
       </div>
       <div className="term-body">
-        {tabs.map((t) => (
-          <TermView
+        {native !== null &&
+          tabs.map((t) => {
+            const View = native ? NativeTermView : TermView;
+            return (
+          <View
             key={t.key}
-            tab={t}
+            exited={t.exited}
             cwd={t.cwd}
             shown={open && t.key === active}
             focusSignal={focusSignal}
@@ -236,7 +247,8 @@ export function TerminalPanel({ open, cwd, dock, size, focusSignal, onHide, onDo
             onError={(error) => setTabs((all) => all.map((x) => (x.key === t.key ? { ...x, error } : x)))}
             onCloseExited={() => closeTab(t.key)}
           />
-        ))}
+            );
+          })}
       </div>
     </section>
   );
@@ -245,7 +257,9 @@ export function TerminalPanel({ open, cwd, dock, size, focusSignal, onHide, onDo
 /** Output kept per tab to redraw it in new colors: Ghostty's terminal fixes its colors when made. */
 const REPLAY_BYTES = 1 << 20;
 
-function TermView({ tab, cwd, shown, focusSignal, theme, onAction, onStarted, onTitle, onError, onCloseExited }: { tab: Tab; cwd: string | null; shown: boolean; focusSignal: number; theme: ITheme; onAction(a: TermAction, t: Terminal | null): boolean; onStarted(session: number, shell: string, cwd: string): void; onTitle(t: string): void; onError(e: string): void; onCloseExited(): void }) {
+/** A terminal drawn by ghostty-web from raw output (Linux, the mock). */
+function TermView({ exited, cwd, shown, focusSignal, theme, onAction, onStarted, onTitle, onError, onCloseExited }: TermViewProps) {
+  const tab = { exited };
   const host = useRef<HTMLDivElement>(null);
   const term = useRef<Terminal | null>(null);
   const fit = useRef<FitAddon | null>(null);
@@ -277,7 +291,17 @@ function TermView({ tab, cwd, shown, focusSignal, theme, onAction, onStarted, on
         return true;
       }
       const a = terminalAction(e, MAC);
-      return a ? cb.current.onAction(a, t) : false;
+      // ghostty-web pastes from the paste event itself.
+      if (!a || a.kind === "paste") return false;
+      return cb.current.onAction(a, {
+        clear: () => t.clear(),
+        copy: () => {
+          const s = t.getSelection();
+          if (s) void navigator.clipboard?.writeText(s).catch(() => {});
+        },
+        paste: () => {},
+        selectAll: () => t.selectAll(),
+      });
     });
     t.onTitleChange((s) => s && cb.current.onTitle(s));
     t.onData((d) => session.current !== null && void api.termWrite(session.current, d).catch(() => {}));
@@ -296,7 +320,9 @@ function TermView({ tab, cwd, shown, focusSignal, theme, onAction, onStarted, on
       const t = build(themeRef.current);
       if (!t) return;
       try {
-        const info = await api.termOpen(cwd, t.cols, t.rows, (bytes) => {
+        const info = await api.termOpen({ cwd, cols: t.cols, rows: t.rows }, (d) => {
+          if (!(d instanceof Uint8Array)) return;
+          const bytes = d;
           const l = log.current;
           l.chunks.push(bytes);
           l.size += bytes.length;

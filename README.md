@@ -186,9 +186,25 @@ the app's state as JSON to copy into a bug report.
 **Terminal** in the header, or Ctrl+` (also on macOS), opens shells in tabs, docked at the bottom
 or on the right side (drag the edge to resize). A new tab starts your shell in the open repo's
 folder: `$SHELL` as a login shell on macOS and Linux; PowerShell 7, else Windows PowerShell, on
-Windows (ConPTY). The shell runs on a PTY in the app (`portable-pty`); the UI draws it with
-[ghostty-web](https://github.com/coder/ghostty-web) (MIT), which is Ghostty's VT parser
-(libghostty-vt) compiled to WebAssembly. Tabs keep running while the panel is hidden.
+Windows (ConPTY). Tabs keep running while the panel is hidden.
+
+On macOS and Windows the shell's output is parsed natively by
+[libghostty-vt](https://ghostty.org) (Ghostty's terminal core, from its official prebuilt
+releases, through the `ghostty-vt` crate) on one thread per tab in `crates/iso-term`. The UI
+only draws frames of the rows that changed, on a canvas: at most 60 a second, and never more
+than it has drawn (each frame waits for the previous one's acknowledgement). So a command
+that floods output never blocks the UI: `cat` of 32 MB keeps the UI at 60 frames a second with
+no long tasks, also with the CPU slowed 4×, and a key reaches the screen in about 3 ms (8 ms
+during the flood). Keys, paste and mouse go through Ghostty's encoders, so application cursor
+keys, bracketed paste, mouse tracking and the Kitty keyboard protocol work as in Ghostty;
+selection (double-click a word, triple-click a line) is Ghostty's too. On Linux, until the
+build has Zig 0.17 for libghostty-vt, the output goes to
+[ghostty-web](https://github.com/coder/ghostty-web) (the same parser as WebAssembly) in the UI.
+
+Building: macOS links the prebuilt library with no extra tools (Nix fetches it ahead, see
+`nix/ghostty-vt.nix`). The Windows release is a GNU-ABI archive, so the MSVC targets link with
+`rust-lld` (set in `.cargo/config.toml`). `iso-cli serve --terminal` serves terminals over the
+HTTP bridge for tests.
 
 | | macOS | Windows and Linux |
 |---|---|---|
@@ -197,7 +213,7 @@ Windows (ConPTY). The shell runs on a PTY in the app (`portable-pty`); the UI dr
 | Next / previous tab | ⌘⇧] / ⌘⇧[, or Ctrl+Tab / Ctrl+Shift+Tab | Ctrl+Tab / Ctrl+Shift+Tab, or Ctrl+PageDown / Ctrl+PageUp |
 | Go to tab 1 to 9 | ⌘1 … ⌘9 | Alt+1 … Alt+9 |
 | Clear | ⌘K | Ctrl+Shift+K |
-| Copy / paste | ⌘C / ⌘V | Ctrl+Shift+C / Ctrl+Shift+V (Ctrl+V also pastes) |
+| Copy / paste / select all | ⌘C / ⌘V / ⌘A | Ctrl+Shift+C / Ctrl+Shift+V (Ctrl+V also pastes) / Ctrl+Shift+A |
 | Show, focus or hide the panel | Ctrl+` | Ctrl+` |
 
 Every other Ctrl key goes to the shell (Ctrl+C, Ctrl+W, Ctrl+R and so on).

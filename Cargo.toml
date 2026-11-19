@@ -13,6 +13,7 @@ members = [
   "crates/iso-git",
   "crates/iso-engine",
   "crates/iso-cli",
+  "crates/iso-term",
   "app/src-tauri",
 ]
 default-members = [
@@ -28,6 +29,7 @@ default-members = [
   "crates/iso-git",
   "crates/iso-engine",
   "crates/iso-cli",
+  "crates/iso-term",
 ]
 
 [workspace.package]
@@ -47,6 +49,7 @@ iso-jobs = { path = "crates/iso-jobs" }
 iso-ai = { path = "crates/iso-ai" }
 iso-git = { path = "crates/iso-git" }
 iso-engine = { path = "crates/iso-engine" }
+iso-term = { path = "crates/iso-term" }
 
 # Versions checked against crates.io on 2026-11-16.
 anyhow = "1.0.104"

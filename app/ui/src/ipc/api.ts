@@ -63,6 +63,63 @@ export interface BackendEvents {
   term_exit: { id: number; code: number | null };
 }
 
+/**
+ * A frame from the native terminal engine (libghostty-vt in the backend): the rows that
+ * changed since the last frame. See `crates/iso-term/src/engine.rs`.
+ */
+export interface TermFrame {
+  seq: number;
+  full: boolean;
+  cols: number;
+  rows_n: number;
+  /** Rows: `y`, runs `[column, text, style, width]`, selected columns. */
+  rows: { y: number; r: [number, string, number, number][]; sel: [number, number] | null }[];
+  /** `[fg, bg, flags]`: colors 0xRRGGBB or -1 for the default. */
+  styles: [number, number, number][];
+  cursor: { x: number; y: number; style: "block" | "bar" | "underline" | "hollow"; blink: boolean; wide: boolean } | null;
+  /** Default foreground, background and cursor, on full frames. */
+  colors: [number, number, number] | null;
+  /** History: total rows, first visible row, visible rows. */
+  scroll: [number, number, number];
+  title: string | null;
+  pwd: string | null;
+  bell: boolean;
+  clipboard: string | null;
+  /** A program tracks the mouse. */
+  mouse: boolean;
+}
+
+/** Input for a native terminal; positions are in cells. See `engine::Input`. */
+export type TermInput =
+  | { t: "key"; code: string; key: string; mods: number; repeat: boolean }
+  | { t: "text"; text: string }
+  | { t: "paste"; text: string }
+  | { t: "mouse"; action: "press" | "release" | "move"; button: number | null; x: number; y: number; mods: number }
+  | { t: "wheel"; x: number; y: number; lines: number; mods: number }
+  | { t: "select"; phase: "press" | "drag" | "release"; x: number; y: number; ms: number }
+  | { t: "selectAll" }
+  | { t: "clearSelection" }
+  | { t: "scroll"; lines?: number; to?: "top" | "bottom"; row?: number }
+  | { t: "clear" }
+  | { t: "resize"; cols: number; rows: number; cellW: number; cellH: number }
+  | { t: "theme"; foreground: string; background: string; cursor: string; palette: string[] }
+  | { t: "focus"; on: boolean }
+  | { t: "refresh" }
+  | { t: "ack"; seq: number };
+
+export interface TermOpen {
+  cwd: string | null;
+  cols: number;
+  rows: number;
+  /** Cell size in device pixels (native engine). */
+  cellW?: number;
+  cellH?: number;
+  theme?: Extract<TermInput, { t: "theme" }>;
+}
+
+/** Output of a terminal: frames (native engine) or raw bytes (ghostty-web path). */
+export type TermData = TermFrame | Uint8Array;
+
 /** A shell started by `termOpen`. */
 export interface TermInfo {
   id: number;
@@ -129,8 +186,13 @@ export interface Backend {
   aiRequests(): Promise<AiRequestRow[]>;
   aiRequest(id: number): Promise<AiRequestDetail | null>;
   aiRequestsClear(): Promise<void>;
+  /** True when the backend parses terminal output natively and sends frames. */
+  termNative(): Promise<boolean>;
   /** Starts a shell in `cwd` (the home folder when null); its output goes to `onData`. */
-  termOpen(cwd: string | null, cols: number, rows: number, onData: (bytes: Uint8Array) => void): Promise<TermInfo>;
+  termOpen(o: TermOpen, onData: (d: TermData) => void): Promise<TermInfo>;
+  termInput(id: number, input: TermInput): Promise<void>;
+  /** The selection as text (native engine). */
+  termCopy(id: number): Promise<string | null>;
   termWrite(id: number, data: string): Promise<void>;
   termResize(id: number, cols: number, rows: number): Promise<void>;
   termClose(id: number): Promise<void>;
@@ -183,12 +245,19 @@ async function createTauriBackend(): Promise<Backend> {
     aiRequests: () => call("ai_requests"),
     aiRequest: (id) => call("ai_request", { id }),
     aiRequestsClear: () => call("ai_requests_clear"),
-    termOpen: async (cwd, cols, rows, onData) => {
+    termNative: () => call("term_native"),
+    termOpen: async (o, onData) => {
       const { Channel } = await import("@tauri-apps/api/core");
-      const ch = new Channel<ArrayBuffer | number[] | string>();
-      ch.onmessage = (m) => onData(m instanceof ArrayBuffer ? new Uint8Array(m) : typeof m === "string" ? new TextEncoder().encode(m) : Uint8Array.from(m));
-      return call("term_open", { cwd, cols, rows, onData: ch });
+      const ch = new Channel<ArrayBuffer | number[] | string | TermFrame>();
+      ch.onmessage = (m) => {
+        // Frames are JSON (objects; a large one may come as its text); output is bytes.
+        if (typeof m === "string") onData(m.startsWith('{"seq"') ? (JSON.parse(m) as TermFrame) : new TextEncoder().encode(m));
+        else onData(m instanceof ArrayBuffer ? new Uint8Array(m) : Array.isArray(m) ? Uint8Array.from(m) : m);
+      };
+      return call("term_open", { cwd: o.cwd, cols: o.cols, rows: o.rows, cellW: o.cellW ?? null, cellH: o.cellH ?? null, theme: o.theme ?? null, onData: ch });
     },
+    termInput: (id, input) => call("term_input", { id, input }),
+    termCopy: (id) => call("term_copy", { id }),
     termWrite: (id, data) => call("term_write", { id, data }),
     termResize: (id, cols, rows) => call("term_resize", { id, cols, rows }),
     termClose: (id) => call("term_close", { id }),
@@ -259,9 +328,33 @@ function createHttpBackend(): Backend {
     aiRequests: () => call("ai_requests"),
     aiRequest: (id) => call("ai_request", { id }),
     aiRequestsClear: () => call("ai_requests_clear"),
-    termOpen: async () => {
-      throw new Error("The terminal works in the desktop app, not over the HTTP bridge.");
+    termNative: () => call("term_native"),
+    termOpen: async (o, onData) => {
+      // Output comes on the event stream, tagged with the terminal's id (`--terminal` only).
+      ensureSource();
+      let id: number | null = null;
+      const early: { id: number; d: TermData }[] = [];
+      const take = (tid: number, d: TermData) => (id === null ? early.push({ id: tid, d }) : tid === id && onData(d));
+      const hf = (p: unknown) => {
+        const x = p as { id: number; frame: TermFrame };
+        take(x.id, x.frame);
+      };
+      const hb = (p: unknown) => {
+        const x = p as { id: number; data: string };
+        take(x.id, new TextEncoder().encode(x.data));
+      };
+      for (const [e, h] of [["term_frame", hf], ["term_bytes", hb]] as const) {
+        const set = handlers.get(e) ?? new Set();
+        set.add(h);
+        handlers.set(e, set);
+      }
+      const info = await call<TermInfo>("term_open", { ...o });
+      id = info.id;
+      for (const x of early.splice(0)) if (x.id === id) onData(x.d);
+      return info;
     },
+    termInput: (id, input) => call("term_input", { id, input }),
+    termCopy: (id) => call("term_copy", { id }),
     termWrite: async () => {},
     termResize: async () => {},
     termClose: async () => {},
@@ -344,7 +437,10 @@ export const api = {
   aiRequests: async () => (await backend()).aiRequests(),
   aiRequest: async (id: number) => (await backend()).aiRequest(id),
   aiRequestsClear: async () => (await backend()).aiRequestsClear(),
-  termOpen: async (cwd: string | null, cols: number, rows: number, onData: (bytes: Uint8Array) => void) => (await backend()).termOpen(cwd, cols, rows, onData),
+  termNative: async () => (await backend()).termNative(),
+  termOpen: async (o: TermOpen, onData: (d: TermData) => void) => (await backend()).termOpen(o, onData),
+  termInput: async (id: number, input: TermInput) => (await backend()).termInput(id, input),
+  termCopy: async (id: number) => (await backend()).termCopy(id),
   termWrite: async (id: number, data: string) => (await backend()).termWrite(id, data),
   termResize: async (id: number, cols: number, rows: number) => (await backend()).termResize(id, cols, rows),
   termClose: async (id: number) => (await backend()).termClose(id),
@@ -354,7 +450,7 @@ export const api = {
 
 // Every call is timed for the developer panel, except its own polling and `listen`.
 // Keystrokes and resizes in the terminal are too many to be useful there.
-const UNTRACED = new Set(["listen", "aiRequests", "aiRequest", "termWrite", "termResize"]);
+const UNTRACED = new Set(["listen", "aiRequests", "aiRequest", "termWrite", "termResize", "termInput"]);
 for (const k of Object.keys(api) as (keyof typeof api)[]) {
   if (UNTRACED.has(k)) continue;
   const f = api[k] as (...a: unknown[]) => Promise<unknown>;

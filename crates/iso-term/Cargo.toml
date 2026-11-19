@@ -1,0 +1,18 @@
+[package]
+name = "iso-term"
+description = "Terminals: shells on PTYs, parsed natively by libghostty-vt into frames for the UI."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+parking_lot.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+portable-pty = "0.9.0"
+
+# Native terminal parsing (libghostty-vt, official prebuilt releases). Linux streams raw
+# bytes to the WebAssembly build in the UI until its build has Zig 0.17.
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+ghostty-vt = { version = "=0.9.0", default-features = false }

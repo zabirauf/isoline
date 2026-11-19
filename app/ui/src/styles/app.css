@@ -933,3 +933,11 @@ button.ty:hover { text-decoration: underline; text-underline-offset: 2px; text-d
 .term-view[hidden] { display: none; }
 @media (max-width: 900px) { .term-keys { display: none; } }
 .dock-side .term-keys { display: none; }
+/* Native terminal: a canvas drawn from backend frames, a hidden input, a thin scrollbar. */
+.term-view.native { inset: 0; }
+.term-canvas { position: absolute; left: 10px; top: 6px; cursor: text; touch-action: none; }
+.term-input { position: absolute; width: 1px; height: 1em; padding: 0; border: 0; margin: 0; opacity: 0; resize: none; overflow: hidden; white-space: nowrap; font: 13px var(--font-mono); color: transparent; background: transparent; caret-color: transparent; pointer-events: none; }
+.term-sb { position: absolute; right: 2px; top: 6px; bottom: 4px; width: 8px; border-radius: 4px; opacity: 0; transition: opacity .2s; cursor: default; }
+.term-view.native:hover .term-sb, .term-sb.on { opacity: 1; }
+.term-sb-thumb { position: absolute; left: 1px; right: 1px; border-radius: 4px; background: var(--line); }
+.term-sb:hover .term-sb-thumb { background: var(--muted); }

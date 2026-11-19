@@ -20,12 +20,23 @@ pub struct ServeArgs {
     /// Built UI folder (app/ui/dist).
     #[arg(long, default_value = "app/ui/dist")]
     pub ui: PathBuf,
+    /// Serve terminals (a shell for any local page that can reach the port): for tests only.
+    #[arg(long)]
+    pub terminal: bool,
 }
 
 struct State {
     data: Option<PathBuf>,
     engine: RwLock<Option<Arc<Engine>>>,
     clients: Arc<Mutex<Vec<Sender<String>>>>,
+    terminal: bool,
+    terms: iso_term::Terminals,
+}
+
+/// Sends one event to every connected event stream.
+fn broadcast(clients: &Mutex<Vec<Sender<String>>>, event: &str, payload: Value) {
+    let msg = json!({ "event": event, "payload": payload }).to_string();
+    clients.lock().retain(|c| c.send(msg.clone()).is_ok());
 }
 
 pub fn run(data: Option<&Path>, args: ServeArgs) -> Result<()> {
@@ -39,6 +50,8 @@ pub fn run(data: Option<&Path>, args: ServeArgs) -> Result<()> {
         data: data.map(Path::to_path_buf),
         engine: RwLock::new(None),
         clients: Arc::new(Mutex::new(Vec::new())),
+        terminal: args.terminal,
+        terms: iso_term::Terminals::default(),
     });
     for req in server.incoming_requests() {
         let st = Arc::clone(&st);
@@ -268,6 +281,64 @@ fn dispatch(st: &Arc<State>, cmd: &str, args: &Value) -> Result<Value> {
             return Err(anyhow!(
                 "AI settings are not available over the HTTP bridge."
             ));
+        }
+        c if c.starts_with("term_") && !st.terminal => {
+            return Err(anyhow!(
+                "Terminals are off: start `iso-cli serve` with --terminal."
+            ));
+        }
+        "term_native" => json!(iso_term::NATIVE),
+        "term_open" => {
+            let n = |k: &str| arg(args, k).and_then(|v| v.as_u64());
+            let opts = iso_term::OpenOptions {
+                cwd: arg(args, "cwd").and_then(|v| v.as_str()).map(PathBuf::from),
+                cols: n("cols").unwrap_or(80) as u16,
+                rows: n("rows").unwrap_or(24) as u16,
+                cell_w: n("cellW").unwrap_or(8) as u32,
+                cell_h: n("cellH").unwrap_or(16) as u32,
+                theme: arg(args, "theme").cloned().filter(|v| !v.is_null()),
+            };
+            // Frames and output go out on the event stream, tagged with the terminal.
+            let (c1, c2) = (Arc::clone(&st.clients), Arc::clone(&st.clients));
+            let id = Arc::new(std::sync::atomic::AtomicU32::new(0));
+            let id2 = Arc::clone(&id);
+            let info = st.terms.open(
+                opts,
+                move |o| {
+                    let id = id2.load(std::sync::atomic::Ordering::Acquire);
+                    match o {
+                        iso_term::Out::Frame(j) => broadcast(&c1, "term_frame", json!({ "id": id, "frame": serde_json::from_str::<Value>(&j).unwrap_or(Value::Null) })),
+                        iso_term::Out::Bytes(b) => broadcast(&c1, "term_bytes", json!({ "id": id, "data": String::from_utf8_lossy(&b) })),
+                    }
+                    true
+                },
+                move |id, code| broadcast(&c2, "term_exit", json!({ "id": id, "code": code })),
+            )?;
+            id.store(info.id, std::sync::atomic::Ordering::Release);
+            serde_json::to_value(info)?
+        }
+        "term_input" => {
+            st.terms.input(
+                u(args, "id").context("id")?,
+                arg(args, "input").cloned().unwrap_or(Value::Null),
+            )?;
+            Value::Null
+        }
+        "term_copy" => json!(st.terms.copy(u(args, "id").context("id")?)?),
+        "term_write" => {
+            st.terms
+                .write(u(args, "id").context("id")?, &s(args, "data")?)?;
+            Value::Null
+        }
+        "term_resize" => {
+            let n = |k: &str| u(args, k).unwrap_or(0) as u16;
+            st.terms
+                .resize(u(args, "id").context("id")?, n("cols"), n("rows"))?;
+            Value::Null
+        }
+        "term_close" => {
+            st.terms.close(u(args, "id").context("id")?);
+            Value::Null
         }
         other => return Err(anyhow!("unknown command {other}")),
     })

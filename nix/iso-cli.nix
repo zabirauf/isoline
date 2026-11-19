@@ -1,9 +1,11 @@
 # iso-cli: index a repo and query it from the terminal (index, file, flow, impact, bench, ...).
 {
   lib,
+  stdenv,
   rustPlatform,
   pkg-config,
   sqlite,
+  ghostty-vt-release,
 }:
 rustPlatform.buildRustPackage {
   pname = "iso-cli";
@@ -13,6 +15,10 @@ rustPlatform.buildRustPackage {
   # rusqlite bundles SQLite, but the link line still names libsqlite3 under Nix's cc wrapper.
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [ sqlite ];
+  # The terminal's native parser (libghostty-vt), prebuilt, on macOS.
+  env = lib.optionalAttrs stdenv.hostPlatform.isDarwin {
+    GHOSTTY_RELEASE_DIR = "${ghostty-vt-release}";
+  };
   cargoBuildFlags = [
     "-p"
     "iso-cli"

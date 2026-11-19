@@ -155,9 +155,11 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `ai_requests` | | `AiRequestRow[]` | Model requests of this session, newest first (in memory, at most 300). |
 | `ai_request` | `id` | `AiRequestDetail \| null` | One request with its system message, prompt and answer. |
 | `ai_requests_clear` | | `null` | Empties the request log. |
-| `term_open` | `cwd` (null: home), `cols`, `rows`, `onData: Channel` | `{ id, shell, cwd }` | Starts the user's shell on a PTY (`$SHELL -l`; PowerShell on Windows). Output streams as raw bytes on the channel. |
-| `term_write` | `id`, `data` | `null` | Typed or pasted text to the shell. |
-| `term_resize` | `id`, `cols`, `rows` | `null` | |
+| `term_native` | | `bool` | True on macOS and Windows: output is parsed natively (libghostty-vt in `iso-term`) and arrives as frames. False on Linux: raw bytes for ghostty-web. |
+| `term_open` | `cwd` (null: home), `cols`, `rows`, `cellW`, `cellH` (device px), `theme`, `onData: Channel` | `{ id, shell, cwd }` | Starts the user's shell on a PTY (`$SHELL -l`; PowerShell on Windows). `onData` gets JSON frames (rows that changed, at most 60/s, each after the previous one's `ack`) or raw bytes. |
+| `term_input` | `id`, `input` | `null` | Native terminals: `key`, `text`, `paste`, `mouse`, `wheel`, `select`, `selectAll`, `scroll`, `clear`, `resize`, `theme`, `focus`, `refresh`, `ack` (`iso_term::engine::Input`). Keys, paste and mouse are encoded with Ghostty's encoders. |
+| `term_copy` | `id` | `string \| null` | The selection as text. |
+| `term_write` / `term_resize` | `id`, `data` / `cols`, `rows` | `null` | Raw input and PTY resize, for the ghostty-web path. |
 | `term_close` | `id` | `null` | Stops the shell. `term_exit { id, code }` follows, as it does when the shell exits by itself. |
 | `get_jobs` | | `JobsState` | `job_progress: JobsState` |
 | `rename_module` | `id`, `name?`, `color?` | `ModuleInfo` | |

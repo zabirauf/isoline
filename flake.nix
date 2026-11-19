@@ -15,8 +15,9 @@
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
       packagesFor = pkgs: rec {
         copilot-sidecar = pkgs.callPackage ./nix/sidecar.nix { };
-        iso-cli = pkgs.callPackage ./nix/iso-cli.nix { };
-        isoline = pkgs.callPackage ./nix/isoline.nix { inherit copilot-sidecar; };
+        ghostty-vt-release = pkgs.callPackage ./nix/ghostty-vt.nix { };
+        iso-cli = pkgs.callPackage ./nix/iso-cli.nix { inherit ghostty-vt-release; };
+        isoline = pkgs.callPackage ./nix/isoline.nix { inherit copilot-sidecar ghostty-vt-release; };
         default = isoline;
       };
     in

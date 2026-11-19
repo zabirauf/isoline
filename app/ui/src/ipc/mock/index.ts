@@ -29,6 +29,7 @@ import data from "./data/mock.json";
 import { generateModuleMap, generateTree } from "./generate";
 import { createMockGit } from "./git";
 import { createMockAiDev } from "./aiDev";
+import { createMockTerm } from "./term";
 
 /** The JSON stores u64 fields as plain numbers; these are the raw shapes before conversion. */
 export type RawLangCount = Omit<LangCount, "lines"> & { lines: number };
@@ -72,6 +73,7 @@ export function createMockBackend(): Backend {
   const listeners = new Map<EventName, Set<(p: unknown) => void>>();
   let signInTimer: ReturnType<typeof setTimeout> | undefined;
   const emit = <E extends EventName>(e: E, p: BackendEvents[E]) => listeners.get(e)?.forEach((cb) => cb(p));
+  const mockTerm = createMockTerm((id, code) => emit("term_exit", { id, code }));
 
   let tree: TreeNode = BIG_FILES ? generateTree(BIG_FILES) : clone(D.tree);
   const moduleMap: RawModuleMap = BIG_MODULES ? generateModuleMap(BIG_MODULES, FANOUT) : clone(D.moduleMap);
@@ -337,6 +339,10 @@ export function createMockBackend(): Backend {
     aiRequests: () => delay(() => aiDev.rows()),
     aiRequest: (id) => delay(() => aiDev.detail(id)),
     aiRequestsClear: () => delay(() => aiDev.clear()),
+    termOpen: async (cwd, cols, rows, onData) => mockTerm.open(cwd, cols, rows, onData),
+    termWrite: async (id, data) => mockTerm.write(id, data),
+    termResize: async () => {},
+    termClose: async (id) => mockTerm.close(id),
     aiEnable: (enabled) => delay(() => (ai = { ...ai, enabledForRepo: enabled })),
     getJobs: () => delay(() => clone(jobs)),
     renameModule: (id, name, color) =>

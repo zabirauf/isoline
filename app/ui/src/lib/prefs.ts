@@ -20,10 +20,15 @@ export interface Prefs {
   confirmCost: boolean;
   /** With confirmCost off, still ask before a run estimated over this, in USD. */
   askAboveUsd: number;
+  /** The terminal panel is shown, where it is docked, and its height (bottom) or width (side). */
+  termOpen: boolean;
+  termDock: "bottom" | "side";
+  termHeight: number;
+  termWidth: number;
 }
 
 export const PREFS_KEY = "isoline.prefs.v1";
-export const DEFAULT_PREFS: Prefs = { detail: "read", mapExternal: false, flowKeySeen: false, hintSeen: false, aiNoticeHidden: false, aiAuto: true, devPanel: false, confirmCost: true, askAboveUsd: 1 };
+export const DEFAULT_PREFS: Prefs = { detail: "read", mapExternal: false, flowKeySeen: false, hintSeen: false, aiNoticeHidden: false, aiAuto: true, devPanel: false, confirmCost: true, askAboveUsd: 1, termOpen: false, termDock: "bottom", termHeight: 280, termWidth: 520 };
 
 /** The subset of Storage the prefs need, so tests can pass a plain object. */
 export interface KeyValueStore {
@@ -51,8 +56,10 @@ export function loadPrefs(s: KeyValueStore | null = store()): Prefs {
   if (raw && typeof raw === "object") {
     const r = raw as Record<string, unknown>;
     if (r.detail === "glance" || r.detail === "read" || r.detail === "dig") p.detail = r.detail;
+    if (r.termDock === "bottom" || r.termDock === "side") p.termDock = r.termDock;
+    for (const k of ["termHeight", "termWidth"] as const) if (typeof r[k] === "number" && Number.isFinite(r[k]) && (r[k] as number) >= 100) p[k] = r[k] as number;
     if (typeof r.askAboveUsd === "number" && Number.isFinite(r.askAboveUsd) && r.askAboveUsd >= 0) p.askAboveUsd = r.askAboveUsd;
-    for (const k of ["mapExternal", "flowKeySeen", "hintSeen", "aiNoticeHidden", "aiAuto", "devPanel", "confirmCost"] as const) if (typeof r[k] === "boolean") p[k] = r[k] as boolean;
+    for (const k of ["mapExternal", "flowKeySeen", "hintSeen", "aiNoticeHidden", "aiAuto", "devPanel", "confirmCost", "termOpen"] as const) if (typeof r[k] === "boolean") p[k] = r[k] as boolean;
   }
   return p;
 }

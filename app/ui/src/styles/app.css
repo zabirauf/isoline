@@ -903,3 +903,33 @@ button.ty:hover { text-decoration: underline; text-underline-offset: 2px; text-d
 }
 .set-limit { display: flex; align-items: center; gap: 4px; font-size: 12.5px; }
 .set-limit input { width: 7ch; font: 12.5px var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; }
+
+/* Terminal panel: shells in tabs, docked at the bottom or on the right side. */
+.work { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.work.dock-side { flex-direction: row; }
+.work > .body { flex: 1; min-height: 0; min-width: 0; }
+.term-panel { flex: none; position: relative; display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--surface); border-top: 1px solid var(--line); }
+.term-panel.dock-bottom { max-height: calc(100% - 80px); }
+.term-panel.dock-side { border-top: 0; border-left: 1px solid var(--line); max-width: calc(100% - 200px); }
+.term-panel[hidden] { display: none; }
+.term-grip { position: absolute; z-index: 5; }
+.term-grip.bottom { top: -3px; left: 0; right: 0; height: 6px; cursor: row-resize; }
+.term-grip.side { left: -3px; top: 0; bottom: 0; width: 6px; cursor: col-resize; }
+.term-grip:hover, .term-grip:active { background: var(--accent-soft); }
+.term-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 3px 6px 3px 8px; border-bottom: 1px solid var(--grid); min-width: 0; }
+.term-tabs { display: flex; align-items: center; gap: 2px; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.term-tab { display: flex; align-items: center; gap: 2px; padding: 2px 2px 2px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; color: var(--muted); max-width: 24ch; flex: none; }
+.term-tab:hover { background: var(--grid); }
+.term-tab.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.term-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.term-tab-name { overflow: hidden; text-overflow: ellipsis; }
+.term-x, .term-new { border: 0; background: none; color: inherit; cursor: pointer; border-radius: 4px; font: 14px/1 var(--font-body); padding: 2px 6px; }
+.term-x:hover, .term-new:hover { background: var(--line); color: var(--ink); }
+.term-new { color: var(--muted); flex: none; }
+.term-sp { flex: 1; }
+.term-keys { white-space: nowrap; }
+.term-body { flex: 1; min-height: 0; position: relative; }
+.term-view { position: absolute; inset: 6px 4px 2px 10px; overflow: hidden; }
+.term-view[hidden] { display: none; }
+@media (max-width: 900px) { .term-keys { display: none; } }
+.dock-side .term-keys { display: none; }

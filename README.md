@@ -181,6 +181,27 @@ session with its system prompt, prompt, answer, tokens, cost and time; every bac
 with its time (also as median, 95th percentile and slowest per command); backend events; and
 the app's state as JSON to copy into a bug report.
 
+## Terminal
+
+**Terminal** in the header, or Ctrl+` (also on macOS), opens shells in tabs, docked at the bottom
+or on the right side (drag the edge to resize). A new tab starts your shell in the open repo's
+folder: `$SHELL` as a login shell on macOS and Linux; PowerShell 7, else Windows PowerShell, on
+Windows (ConPTY). The shell runs on a PTY in the app (`portable-pty`); the UI draws it with
+[ghostty-web](https://github.com/coder/ghostty-web) (MIT), which is Ghostty's VT parser
+(libghostty-vt) compiled to WebAssembly. Tabs keep running while the panel is hidden.
+
+| | macOS | Windows and Linux |
+|---|---|---|
+| New tab | ⌘T | Ctrl+Shift+T |
+| Close tab | ⌘W | Ctrl+Shift+W |
+| Next / previous tab | ⌘⇧] / ⌘⇧[, or Ctrl+Tab / Ctrl+Shift+Tab | Ctrl+Tab / Ctrl+Shift+Tab, or Ctrl+PageDown / Ctrl+PageUp |
+| Go to tab 1 to 9 | ⌘1 … ⌘9 | Alt+1 … Alt+9 |
+| Clear | ⌘K | Ctrl+Shift+K |
+| Copy / paste | ⌘C / ⌘V | Ctrl+Shift+C / Ctrl+Shift+V (Ctrl+V also pastes) |
+| Show, focus or hide the panel | Ctrl+` | Ctrl+` |
+
+Every other Ctrl key goes to the shell (Ctrl+C, Ctrl+W, Ctrl+R and so on).
+
 ## License
 
 MIT.

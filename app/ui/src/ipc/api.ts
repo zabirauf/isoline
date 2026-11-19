@@ -59,10 +59,20 @@ export interface BackendEvents {
   git_changed: GitStatus;
   /** A device-flow sign-in finished: signed in, or stopped (the status says why). */
   ai_status: AiStatus;
+  /** A terminal's shell exited (or was stopped by closing its tab). */
+  term_exit: { id: number; code: number | null };
+}
+
+/** A shell started by `termOpen`. */
+export interface TermInfo {
+  id: number;
+  /** Program name, such as "zsh" or "pwsh". */
+  shell: string;
+  cwd: string;
 }
 export type EventName = keyof BackendEvents;
 /** Every event name, for listeners that take them all (the developer panel). */
-export const EVENT_NAMES: EventName[] = ["index_progress", "index_done", "ai_progress", "ai_job_done", "summary_ready", "job_progress", "files_changed", "tree_changed", "git_changed", "ai_status"];
+export const EVENT_NAMES: EventName[] = ["index_progress", "index_done", "ai_progress", "ai_job_done", "summary_ready", "job_progress", "files_changed", "tree_changed", "git_changed", "ai_status", "term_exit"];
 export type Unlisten = () => void;
 export interface LaunchArgs {
   repo: string | null;
@@ -119,6 +129,11 @@ export interface Backend {
   aiRequests(): Promise<AiRequestRow[]>;
   aiRequest(id: number): Promise<AiRequestDetail | null>;
   aiRequestsClear(): Promise<void>;
+  /** Starts a shell in `cwd` (the home folder when null); its output goes to `onData`. */
+  termOpen(cwd: string | null, cols: number, rows: number, onData: (bytes: Uint8Array) => void): Promise<TermInfo>;
+  termWrite(id: number, data: string): Promise<void>;
+  termResize(id: number, cols: number, rows: number): Promise<void>;
+  termClose(id: number): Promise<void>;
   /** Folder picker: the dialog plugin in Tauri, a fixed answer in the mock. */
   pickFolder(): Promise<string | null>;
   listen<E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void): Promise<Unlisten>;
@@ -168,6 +183,15 @@ async function createTauriBackend(): Promise<Backend> {
     aiRequests: () => call("ai_requests"),
     aiRequest: (id) => call("ai_request", { id }),
     aiRequestsClear: () => call("ai_requests_clear"),
+    termOpen: async (cwd, cols, rows, onData) => {
+      const { Channel } = await import("@tauri-apps/api/core");
+      const ch = new Channel<ArrayBuffer | number[] | string>();
+      ch.onmessage = (m) => onData(m instanceof ArrayBuffer ? new Uint8Array(m) : typeof m === "string" ? new TextEncoder().encode(m) : Uint8Array.from(m));
+      return call("term_open", { cwd, cols, rows, onData: ch });
+    },
+    termWrite: (id, data) => call("term_write", { id, data }),
+    termResize: (id, cols, rows) => call("term_resize", { id, cols, rows }),
+    termClose: (id) => call("term_close", { id }),
     launchArgs: () => call("launch_args"),
     pickFolder: async () => {
       const { open } = await import("@tauri-apps/plugin-dialog");
@@ -235,6 +259,12 @@ function createHttpBackend(): Backend {
     aiRequests: () => call("ai_requests"),
     aiRequest: (id) => call("ai_request", { id }),
     aiRequestsClear: () => call("ai_requests_clear"),
+    termOpen: async () => {
+      throw new Error("The terminal works in the desktop app, not over the HTTP bridge.");
+    },
+    termWrite: async () => {},
+    termResize: async () => {},
+    termClose: async () => {},
     launchArgs: async () => urlLaunchArgs(),
     pickFolder: async () => window.prompt("Repo folder") || null,
     listen: async (event, cb) => {
@@ -314,12 +344,17 @@ export const api = {
   aiRequests: async () => (await backend()).aiRequests(),
   aiRequest: async (id: number) => (await backend()).aiRequest(id),
   aiRequestsClear: async () => (await backend()).aiRequestsClear(),
+  termOpen: async (cwd: string | null, cols: number, rows: number, onData: (bytes: Uint8Array) => void) => (await backend()).termOpen(cwd, cols, rows, onData),
+  termWrite: async (id: number, data: string) => (await backend()).termWrite(id, data),
+  termResize: async (id: number, cols: number, rows: number) => (await backend()).termResize(id, cols, rows),
+  termClose: async (id: number) => (await backend()).termClose(id),
   launchArgs: async () => (await backend()).launchArgs(),
   listen: async <E extends EventName>(event: E, cb: (payload: BackendEvents[E]) => void) => (await backend()).listen(event, cb),
 };
 
 // Every call is timed for the developer panel, except its own polling and `listen`.
-const UNTRACED = new Set(["listen", "aiRequests", "aiRequest"]);
+// Keystrokes and resizes in the terminal are too many to be useful there.
+const UNTRACED = new Set(["listen", "aiRequests", "aiRequest", "termWrite", "termResize"]);
 for (const k of Object.keys(api) as (keyof typeof api)[]) {
   if (UNTRACED.has(k)) continue;
   const f = api[k] as (...a: unknown[]) => Promise<unknown>;

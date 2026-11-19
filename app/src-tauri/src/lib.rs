@@ -10,11 +10,13 @@ use parking_lot::RwLock;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 mod ai;
+mod terminal;
 
 #[derive(Default)]
 pub struct AppState {
     pub(crate) engine: RwLock<Option<Arc<Engine>>>,
     pub(crate) ai: ai::AiState,
+    pub(crate) term: terminal::TermState,
 }
 
 pub(crate) type CmdResult<T> = Result<T, String>;
@@ -309,6 +311,10 @@ pub fn run() {
             ai::ai_requests,
             ai::ai_request,
             ai::ai_requests_clear,
+            terminal::term_open,
+            terminal::term_write,
+            terminal::term_resize,
+            terminal::term_close,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Isoline");

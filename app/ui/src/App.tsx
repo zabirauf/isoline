@@ -5,6 +5,7 @@ import { getPrefs, setPrefs, subscribePrefs } from "./lib/prefs";
 import { recordEvent } from "./lib/devlog";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { DevPanel } from "./components/DevPanel";
+import { TerminalPanel } from "./components/TerminalPanel";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { AiStatus } from "./ipc/bindings/AiStatus";
 import type { Architecture } from "./ipc/bindings/Architecture";
@@ -113,6 +114,17 @@ function Shell() {
   const [aiOpen, setAiOpen] = useState(0);
   const [themeOpen, setThemeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Bumped to give the terminal the keyboard (Ctrl+` with the panel open but not focused).
+  const [termFocus, setTermFocus] = useState(0);
+  const hideTerminal = useCallback(() => setPrefs({ termOpen: false }), []);
+  const toggleTerminal = useCallback((fromKey: boolean) => {
+    const inTerm = !!document.activeElement?.closest(".term-panel");
+    if (!getPrefs().termOpen) {
+      setPrefs({ termOpen: true });
+      setTermFocus((n) => n + 1);
+    } else if (fromKey && !inTerm) setTermFocus((n) => n + 1);
+    else setPrefs({ termOpen: false });
+  }, []);
   const locationOf = useRef<(() => WorkbenchLocation) | null>(null);
   const pickRepoRef = useRef<() => Promise<void>>(async () => {});
   const peek = usePeek();
@@ -345,7 +357,8 @@ function Shell() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
-      if (e.shiftKey && e.key.toLowerCase() === "d") (e.preventDefault(), setPrefs({ devPanel: !getPrefs().devPanel }));
+      if (e.ctrlKey && !e.metaKey && e.code === "Backquote") (e.preventDefault(), toggleTerminal(true));
+      else if (e.shiftKey && e.key.toLowerCase() === "d") (e.preventDefault(), setPrefs({ devPanel: !getPrefs().devPanel }));
       else if (e.key === ",") (e.preventDefault(), setSettingsOpen(true));
       else if (e.key === "[") (e.preventDefault(), travel("back"));
       else if (e.key === "]") (e.preventDefault(), travel("forward"));
@@ -361,7 +374,7 @@ function Shell() {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("mouseup", onMouse);
     };
-  }, [travel]);
+  }, [travel, toggleTerminal]);
 
   // Load the file view whenever another file opens.
   useEffect(() => {
@@ -521,6 +534,9 @@ function Shell() {
           )}
         </div>
         {repo && <AiPanel status={ai} setStatus={setAi} filePath={file?.path ?? null} job={aiRuns.job} onRun={aiRuns.run} openSignal={aiOpen} />}
+        <button type="button" className="iso-btn quiet" aria-pressed={prefs.termOpen} onClick={() => toggleTerminal(false)} title={`Terminal (${navigator.platform.includes("Mac") ? "⌃`" : "Ctrl+`"})`}>
+          Terminal
+        </button>
         <button type="button" className="iso-btn quiet" aria-haspopup="dialog" onClick={() => setSettingsOpen(true)} title={`Settings (${navigator.platform.includes("Mac") ? "⌘," : "Ctrl+,"})`}>
           Settings
         </button>
@@ -547,43 +563,58 @@ function Shell() {
           )}
         </div>
       </header>
-      <div className={`body${repo && sidebar ? " with-side" : ""}`}>
-        {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={openFromTree} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} moduleNames={moduleNames} focusModule={focusModule} onClearFocus={clearModFocus} />}
-        <main className="content">
-          {!repo && <StartScreen recent={recent} onOpen={(p) => void openRepo(p)} onPick={() => void pickRepo()} busy={busy} error={openError} />}
-          {repo && compareReq && (
-            <div className="compare-host" hidden={!compareOn}>
-              <CompareView status={git} moduleMap={moduleMap} request={compareReq} onOpenFile={(p, line) => openFile(p, { line })} ai={ai} onOpenAi={() => setAiOpen((n) => n + 1)} />
-            </div>
-          )}
-          {repo && !compareOn && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} ai={{ arch: architecture, status: ai, job: aiRuns.job, onRun: aiRuns.run, onOpenAi: () => setAiOpen((n) => n + 1) }} sel={modFocus} setSel={setModFocus} />}
-          {repo && !compareOn && file && viewError && (
-            <div className="start">
-              <p className="err">
-                Could not open {file.path}: {viewError}
-              </p>
-            </div>
-          )}
-          {repo && !compareOn && file && !viewError && !showView && <div className="loading muted">Opening {file.path}…</div>}
-          {!compareOn && showView && showView.tier === "full" && (
-            <Workbench
-              key={showView.path}
-              view={showView}
-              focusName={file?.symbol}
-              focusLine={file?.line}
-              focusNonce={file?.nonce}
-              restore={file?.restore ?? null}
-              restoreNonce={file?.restore ? file.nonce : 0}
-              onOpenFile={openFile}
-              onPushHistory={pushHere}
-              registerLocation={registerLocation}
-              onOpenAi={() => setAiOpen((n) => n + 1)}
-              ai={aiRuns.fileAi}
-              onSummarize={aiRuns.summarizeFile}
-            />
-          )}
-          {!compareOn && showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} ai={aiRuns.fileAi} onOpenAi={() => setAiOpen((n) => n + 1)} onSummarize={aiRuns.summarizeFile} />}
-        </main>
+      <div className={`work dock-${prefs.termDock}`}>
+        <div className={`body${repo && sidebar ? " with-side" : ""}`}>
+          {repo && sidebar && tree && <Sidebar key={repo.root} repo={repo.root} tree={tree} openPath={file?.path ?? null} onOpen={openFromTree} emptyText={progress?.phase === "done" ? "No files to show." : "Listing files…"} moduleNames={moduleNames} focusModule={focusModule} onClearFocus={clearModFocus} />}
+          <main className="content">
+            {!repo && <StartScreen recent={recent} onOpen={(p) => void openRepo(p)} onPick={() => void pickRepo()} busy={busy} error={openError} />}
+            {repo && compareReq && (
+              <div className="compare-host" hidden={!compareOn}>
+                <CompareView status={git} moduleMap={moduleMap} request={compareReq} onOpenFile={(p, line) => openFile(p, { line })} ai={ai} onOpenAi={() => setAiOpen((n) => n + 1)} />
+              </div>
+            )}
+            {repo && !compareOn && !file && <RepoOverview repo={repo} moduleMap={moduleMap} progress={indexing ? progress : null} onModuleRenamed={refreshRepoData} ai={{ arch: architecture, status: ai, job: aiRuns.job, onRun: aiRuns.run, onOpenAi: () => setAiOpen((n) => n + 1) }} sel={modFocus} setSel={setModFocus} />}
+            {repo && !compareOn && file && viewError && (
+              <div className="start">
+                <p className="err">
+                  Could not open {file.path}: {viewError}
+                </p>
+              </div>
+            )}
+            {repo && !compareOn && file && !viewError && !showView && <div className="loading muted">Opening {file.path}…</div>}
+            {!compareOn && showView && showView.tier === "full" && (
+              <Workbench
+                key={showView.path}
+                view={showView}
+                focusName={file?.symbol}
+                focusLine={file?.line}
+                focusNonce={file?.nonce}
+                restore={file?.restore ?? null}
+                restoreNonce={file?.restore ? file.nonce : 0}
+                onOpenFile={openFile}
+                onPushHistory={pushHere}
+                registerLocation={registerLocation}
+                onOpenAi={() => setAiOpen((n) => n + 1)}
+                ai={aiRuns.fileAi}
+                onSummarize={aiRuns.summarizeFile}
+              />
+            )}
+            {!compareOn && showView && showView.tier !== "full" && <PlainFile key={showView.path} view={showView} focusLine={file?.line} onOpenFile={openFile} ai={aiRuns.fileAi} onOpenAi={() => setAiOpen((n) => n + 1)} onSummarize={aiRuns.summarizeFile} />}
+          </main>
+        </div>
+        <TerminalPanel
+          open={prefs.termOpen}
+          cwd={repo?.root ?? null}
+          dock={prefs.termDock}
+          size={prefs.termDock === "bottom" ? prefs.termHeight : prefs.termWidth}
+          focusSignal={termFocus}
+          onHide={hideTerminal}
+          onDock={(d) => {
+            setPrefs({ termDock: d });
+            setTermFocus((n) => n + 1);
+          }}
+          onResize={(px) => setPrefs(prefs.termDock === "bottom" ? { termHeight: px } : { termWidth: px })}
+        />
       </div>
       {prefs.devPanel && <DevPanel onClose={() => setPrefs({ devPanel: false })} ai={ai} repo={repo} />}
       <SettingsDialog

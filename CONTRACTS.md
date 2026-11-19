@@ -155,6 +155,10 @@ Payload types are in `crates/iso-core/src/ipc.rs`; TypeScript bindings are gener
 | `ai_requests` | | `AiRequestRow[]` | Model requests of this session, newest first (in memory, at most 300). |
 | `ai_request` | `id` | `AiRequestDetail \| null` | One request with its system message, prompt and answer. |
 | `ai_requests_clear` | | `null` | Empties the request log. |
+| `term_open` | `cwd` (null: home), `cols`, `rows`, `onData: Channel` | `{ id, shell, cwd }` | Starts the user's shell on a PTY (`$SHELL -l`; PowerShell on Windows). Output streams as raw bytes on the channel. |
+| `term_write` | `id`, `data` | `null` | Typed or pasted text to the shell. |
+| `term_resize` | `id`, `cols`, `rows` | `null` | |
+| `term_close` | `id` | `null` | Stops the shell. `term_exit { id, code }` follows, as it does when the shell exits by itself. |
 | `get_jobs` | | `JobsState` | `job_progress: JobsState` |
 | `rename_module` | `id`, `name?`, `color?` | `ModuleInfo` | |
 | `recent_repos` | | `string[]` | |

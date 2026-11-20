@@ -17,12 +17,25 @@ function StatusDot({ status, text }: { status: keyof typeof STATUS_WORD; text: s
 const ROW = 26;
 const OVERSCAN = 12;
 
-interface Row {
+export interface Row {
   node: TreeNode;
   depth: number;
   open: boolean;
   /** Shown in filter mode: the folder the match lives in. */
   dir?: string;
+}
+
+/** The index of the focused row; if a closed folder hides it, the nearest shown folder above it. */
+export function activeIndex(rows: Row[], path: string | null): number {
+  if (!path || rows.length === 0) return 0;
+  const at = new Map<string, number>();
+  for (let i = 0; i < rows.length; i++) at.set(rows[i].node.path, i);
+  for (let p = path; p; p = p.slice(0, Math.max(0, p.lastIndexOf("/")))) {
+    const i = at.get(p);
+    if (i !== undefined) return i;
+    if (!p.includes("/")) break;
+  }
+  return 0;
 }
 
 function flatten(root: TreeNode, expanded: Set<string>): Row[] {
@@ -220,7 +233,8 @@ export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, o
   const [scroll, setScroll] = useState(0);
   const [height, setHeight] = useState(600);
   const [width, setWidth] = useState(250);
-  const [active, setActive] = useState(0);
+  // The row with keyboard focus, by path: rows opening or closing above it do not move it.
+  const [activePath, setActivePath] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const counts = useMemo(() => folderCounts(tree), [tree]);
   const total = counts.get("") ?? 0;
@@ -261,9 +275,16 @@ export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, o
     return filtered(filesFor(tree) ?? fileList(tree), query);
   }, [tree, expanded, focusOpen, query, files]);
   const rows = result.rows;
+  const active = useMemo(() => activeIndex(rows, activePath), [rows, activePath]);
+  // The open file is revealed once per file: not again whenever a folder opens or closes.
+  const revealed = useRef<string | null>(null);
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = 0;
+    revealed.current = null;
   }, [focusId]);
+  useEffect(() => {
+    revealed.current = null;
+  }, [!!query]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -278,13 +299,14 @@ export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, o
     return () => ro.disconnect();
   }, []);
 
-  // Keep the open file in view once its row exists.
+  // Bring a newly opened file into view once its row exists.
   useEffect(() => {
-    if (!openPath) return;
+    if (!openPath || revealed.current === openPath) return;
     const i = rows.findIndex((r) => r.node.path === openPath);
     const el = listRef.current;
     if (i < 0 || !el) return;
-    setActive(i);
+    revealed.current = openPath;
+    setActivePath(openPath);
     const top = i * ROW;
     if (top < el.scrollTop || top + ROW > el.scrollTop + el.clientHeight) el.scrollTop = Math.max(0, top - Math.floor(el.clientHeight / 3 / ROW) * ROW); // whole rows: none half-hidden at the top
   }, [openPath, rows]);
@@ -306,7 +328,8 @@ export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, o
     const el = listRef.current;
     if (!el) return;
     const n = Math.max(0, Math.min(rows.length - 1, i));
-    setActive(n);
+    if (!rows[n]) return;
+    setActivePath(rows[n].node.path);
     const top = n * ROW;
     if (top < el.scrollTop) el.scrollTop = top;
     else if (top + ROW > el.scrollTop + el.clientHeight) el.scrollTop = top + ROW - el.clientHeight;
@@ -374,7 +397,7 @@ export const Sidebar = memo(function Sidebar({ repo, tree: fullTree, openPath, o
                 className={`row${n.isDir ? " dir" : " file"}${n.path === openPath ? " cur" : ""}`}
                 style={{ transform: `translateY(${i * ROW}px)`, paddingLeft: indent }}
                 onClick={() => {
-                  setActive(i);
+                  setActivePath(n.path);
                   activate(r);
                 }}
                 title={title}
